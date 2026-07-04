@@ -1,13 +1,10 @@
-// Firebase の設定値をここに入れると、リアルタイム同期がオンになります。
-// 空のままだと、これまで通り各端末の localStorage のみで動作します（同期なし）。
-//
-// 取得方法：Firebase コンソール → プロジェクトの設定 → 「マイアプリ」→ ウェブアプリ
-// の firebaseConfig をコピーして下の各値に貼り付け。
+// Firebase の設定値。埋まっているとリアルタイム同期がオンになります。
+// （apiKey 等は Firebase では公開前提の値。保護は 匿名認証＋合言葉＋セキュリティルール で行う）
 export const cloudConfig = {
-  apiKey: "",
-  authDomain: "",
-  projectId: "",
-  storageBucket: "",
-  messagingSenderId: "",
-  appId: "",
+  apiKey: "AIzaSyB0Ij0bEofN3LI17K6_agqgc5Opi-qV9BA",
+  authDomain: "umatsumi-yard.firebaseapp.com",
+  projectId: "umatsumi-yard",
+  storageBucket: "umatsumi-yard.firebasestorage.app",
+  messagingSenderId: "666631655461",
+  appId: "1:666631655461:web:f23b8ada215e97a5fa6fcc",
 };
