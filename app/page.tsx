@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Vehicle, Horse, UnloadStatus, effBatch, wakuClass } from "@/lib/types";
 import { loadData, saveData, genId } from "@/lib/storage";
+import { cloudEnabled, subscribeYard, saveYard } from "@/lib/cloud";
 import { initialVehicles, initialHorseCodes } from "@/lib/initialData";
 import VehicleCard from "@/components/VehicleCard";
 import VehicleModal from "@/components/VehicleModal";
@@ -19,6 +20,14 @@ export default function Page() {
   const [editing, setEditing] = useState<Vehicle | null>(null);
   const [confirmClear, setConfirmClear] = useState(false);
 
+  // リアルタイム同期（合言葉ごとに全端末で共有）
+  const ACCESS_KEY_STORAGE = "mare-transport-access-key";
+  const [accessKey, setAccessKey] = useState<string | null>(null);
+  const [keyInput, setKeyInput] = useState("");
+  const [cloudConnected, setCloudConnected] = useState(false);
+  const vehiclesRef = useRef<Vehicle[]>([]);
+  const skipCloudWrite = useRef(false);
+
   // 配置する馬（複数選択・最大3頭）
   const [staging, setStaging] = useState<StagedHorse[]>([]);
   const MAX_HORSES = 3;
@@ -31,8 +40,20 @@ export default function Page() {
   // 初回ロード
   useEffect(() => {
     setVehicles(loadData());
+    if (cloudEnabled) {
+      try {
+        setAccessKey(window.localStorage.getItem(ACCESS_KEY_STORAGE));
+      } catch {
+        /* ignore */
+      }
+    }
     setReady(true);
   }, []);
+
+  // 最新の vehicles を ref に保持（クラウド初期化用）
+  useEffect(() => {
+    vehiclesRef.current = vehicles;
+  }, [vehicles]);
 
   // 滞在時間の警告を最新化するため定期的に再描画
   const [, setTick] = useState(0);
@@ -41,10 +62,57 @@ export default function Page() {
     return () => clearInterval(id);
   }, []);
 
-  // 変更の都度 localStorage 保存
+  // 変更の都度 localStorage 保存 ＋ 同期中ならクラウドにも保存
   useEffect(() => {
-    if (ready) saveData(vehicles);
-  }, [vehicles, ready]);
+    if (!ready) return;
+    saveData(vehicles);
+    if (cloudEnabled && accessKey) {
+      if (skipCloudWrite.current) {
+        skipCloudWrite.current = false; // リモート反映分は書き戻さない（ループ防止）
+      } else {
+        saveYard(accessKey, vehicles).catch(() => {});
+      }
+    }
+  }, [vehicles, ready, accessKey]);
+
+  // クラウド購読（合言葉の駐車場を全端末で共有）
+  useEffect(() => {
+    if (!cloudEnabled || !accessKey) return;
+    let unsub: (() => void) | undefined;
+    let cancelled = false;
+    subscribeYard(accessKey, (remote) => {
+      if (remote == null) {
+        // クラウドに未作成 → 現在の内容で初期化
+        saveYard(accessKey, vehiclesRef.current).catch(() => {});
+      } else {
+        skipCloudWrite.current = true;
+        setVehicles(remote);
+      }
+      setCloudConnected(true);
+    })
+      .then((u) => {
+        if (cancelled) u();
+        else unsub = u;
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+      if (unsub) unsub();
+      setCloudConnected(false);
+    };
+  }, [accessKey]);
+
+  function submitAccessKey() {
+    const k = keyInput.trim();
+    if (!k) return;
+    try {
+      window.localStorage.setItem(ACCESS_KEY_STORAGE, k);
+    } catch {
+      /* ignore */
+    }
+    setAccessKey(k);
+    setKeyInput("");
+  }
 
   const openVehicle = useMemo(
     () => vehicles.find((v) => v.id === openId) ?? null,
@@ -393,6 +461,20 @@ export default function Page() {
           🐴 馬積み駐車場管理アプリ
           <span className="sub">Mare Transport Yard Manager</span>
         </h1>
+        {cloudEnabled && (
+          <button
+            className={`sync-chip ${cloudConnected ? "on" : ""}`}
+            onClick={() => {
+              setKeyInput(accessKey ?? "");
+              setAccessKey(null);
+            }}
+            title="同期の合言葉を変更"
+          >
+            {cloudConnected
+              ? `🔄 同期中${accessKey ? `：${accessKey}` : ""}`
+              : "⚪ 未接続"}
+          </button>
+        )}
       </div>
 
       {/* ===== 操作バー ===== */}
@@ -588,6 +670,48 @@ export default function Page() {
               ※この操作は取り消せません。
             </span>
           </p>
+        </Modal>
+      )}
+
+      {/* ===== 同期の合言葉 入力 ===== */}
+      {cloudEnabled && !accessKey && (
+        <Modal
+          title="🔄 リアルタイム同期"
+          onClose={() => {}}
+          footer={
+            <button
+              className="btn btn-primary btn-block"
+              onClick={submitAccessKey}
+            >
+              この合言葉で同期を始める
+            </button>
+          }
+        >
+          <p style={{ fontSize: 14, lineHeight: 1.7, marginTop: 0 }}>
+            みんなで同じ駐車場を共有するための<strong>合言葉</strong>
+            を入力してください。
+            <br />
+            <span style={{ color: "var(--text-muted)", fontSize: 13 }}>
+              同じ合言葉を入れた端末どうしで、内容がリアルタイムに同期されます。
+              他の人に推測されにくい言葉にしてください。
+            </span>
+          </p>
+          <input
+            type="text"
+            value={keyInput}
+            onChange={(e) => setKeyInput(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") submitAccessKey();
+            }}
+            placeholder="例: shadai-yard-2026"
+            style={{
+              width: "100%",
+              padding: "12px",
+              fontSize: 16,
+              border: "1px solid var(--line-strong)",
+              borderRadius: 8,
+            }}
+          />
         </Modal>
       )}
 

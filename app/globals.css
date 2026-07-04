@@ -83,6 +83,23 @@ button {
   color: var(--text-muted);
 }
 
+.sync-chip {
+  border: 1px solid var(--line-strong);
+  background: #fff;
+  border-radius: 999px;
+  padding: 8px 14px;
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--text-muted);
+  min-height: 40px;
+  white-space: nowrap;
+}
+.sync-chip.on {
+  background: #e3f4e6;
+  border-color: #57b478;
+  color: #1f7a3d;
+}
+
 .btn {
   border: none;
   border-radius: 10px;
