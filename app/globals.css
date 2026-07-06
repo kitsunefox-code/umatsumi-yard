@@ -1794,7 +1794,7 @@ button {
 }
 .fyard-diagram {
   display: flex;
-  align-items: stretch;
+  align-items: flex-start;
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
 }
@@ -1903,9 +1903,8 @@ button {
 .fyard-frame.small {
   border: 1.5px solid #4a5560;
   border-radius: 6px;
-  min-height: 0;
-  flex: 1;
-  min-width: 48px;
+  min-height: 74px;
+  min-width: 62px;
   display: flex;
   align-items: center;
   justify-content: center;
