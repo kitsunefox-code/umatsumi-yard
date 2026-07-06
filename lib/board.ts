@@ -34,6 +34,7 @@ export type Mare = {
   isNew?: boolean; // 進行中に追加された予定（NEW表示）
   frameNo?: number; // 馬積場の枠番号（1〜15）
   parkingRef?: string; // 連携元の馬積みの馬（vehicleId:horseId）。二重表示防止用
+  note?: string; // 順番表の注記（上り・鎮静※・指定 昼ＫＺＮ など）
 };
 
 // 順番表（本日の予定）の1件
@@ -46,6 +47,7 @@ export type RosterEntry = {
   apptTime?: string; // 予定時間
   arrived: boolean; // 馬積場に到着してボードに出したか
   isNew?: boolean; // 取り込み後に追加された（NEW表示）
+  note?: string; // 順番表の注記（上り・鎮静※・指定 昼ＫＺＮ など）
 };
 
 // 種牡馬コードごとの色（決定的ハッシュ）
@@ -114,6 +116,11 @@ export function resolveMareName(
   const c = normCode(code);
   return roster.find((r) => normCode(r.sireCode) === c)?.mareName ?? "";
 }
+// 父コード → 順番表の注記（上り・鎮静など）を照合
+export function resolveNote(roster: RosterEntry[], code: string): string {
+  const c = normCode(code);
+  return roster.find((r) => normCode(r.sireCode) === c)?.note ?? "";
+}
 
 // 馬積場の空いている最小の枠番号（1〜15）
 export function firstFreeFrame(mares: Mare[]): number | undefined {
@@ -144,22 +151,22 @@ export const roster8Sample: RosterEntry[] = [
   { id: "r-eqx", mareName: "ネバーギブアップ", sireCode: "ＥＱＸ", farm: "服部牧場", kind: "再", apptTime: "7:30", arrived: true },
   { id: "r-kzn", mareName: "ラブインジエア", sireCode: "ＫＺＮ", farm: "千代田牧場", kind: "新", apptTime: "", arrived: true },
   { id: "r-dfo", mareName: "ドロミティ", sireCode: "ＤＦＯ", farm: "村上欽哉牧場", kind: "新", apptTime: "8:30", arrived: true },
-  { id: "r-ldk", mareName: "アートハウス", sireCode: "ＬＤＫ", farm: "", kind: "新", apptTime: "7:30", arrived: false },
-  { id: "r-orf", mareName: "モンゴリアンチャンガ", sireCode: "ＯＲＦ", farm: "", kind: "新", apptTime: "7:45", arrived: false },
-  { id: "r-rey", mareName: "チェルビック", sireCode: "ＲＥＹ", farm: "丸善橋本牧場", kind: "再", apptTime: "8:15", arrived: false },
+  { id: "r-ldk", mareName: "アートハウス", sireCode: "ＬＤＫ", farm: "", kind: "新", apptTime: "7:30", arrived: false, note: "指定 昼ＫＺＮ" },
+  { id: "r-orf", mareName: "モンゴリアンチャンガ", sireCode: "ＯＲＦ", farm: "", kind: "新", apptTime: "7:45", arrived: false, isNew: true },
+  { id: "r-rey", mareName: "チェルビック", sireCode: "ＲＥＹ", farm: "丸善橋本牧場", kind: "再", apptTime: "8:15", arrived: false, note: "鎮静 OV" },
   { id: "r-dfo2", mareName: "セレッソブランコ", sireCode: "ＧＤＧ", farm: "天羽禮治牧場", kind: "新", apptTime: "8:30", arrived: false },
   { id: "r-mau", mareName: "ダブルイプシロン", sireCode: "ＭＡＵ", farm: "奥山Ｆ", kind: "再", apptTime: "8:30", arrived: false },
-  { id: "r-bop", mareName: "ルクスドヌーヴ", sireCode: "ＢＯＰ", farm: "いとう牧場", kind: "新", apptTime: "8:30", arrived: false },
+  { id: "r-bop", mareName: "ルクスドヌーヴ", sireCode: "ＢＯＰ", farm: "いとう牧場", kind: "新", apptTime: "8:30", arrived: false, note: "上り" },
   { id: "r-stn", mareName: "ヴィアフィレンツェ", sireCode: "ＳＴＮ", farm: "", kind: "新", apptTime: "8:45", arrived: false },
   { id: "r-poe", mareName: "ハルワタート", sireCode: "ＰＯＥ", farm: "", kind: "新", apptTime: "8:45", arrived: false },
-  { id: "r-con", mareName: "テイハ", sireCode: "ＣＯＮ", farm: "", kind: "新", apptTime: "9:00", arrived: false },
+  { id: "r-con", mareName: "テイハ", sireCode: "ＣＯＮ", farm: "", kind: "新", apptTime: "9:00", arrived: false, note: "鎮静 ※" },
   { id: "r-shy", mareName: "ウィラビーオーサム", sireCode: "ＳＨＹ", farm: "", kind: "新", apptTime: "9:00", arrived: false },
   { id: "r-hrc", mareName: "エスキモーキセス", sireCode: "ＨＲＣ", farm: "", kind: "新", apptTime: "9:00", arrived: false },
-  { id: "r-epn", mareName: "グランドマルク", sireCode: "ＥＰＮ", farm: "", kind: "新", apptTime: "9:15", arrived: false },
+  { id: "r-epn", mareName: "グランドマルク", sireCode: "ＥＰＮ", farm: "", kind: "新", apptTime: "9:15", arrived: false, note: "上り" },
   { id: "r-ndl", mareName: "チェエヴァソラ", sireCode: "ＮＤＬ", farm: "アシュリンジャパン", kind: "新", apptTime: "", arrived: false },
-  { id: "r-efo", mareName: "ベルフィオーレ", sireCode: "ＥＦＯ", farm: "ケイアイＦ", kind: "新", apptTime: "", arrived: false },
+  { id: "r-efo", mareName: "ベルフィオーレ", sireCode: "ＥＦＯ", farm: "ケイアイＦ", kind: "新", apptTime: "", arrived: false, note: "指定 昼ＡＭＳ" },
   { id: "r-lvl", mareName: "シゲルチャグチャグ", sireCode: "ＬＶＬ", farm: "コスモヴューＦ", kind: "再", apptTime: "", arrived: false },
-  { id: "r-sis", mareName: "スカイラー", sireCode: "ＳＩＳ", farm: "高橋Ｆ", kind: "新", apptTime: "", arrived: false },
+  { id: "r-sis", mareName: "スカイラー", sireCode: "ＳＩＳ", farm: "高橋Ｆ", kind: "新", apptTime: "", arrived: false, note: "指定 昼ＳＩＳ" },
 ];
 
 // 見本データ：流れの馬は最初は空（馬積場は馬積みアプリから反映、進めると流れに入る）

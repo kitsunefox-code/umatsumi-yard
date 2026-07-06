@@ -15,6 +15,7 @@ import {
   nextZones,
   firstFreeFrame,
   resolveMareName,
+  resolveNote,
   sampleMares,
   roster8Sample,
 } from "@/lib/board";
@@ -34,6 +35,7 @@ type YardOcc = {
   sireCode: string;
   mareName: string;
   foal?: string;
+  note?: string;
   isNew?: boolean;
   onAdvance: () => void;
   onOpen?: () => void;
@@ -231,7 +233,13 @@ export default function BoardPage() {
   ) {
     setMares((prev) => [
       ...prev,
-      newMare({ mareName, sireCode, zone: "洗い場", parkingRef: ref }),
+      newMare({
+        mareName,
+        sireCode,
+        zone: "洗い場",
+        parkingRef: ref,
+        note: resolveNote(roster, sireCode),
+      }),
     ]);
   }
   // 予定を追加（進行中の追加＝NEW）
@@ -287,6 +295,7 @@ export default function BoardPage() {
           key: ref,
           sireCode: h.horseCode,
           mareName,
+          note: resolveNote(roster, h.horseCode) || undefined,
           foal:
             h.foalBirthDate || h.foalSex
               ? `${h.foalBirthDate ?? ""}${h.foalSex ? " " + h.foalSex : ""}`
@@ -302,6 +311,7 @@ export default function BoardPage() {
           key: m.id,
           sireCode: m.sireCode,
           mareName: m.mareName || "（名前未入力）",
+          note: m.note,
           isNew: m.isNew,
           onAdvance: () => advanceMare(m.id, "洗い場"),
           onOpen: () => setOpenId(m.id),
@@ -396,6 +406,7 @@ export default function BoardPage() {
                       {r.apptTime && <span className="mare-time">🕐{r.apptTime}</span>}
                       {r.kind && <span className="mare-kind">{r.kind}</span>}
                     </span>
+                    {r.note && <span className="mare-note">{r.note}</span>}
                   </span>
                   <span className="roster-status">{here ? "✅来場" : "未着"}</span>
                 </div>
@@ -426,23 +437,30 @@ export default function BoardPage() {
               ))}
             </div>
           </div>
+          {/* 予備（馬積）＝馬積の欄に配置 */}
+          <PlaceBox
+            zone="予備（馬積）"
+            byZone={byZone}
+            onOpen={setOpenId}
+            onAdvance={advanceMare}
+            wide
+          />
         </section>
 
-        {/* 中段3ボックス */}
+        {/* 中段3ボックス（予備の位置に鎮静待ち） */}
         <div className="fmap-row">
           <PlaceBox zone="P検待ち・直検待ち" byZone={byZone} onOpen={setOpenId} onAdvance={advanceMare} />
-          <PlaceBox zone="予備（馬積）" byZone={byZone} onOpen={setOpenId} onAdvance={advanceMare} />
+          <PlaceBox zone="鎮静待ち" byZone={byZone} onOpen={setOpenId} onAdvance={advanceMare} />
           <PlaceBox zone="洗い場" byZone={byZone} onOpen={setOpenId} onAdvance={advanceMare} />
         </div>
 
         {/* 待機（横長） */}
         <PlaceBox zone="待機" byZone={byZone} onOpen={setOpenId} onAdvance={advanceMare} wide />
 
-        {/* 下段3ボックス */}
-        <div className="fmap-row">
+        {/* 下段：第二・第一種付所 */}
+        <div className="fmap-row two">
           <PlaceBox zone="第二種付所" byZone={byZone} onOpen={setOpenId} onAdvance={advanceMare} />
           <PlaceBox zone="第一種付所" byZone={byZone} onOpen={setOpenId} onAdvance={advanceMare} />
-          <PlaceBox zone="鎮静待ち" byZone={byZone} onOpen={setOpenId} onAdvance={advanceMare} />
         </div>
 
         {/* 帰宅（横長・出口） */}
@@ -625,6 +643,7 @@ function MareList({
                   {m.apptTime && <span className="mare-time">🕐{m.apptTime}</span>}
                   {m.kind && <span className="mare-kind">{m.kind}</span>}
                 </span>
+                {m.note && <span className="mare-note">{m.note}</span>}
                 {m.tags.length > 0 && (
                   <span className="chip-tags">
                     {m.tags.map((t) => (
@@ -637,7 +656,7 @@ function MareList({
               </span>
             </button>
             {onAdvance && nexts.length > 0 && (
-              <span className="chip-advs">
+              <span className={`chip-advs${nexts.length > 1 ? " branch" : ""}`}>
                 {nexts.map((nz) => (
                   <button
                     key={nz}
@@ -687,6 +706,7 @@ function FrameCell({
               {o.sireCode || "?"}
             </span>
             <span className="frame-name">{o.mareName}</span>
+            {o.note && <span className="frame-note">{o.note}</span>}
             {o.foal && <span className="frame-foal">{o.foal}</span>}
           </button>
           <button

@@ -2030,6 +2030,29 @@ button {
   color: #2e8b57;
 }
 
+/* 順番表の注記（上り・鎮静※・指定） */
+.mare-note {
+  align-self: flex-start;
+  font-size: 11px;
+  font-weight: 800;
+  color: #b3541e;
+  background: #fff2e8;
+  border: 1px solid #f0c3a0;
+  border-radius: 6px;
+  padding: 1px 7px;
+  margin-top: 1px;
+}
+.frame-note {
+  font-size: 9px;
+  font-weight: 800;
+  color: #b3541e;
+  background: #fff2e8;
+  border: 1px solid #f0c3a0;
+  border-radius: 5px;
+  padding: 0 4px;
+  line-height: 1.4;
+}
+
 /* 進めるボタン（待機は第一/第二の2つ） */
 .chip-advs {
   flex-shrink: 0;
@@ -2037,6 +2060,32 @@ button {
   display: flex;
   flex-direction: column;
   gap: 4px;
+}
+/* 待機の第一/第二＝大きく */
+.chip-advs.branch {
+  flex-direction: row;
+  gap: 6px;
+}
+.chip-advs.branch .chip-adv {
+  min-width: 92px;
+  padding: 8px 10px;
+  border-width: 2px;
+  border-radius: 10px;
+}
+.chip-advs.branch .chip-adv-arrow {
+  font-size: 14px;
+}
+.chip-advs.branch .chip-adv-label {
+  font-size: 14px;
+}
+/* 第二・第一種付所の2ボックス行 */
+.fmap-row.two {
+  grid-template-columns: repeat(2, 1fr);
+}
+@media (max-width: 720px) {
+  .fmap-row.two {
+    grid-template-columns: 1fr;
+  }
 }
 
 /* 牝馬チップ：本体＋ワンタップ「進める」 */
