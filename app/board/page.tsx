@@ -9,8 +9,7 @@ import {
   RosterEntry,
   ZONES,
   MARE_TAGS,
-  sireColor,
-  sireTextColor,
+  sireBadge,
   newMare,
   normCode,
   zoneMoves,
@@ -782,12 +781,15 @@ function StayWarn({ ts, now }: { ts?: number; now: number }) {
   return <span className="stay-warn">⚠ 滞在{m}分</span>;
 }
 
-// 種牡馬マーク（勝負服っぽい色の馬コードバッジ）
+// 種牡馬マーク（勝負服っぽい色の馬コードバッジ。同馬主は2色で個性）
 function SireMark({ code, frame }: { code: string; frame?: boolean }) {
-  const bg = sireColor(code);
+  const b = sireBadge(code);
   const cls = frame ? "frame-sire" : "chip-sire";
   return (
-    <span className={cls} style={{ background: bg, color: sireTextColor(bg) }}>
+    <span
+      className={`${cls}${b.twoTone ? " twotone" : ""}`}
+      style={{ background: b.background, color: b.color }}
+    >
       {code || "?"}
     </span>
   );

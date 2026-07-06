@@ -1869,6 +1869,12 @@ button {
   align-items: center;
   justify-content: center;
 }
+/* 2色の種牡馬バッジ（同馬主の見分け）＝文字を影付きで読みやすく */
+.chip-sire.twotone,
+.frame-sire.twotone {
+  text-shadow: 0 0 2px rgba(0, 0, 0, 0.9), 0 1px 1px rgba(0, 0, 0, 0.7);
+}
+
 /* 種牡馬マーク＝勝負服アイコン */
 .chip-sire.silk {
   background: #eef1f4 !important;

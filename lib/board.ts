@@ -103,6 +103,26 @@ export function sireTextColor(bg: string): string {
   return 0.299 * r + 0.587 * g + 0.114 * b > 150 ? "#1a1a1a" : "#fff";
 }
 
+// 同じ馬主で服色が被る種牡馬は2色＋配置違いで個性を出す（水色＋赤）
+const SILK_2TONE: Record<string, string> = {
+  CON: "linear-gradient(135deg,#78c8f0 50%,#c80028 50%)", // ノースヒルズ 斜め＼
+  KZN: "linear-gradient(45deg,#78c8f0 50%,#c80028 50%)", // ノースヒルズ 斜め／
+  EQX: "linear-gradient(#78c8f0 0 34%,#c80028 34% 66%,#78c8f0 66%)", // シルク 横帯
+  SAO: "linear-gradient(90deg,#78c8f0 0 34%,#c80028 34% 66%,#78c8f0 66%)", // シルク 縦帯
+};
+// 種牡馬バッジの背景・文字色（2色服は grad＋文字影）
+export function sireBadge(code: string): {
+  background: string;
+  color: string;
+  twoTone: boolean;
+} {
+  const c = normCode(code);
+  if (SILK_2TONE[c])
+    return { background: SILK_2TONE[c], color: "#fff", twoTone: true };
+  const bg = sireColor(code);
+  return { background: bg, color: sireTextColor(bg), twoTone: false };
+}
+
 export function newMare(patch: Partial<Mare> = {}): Mare {
   return {
     id: genId("mare"),
