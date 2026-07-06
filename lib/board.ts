@@ -119,7 +119,8 @@ const SILK: Record<string, [string, string | null]> = {
   MYB: [C.black, C.dred],
   // 赤＋黄
   BOP: [C.red, C.yellow],
-  MAU: [C.red, C.yellow],
+  // 黄
+  MAU: [C.yellow, null],
   // 単色
   DFO: [C.navy, null],
   DDC: [C.gray, null],
