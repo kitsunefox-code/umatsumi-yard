@@ -2074,9 +2074,17 @@ button {
   background: #f2edfa !important;
   border-color: #cbb8e6 !important;
 }
-.note-warn {
-  font-weight: 900;
+.warn-icon {
+  width: 13px;
+  height: 12px;
   margin-right: 3px;
+  vertical-align: -2px;
+  flex-shrink: 0;
+}
+.frame-note .warn-icon {
+  width: 11px;
+  height: 10px;
+  margin-right: 2px;
 }
 
 /* カード全体の色付け（上り=赤 / 上り再発=青 / 鎮静=黄） */

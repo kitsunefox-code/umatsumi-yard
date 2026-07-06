@@ -618,12 +618,28 @@ export default function BoardPage() {
   );
 }
 
+function WarnIcon() {
+  return (
+    <svg className="warn-icon" viewBox="0 0 24 22" aria-hidden="true">
+      <path
+        d="M12 1.6 L22.4 20.4 L1.6 20.4 Z"
+        fill="#F5C518"
+        stroke="#111"
+        strokeWidth="2.4"
+        strokeLinejoin="round"
+      />
+      <rect x="10.7" y="7" width="2.6" height="7.2" rx="1.3" fill="#111" />
+      <circle cx="12" cy="17.1" r="1.5" fill="#111" />
+    </svg>
+  );
+}
+
 function NoteBadge({ note, frame }: { note?: string; frame?: boolean }) {
   if (!note) return null;
   const k = noteKind(note);
   return (
     <span className={`${frame ? "frame-note" : "mare-note"} note-${k}`}>
-      {k === "sedate" && <span className="note-warn">△!</span>}
+      {k === "sedate" && <WarnIcon />}
       {note}
     </span>
   );
