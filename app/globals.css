@@ -2053,21 +2053,83 @@ button {
   line-height: 1.4;
 }
 
-/* 注記の種類別カラー（鎮静=赤 / OV=紫 / 上り=緑） */
-.note-sedate {
+/* 注記バッジの種類別カラー（上り=赤 / 上り再発=青 / 鎮静=黄 / OV=紫） */
+.note-agari {
   color: #c0392b !important;
   background: #fdecec !important;
   border-color: #e6a3a3 !important;
+}
+.note-agari-re {
+  color: #1c5fb0 !important;
+  background: #e8f1fc !important;
+  border-color: #a9c8ec !important;
+}
+.note-sedate {
+  color: #8a6100 !important;
+  background: #fff6d8 !important;
+  border-color: #e6c34d !important;
 }
 .note-ov {
   color: #6b3fa0 !important;
   background: #f2edfa !important;
   border-color: #cbb8e6 !important;
 }
-.note-agari {
-  color: #1f7a4d !important;
-  background: #e9f6ef !important;
-  border-color: #a9d8bf !important;
+.note-warn {
+  font-weight: 900;
+  margin-right: 3px;
+}
+
+/* カード全体の色付け（上り=赤 / 上り再発=青 / 鎮静=黄） */
+.roster-chip.card-agari,
+.mare-chip.card-agari,
+.frame-occ.card-agari {
+  background: #fdecec;
+  border-color: #e06060;
+}
+.roster-chip.card-agari-re,
+.mare-chip.card-agari-re,
+.frame-occ.card-agari-re {
+  background: #e8f1fc;
+  border-color: #5a8fd6;
+}
+.roster-chip.card-sedate,
+.mare-chip.card-sedate,
+.frame-occ.card-sedate {
+  background: #fff6d8;
+  border-color: #e0b000;
+}
+.frame-occ.card-agari,
+.frame-occ.card-agari-re,
+.frame-occ.card-sedate {
+  border-radius: 6px;
+  padding: 2px 3px;
+  border-bottom: none;
+}
+.frame-occ.card-agari {
+  border-left: 3px solid #e06060;
+}
+.frame-occ.card-agari-re {
+  border-left: 3px solid #5a8fd6;
+}
+.frame-occ.card-sedate {
+  border-left: 3px solid #e0b000;
+}
+
+/* 2頭同時バッジ（馬積み連携） */
+.frame-head {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.frame-batch {
+  font-size: 9px;
+  font-weight: 800;
+  color: #0f7a6e;
+  background: #e2f6f2;
+  border: 1px solid #9fd9cf;
+  border-radius: 5px;
+  padding: 0 4px;
+  line-height: 1.4;
 }
 
 /* 進めるボタン（待機は第一/第二の2つ） */

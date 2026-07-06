@@ -108,13 +108,21 @@ export function nextZones(z: Zone): Zone[] {
   return NEXT_ZONES[z] ?? [];
 }
 
-// 注記の種類でスタイル分け（鎮静/OV/上り）
+// 注記の種類でスタイル分け（上り=赤/上り再発=青/鎮静=黄△!/OV=紫）
 export function noteKind(note?: string): string {
   if (!note) return "";
   if (note.includes("鎮静")) return "sedate";
-  if (note.includes("OV")) return "ov";
+  if (note.includes("上り再発") || note.includes("再発")) return "agari-re";
   if (note.includes("上り")) return "agari";
+  if (note.includes("OV")) return "ov";
   return "other";
+}
+// カード全体を色付けする注記かどうか（上り/上り再発/鎮静）
+export function cardClass(note?: string): string {
+  const k = noteKind(note);
+  return k === "agari" || k === "agari-re" || k === "sedate"
+    ? `card-${k}`
+    : "";
 }
 
 // 父コード（種牡馬）→ 本日の予定の牝馬名を照合（無ければ空）
@@ -165,7 +173,7 @@ export const roster8Sample: RosterEntry[] = [
   { id: "r-rey", mareName: "チェルビック", sireCode: "ＲＥＹ", farm: "丸善橋本牧場", kind: "再", apptTime: "8:15", arrived: false, note: "OV" },
   { id: "r-dfo2", mareName: "セレッソブランコ", sireCode: "ＧＤＧ", farm: "天羽禮治牧場", kind: "新", apptTime: "8:30", arrived: false },
   { id: "r-mau", mareName: "ダブルイプシロン", sireCode: "ＭＡＵ", farm: "奥山Ｆ", kind: "再", apptTime: "8:30", arrived: false },
-  { id: "r-bop", mareName: "ルクスドヌーヴ", sireCode: "ＢＯＰ", farm: "いとう牧場", kind: "新", apptTime: "8:30", arrived: false, note: "上り" },
+  { id: "r-bop", mareName: "ルクスドヌーヴ", sireCode: "ＢＯＰ", farm: "いとう牧場", kind: "新", apptTime: "8:30", arrived: false, note: "上り再発" },
   { id: "r-stn", mareName: "ヴィアフィレンツェ", sireCode: "ＳＴＮ", farm: "", kind: "新", apptTime: "8:45", arrived: false },
   { id: "r-poe", mareName: "ハルワタート", sireCode: "ＰＯＥ", farm: "", kind: "新", apptTime: "8:45", arrived: false },
   { id: "r-con", mareName: "テイハ", sireCode: "ＣＯＮ", farm: "", kind: "新", apptTime: "9:00", arrived: false, note: "鎮静" },

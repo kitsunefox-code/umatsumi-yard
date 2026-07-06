@@ -14,13 +14,14 @@ import {
   normCode,
   nextZones,
   noteKind,
+  cardClass,
   firstFreeFrame,
   resolveMareName,
   resolveNote,
   sampleMares,
   roster8Sample,
 } from "@/lib/board";
-import { Vehicle } from "@/lib/types";
+import { Vehicle, effBatch } from "@/lib/types";
 import {
   cloudEnabled,
   subscribeBoard,
@@ -37,6 +38,7 @@ type YardOcc = {
   mareName: string;
   foal?: string;
   note?: string;
+  batch?: number; // 同時に降ろせる頭数（馬積みアプリ由来）
   isNew?: boolean;
   onAdvance: () => void;
   onOpen?: () => void;
@@ -285,6 +287,7 @@ export default function BoardPage() {
     // 馬積みアプリの駐車枠から
     vehicles.forEach((v) => {
       if (v.wentHome || v.parkingNo == null) return;
+      const batch = effBatch(v);
       v.horses.forEach((h) => {
         const ref = `${v.id}:${h.id}`;
         if (advancedRefs.has(ref)) return;
@@ -297,6 +300,7 @@ export default function BoardPage() {
           sireCode: h.horseCode,
           mareName,
           note: resolveNote(roster, h.horseCode) || undefined,
+          batch,
           foal:
             h.foalBirthDate || h.foalSex
               ? `${h.foalBirthDate ?? ""}${h.foalSex ? " " + h.foalSex : ""}`
@@ -395,7 +399,7 @@ export default function BoardPage() {
         ) : (
           <div className="roster-chips">
             {pendingRoster.map((r) => (
-              <div key={r.id} className="roster-chip">
+              <div key={r.id} className={`roster-chip ${cardClass(r.note)}`}>
                 {r.isNew && <span className="badge-new">NEW</span>}
                 <span
                   className="chip-sire"
@@ -410,11 +414,7 @@ export default function BoardPage() {
                     {r.apptTime && <span className="mare-time">🕐{r.apptTime}</span>}
                     {r.kind && <span className="mare-kind">{r.kind}</span>}
                   </span>
-                  {r.note && (
-                    <span className={`mare-note note-${noteKind(r.note)}`}>
-                      {r.note}
-                    </span>
-                  )}
+                  <NoteBadge note={r.note} />
                 </span>
               </div>
             ))}
@@ -618,6 +618,17 @@ export default function BoardPage() {
   );
 }
 
+function NoteBadge({ note, frame }: { note?: string; frame?: boolean }) {
+  if (!note) return null;
+  const k = noteKind(note);
+  return (
+    <span className={`${frame ? "frame-note" : "mare-note"} note-${k}`}>
+      {k === "sedate" && <span className="note-warn">△!</span>}
+      {note}
+    </span>
+  );
+}
+
 function MareList({
   list,
   onOpen,
@@ -636,7 +647,9 @@ function MareList({
         return (
           <div
             key={m.id}
-            className={`mare-chip${branching ? " branching" : ""}`}
+            className={`mare-chip${branching ? " branching" : ""} ${cardClass(
+              m.note
+            )}`}
           >
             {m.isNew && <span className="badge-new">NEW</span>}
             <button className="chip-open" onClick={() => onOpen(m.id)}>
@@ -653,11 +666,7 @@ function MareList({
                   {m.apptTime && <span className="mare-time">🕐{m.apptTime}</span>}
                   {m.kind && <span className="mare-kind">{m.kind}</span>}
                 </span>
-                {m.note && (
-                  <span className={`mare-note note-${noteKind(m.note)}`}>
-                    {m.note}
-                  </span>
-                )}
+                <NoteBadge note={m.note} />
                 {m.tags.length > 0 && (
                   <span className="chip-tags">
                     {m.tags.map((t) => (
@@ -703,11 +712,15 @@ function FrameCell({
   if (!occs || occs.length === 0) {
     return <div className={`fyard-frame${small ? " small" : ""}`}>{n}</div>;
   }
+  const batch = occs[0]?.batch ?? 1;
   return (
     <div className={`fyard-frame occ${small ? " small" : ""}`}>
-      <span className="frame-no">{n}</span>
+      <span className="frame-head">
+        <span className="frame-no">{n}</span>
+        {batch >= 2 && <span className="frame-batch">{batch}頭同時</span>}
+      </span>
       {occs.map((o) => (
-        <div key={o.key} className="frame-occ">
+        <div key={o.key} className={`frame-occ ${cardClass(o.note)}`}>
           {o.isNew && <span className="badge-new">NEW</span>}
           <button
             className="frame-mare"
@@ -720,11 +733,7 @@ function FrameCell({
               {o.sireCode || "?"}
             </span>
             <span className="frame-name">{o.mareName}</span>
-            {o.note && (
-              <span className={`frame-note note-${noteKind(o.note)}`}>
-                {o.note}
-              </span>
-            )}
+            <NoteBadge note={o.note} frame />
             {o.foal && <span className="frame-foal">{o.foal}</span>}
           </button>
           <button
