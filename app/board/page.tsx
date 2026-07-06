@@ -247,21 +247,25 @@ export default function BoardPage() {
       })
     );
   }
-  // ワンタップで移動（処置の記録も反映）
+  // ワンタップ操作（移動 or 処置タグ付与）
   function advanceMare(id: string, mv: Move) {
     setMares((prev) =>
       prev.map((m) => {
         if (m.id !== id) return m;
-        let treat = m.treat;
-        if (mv.treat) treat = mv.treat;
-        else if (mv.to === "第一種付所" || mv.to === "第二種付所")
-          treat = undefined; // 新たな種付でリセット
+        const zone = mv.to ?? m.zone; // to が無ければ移動せずタグのみ
+        // 種付所へ移動＝新たな種付なのでタグをリセット
+        let treats =
+          mv.to === "第一種付所" || mv.to === "第二種付所"
+            ? []
+            : m.treats ?? [];
+        if (mv.treat && !treats.includes(mv.treat))
+          treats = [...treats, mv.treat];
         return {
           ...m,
-          zone: mv.to,
-          frameNo: mv.to === "馬積場" ? m.frameNo : undefined,
-          treat,
-          ...zoneExtra(m, mv.to),
+          zone,
+          frameNo: zone === "馬積場" ? m.frameNo : undefined,
+          treats,
+          ...zoneExtra(m, zone),
         };
       })
     );
@@ -785,7 +789,15 @@ function MareList({
                   {m.kind && <span className="mare-kind">{m.kind}</span>}
                 </span>
                 <NoteBadge note={m.note} />
-                {m.treat && <span className="treat-badge">🩺{m.treat}</span>}
+                {m.treats && m.treats.length > 0 && (
+                  <span className="treat-list">
+                    {m.treats.map((t) => (
+                      <span key={t} className="treat-badge">
+                        🩺{t}
+                      </span>
+                    ))}
+                  </span>
+                )}
                 {m.zone !== "帰宅" && <StayWarn ts={m.enteredTs} now={now} />}
                 <HomeInfo m={m} />
                 {m.tags.length > 0 && (

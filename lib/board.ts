@@ -39,7 +39,7 @@ export type Mare = {
   enteredTs?: number; // 馬積場到着（滞在時間の起点。ms）
   matedAt?: string; // 入った種付所（第一種付所 / 第二種付所）
   departedTs?: number; // 帰宅時刻（ms）
-  treat?: string; // 処置（促進剤 / ピン止め / 陰部チェック）
+  treats?: string[]; // 処置タグ（促進剤 / ピン止め / 陰部チェック）
 };
 
 // 滞在時間の注意しきい値（分）
@@ -106,12 +106,12 @@ export function normCode(s: string): string {
     .toUpperCase();
 }
 
-// 進める先（ワンタップ移動）。label=ボタン表示、to=移動先、treat=処置記録
-export type Move = { label: string; to: Zone; treat?: string };
+// 進める先（ワンタップ移動）。label=ボタン表示、to=移動先(無ければ移動せずタグのみ)、treat=処置タグ
+export type Move = { label: string; to?: Zone; treat?: string };
 
 const MATE_MOVES: Move[] = [
-  { label: "促進剤", to: "待機", treat: "促進剤" },
-  { label: "ピン止め", to: "洗い場", treat: "ピン止め" },
+  { label: "促進剤", treat: "促進剤" }, // タグのみ（移動しない）
+  { label: "ピン止め", treat: "ピン止め" }, // タグのみ
   { label: "陰部チェック", to: "洗い場", treat: "陰部チェック" },
   { label: "待機馬房", to: "待機馬房" },
   { label: "鎮静待ち", to: "鎮静待ち" },
@@ -131,6 +131,7 @@ const ZONE_MOVES: Partial<Record<Zone, Move[]>> = {
   "待機馬房": [
     { label: "待機", to: "待機" },
     { label: "洗い場", to: "洗い場" },
+    { label: "帰宅", to: "帰宅" },
   ],
   "待機": [
     { label: "第一種付所", to: "第一種付所" },

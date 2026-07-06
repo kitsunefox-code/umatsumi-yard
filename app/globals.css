@@ -2165,6 +2165,12 @@ button {
 }
 
 /* 処置バッジ（促進剤・ピン止め・陰部チェック） */
+.treat-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 2px;
+}
 .treat-badge {
   align-self: flex-start;
   font-size: 11px;
