@@ -162,9 +162,5 @@ export const roster8Sample: RosterEntry[] = [
   { id: "r-sis", mareName: "スカイラー", sireCode: "ＳＩＳ", farm: "高橋Ｆ", kind: "新", apptTime: "", arrived: false },
 ];
 
-// 見本データ：種付けの流れに入った数頭（馬積場は馬積みアプリから反映される）
-export const sampleMares: Mare[] = [
-  mareFromRoster(roster8Sample[1], "洗い場"),
-  mareFromRoster(roster8Sample[2], "待機"),
-  mareFromRoster(roster8Sample[3], "第一種付所"),
-];
+// 見本データ：流れの馬は最初は空（馬積場は馬積みアプリから反映、進めると流れに入る）
+export const sampleMares: Mare[] = [];
