@@ -7,7 +7,7 @@ function arr(minAgo: number): { at: string; ts: number } {
   const mm = String(d.getMinutes()).padStart(2, "0");
   return { at: `${d.getMonth() + 1}/${d.getDate()} ${d.getHours()}:${mm}`, ts };
 }
-const arrMau = arr(40); // 40分前・未降ろし → 警告
+const arrMau = arr(75); // 75分前・未降ろし → 30分＆60分の警告
 const arrHrc = arr(12); // 12分前
 const arrKzn = arr(50); // 50分前だが降ろし済み → 警告なし
 

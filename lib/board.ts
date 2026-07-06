@@ -35,7 +35,16 @@ export type Mare = {
   frameNo?: number; // 馬積場の枠番号（1〜15）
   parkingRef?: string; // 連携元の馬積みの馬（vehicleId:horseId）。二重表示防止用
   note?: string; // 順番表の注記（上り・鎮静※・指定 昼ＫＺＮ など）
+  enteredTs?: number; // 馬積場到着（滞在時間の起点。ms）
 };
+
+// 滞在時間の注意しきい値（分）
+export const STAY_WARN_MIN = 60;
+// 起点tsからの滞在（分）。tsが無ければ null
+export function stayMinutes(ts?: number, now?: number): number | null {
+  if (!ts || !now) return null;
+  return Math.floor((now - ts) / 60000);
+}
 
 // 順番表（本日の予定）の1件
 export type RosterEntry = {
