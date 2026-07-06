@@ -1,25 +1,22 @@
 // 所在ボード（種付当日の牝馬が今どこにいるか）のデータ定義
 import { genId } from "./storage";
 
-// 場所（ゾーン）：馬積場→洗い場→待機→第1/第2種付場→保留・処置→帰宅
+// 場所（ゾーン）：実際の配置図どおり
 export const ZONES = [
   "馬積場",
+  "予備（馬積）",
   "洗い場",
   "待機",
-  "第1種付場",
-  "第2種付所",
-  "保留・処置",
+  "第一種付所",
+  "第二種付所",
+  "P検待ち・直検待ち",
+  "鎮静待ち",
   "帰宅",
 ] as const;
 export type Zone = (typeof ZONES)[number];
 
-// 保留・処置の状態タグ
-export const MARE_TAGS = [
-  "種付出来ず待機",
-  "鎮静",
-  "直検",
-  "P値待ち",
-] as const;
+// 状態タグ（待機の補足）
+export const MARE_TAGS = ["種付出来ず待機"] as const;
 export type MareTag = (typeof MARE_TAGS)[number];
 
 export type Mare = {
@@ -73,8 +70,10 @@ export const sampleMares: Mare[] = [
   newMare({ mareName: "エジプシャンストーム", farm: "ヤナガワ牧場", sireCode: "ＫＢＬ", apptTime: "7:30", kind: "新", zone: "馬積場" }),
   newMare({ mareName: "グレイスフル", farm: "坂東牧場", sireCode: "ＫＢＬ", apptTime: "16:45", kind: "新", zone: "洗い場" }),
   newMare({ mareName: "コミッショニング", farm: "服部牧場", sireCode: "ＥＱＸ", apptTime: "12:45", kind: "新", zone: "待機" }),
-  newMare({ mareName: "ラブインジエア", farm: "千代田牧場", sireCode: "ＫＺＮ", apptTime: "", kind: "新", zone: "第1種付場" }),
-  newMare({ mareName: "アートハウス", farm: "ノースヒルズ", sireCode: "ＬＤＫ", apptTime: "7:30", kind: "新", zone: "第2種付所" }),
-  newMare({ mareName: "ドロミティ", farm: "村上欽哉牧場", sireCode: "ＤＦＯ", apptTime: "", kind: "新", zone: "保留・処置", tags: ["直検"] }),
+  newMare({ mareName: "ラブインジエア", farm: "千代田牧場", sireCode: "ＫＺＮ", apptTime: "", kind: "新", zone: "第一種付所" }),
+  newMare({ mareName: "アートハウス", farm: "ノースヒルズ", sireCode: "ＬＤＫ", apptTime: "7:30", kind: "新", zone: "第二種付所" }),
+  newMare({ mareName: "ドロミティ", farm: "村上欽哉牧場", sireCode: "ＤＦＯ", apptTime: "", kind: "新", zone: "P検待ち・直検待ち" }),
+  newMare({ mareName: "サトノレイナス", farm: "岡田牧場", sireCode: "ＥＱＸ", apptTime: "13:00", kind: "再", zone: "予備（馬積）" }),
+  newMare({ mareName: "ソダシ", farm: "白老ファーム", sireCode: "ＬＤＫ", apptTime: "", kind: "新", zone: "鎮静待ち" }),
   newMare({ mareName: "フルーリア", farm: "ノースヒルズ", sireCode: "ＫＺＮ", apptTime: "", kind: "新", zone: "帰宅" }),
 ];

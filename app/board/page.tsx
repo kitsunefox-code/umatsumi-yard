@@ -18,16 +18,18 @@ import Modal from "@/components/Modal";
 const STORAGE = "mare-board-data";
 const ACCESS_KEY_STORAGE = "mare-transport-access-key";
 
-// 施設マップ配置（実際の場所の並び／処理の流れ順）
-const PLACES: { zone: Zone; area: string; accent: string }[] = [
-  { zone: "馬積場", area: "umatsumi", accent: "entry" },
-  { zone: "洗い場", area: "arai", accent: "wash" },
-  { zone: "待機", area: "taiki", accent: "wait" },
-  { zone: "第1種付場", area: "tane1", accent: "mate" },
-  { zone: "第2種付所", area: "tane2", accent: "mate" },
-  { zone: "保留・処置", area: "horyu", accent: "hold" },
-  { zone: "帰宅", area: "kitaku", accent: "home" },
-];
+// 施設マップの各場所（配置図どおり）
+const PLACE_META: Record<Zone, { icon: string; tone: string }> = {
+  "馬積場": { icon: "🐴", tone: "yard" },
+  "予備（馬積）": { icon: "🐴", tone: "spare" },
+  "洗い場": { icon: "💧", tone: "wash" },
+  "待機": { icon: "👥", tone: "wait" },
+  "第一種付所": { icon: "🏚️", tone: "mate" },
+  "第二種付所": { icon: "🏚️", tone: "mate" },
+  "P検待ち・直検待ち": { icon: "📋", tone: "check" },
+  "鎮静待ち": { icon: "🐎", tone: "sedate" },
+  "帰宅": { icon: "🏠", tone: "home" },
+};
 
 function load(): Mare[] {
   if (typeof window === "undefined") return sampleMares;
@@ -182,74 +184,52 @@ export default function BoardPage() {
         )}
       </div>
 
-      <div className="map-flow">
-        <span>🚚 馬積場</span>
-        <b>→</b>
-        <span>洗い場</span>
-        <b>→</b>
-        <span>待機</span>
-        <b>→</b>
-        <span>種付場</span>
-        <b>→</b>
-        <span>（保留・処置）</span>
-        <b>→</b>
-        <span>🏠 帰宅</span>
-      </div>
+      <div className="fmap">
+        {/* 馬積場（駐車枠 1〜15 の図） */}
+        <section className="fyard">
+          <div className="fyard-label">
+            <span className="fplace-icon">🐴</span>
+            <span className="fplace-name">馬積場</span>
+            <span className="fplace-count">
+              {(byZone.get("馬積場") ?? []).length}
+            </span>
+          </div>
+          <div className="fyard-diagram">
+            <div className="fyard-lane">
+              <span>3</span>
+              <span>2</span>
+              <span>1</span>
+            </div>
+            <div className="fyard-frames">
+              {[4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15].map((n) => (
+                <div key={n} className="fyard-frame">
+                  {n}
+                </div>
+              ))}
+            </div>
+          </div>
+          <MareList list={byZone.get("馬積場") ?? []} onOpen={setOpenId} />
+        </section>
 
-      <div className="board-map">
-        {PLACES.map((p) => {
-          const list = byZone.get(p.zone) ?? [];
-          return (
-            <section
-              key={p.zone}
-              className={`map-place place-${p.accent}`}
-              style={{ gridArea: p.area }}
-            >
-              <header className="map-place-head">
-                <span className="map-place-name">{p.zone}</span>
-                <span className="map-place-count">{list.length}</span>
-              </header>
-              <div className="map-place-body">
-                {list.length === 0 && <div className="map-empty">空き</div>}
-                {list.map((m) => (
-                  <button
-                    key={m.id}
-                    className="mare-chip"
-                    onClick={() => setOpenId(m.id)}
-                  >
-                    <span
-                      className="chip-sire"
-                      style={{ background: sireColor(m.sireCode) }}
-                    >
-                      {m.sireCode || "?"}
-                    </span>
-                    <span className="chip-body">
-                      <span className="chip-name">
-                        {m.mareName || "（名前未入力）"}
-                      </span>
-                      <span className="chip-sub">
-                        {m.farm && <span>{m.farm}</span>}
-                        {m.apptTime && (
-                          <span className="mare-time">🕐{m.apptTime}</span>
-                        )}
-                        {m.kind && <span className="mare-kind">{m.kind}</span>}
-                      </span>
-                      {m.tags.length > 0 && (
-                        <span className="chip-tags">
-                          {m.tags.map((t) => (
-                            <span key={t} className="mare-tag">
-                              {t}
-                            </span>
-                          ))}
-                        </span>
-                      )}
-                    </span>
-                  </button>
-                ))}
-              </div>
-            </section>
-          );
-        })}
+        {/* 中段3ボックス */}
+        <div className="fmap-row">
+          <PlaceBox zone="P検待ち・直検待ち" byZone={byZone} onOpen={setOpenId} />
+          <PlaceBox zone="予備（馬積）" byZone={byZone} onOpen={setOpenId} />
+          <PlaceBox zone="洗い場" byZone={byZone} onOpen={setOpenId} />
+        </div>
+
+        {/* 待機（横長） */}
+        <PlaceBox zone="待機" byZone={byZone} onOpen={setOpenId} wide />
+
+        {/* 下段3ボックス */}
+        <div className="fmap-row">
+          <PlaceBox zone="第二種付所" byZone={byZone} onOpen={setOpenId} />
+          <PlaceBox zone="第一種付所" byZone={byZone} onOpen={setOpenId} />
+          <PlaceBox zone="鎮静待ち" byZone={byZone} onOpen={setOpenId} />
+        </div>
+
+        {/* 帰宅（横長・出口） */}
+        <PlaceBox zone="帰宅" byZone={byZone} onOpen={setOpenId} wide />
       </div>
 
       {/* ===== カード操作シート ===== */}
@@ -386,6 +366,80 @@ export default function BoardPage() {
         </Modal>
       )}
     </div>
+  );
+}
+
+function MareList({
+  list,
+  onOpen,
+}: {
+  list: Mare[];
+  onOpen: (id: string) => void;
+}) {
+  if (!list.length) return null;
+  return (
+    <div className="fplace-body">
+      {list.map((m) => (
+        <button
+          key={m.id}
+          className="mare-chip"
+          onClick={() => onOpen(m.id)}
+        >
+          <span
+            className="chip-sire"
+            style={{ background: sireColor(m.sireCode) }}
+          >
+            {m.sireCode || "?"}
+          </span>
+          <span className="chip-body">
+            <span className="chip-name">{m.mareName || "（名前未入力）"}</span>
+            <span className="chip-sub">
+              {m.farm && <span>{m.farm}</span>}
+              {m.apptTime && <span className="mare-time">🕐{m.apptTime}</span>}
+              {m.kind && <span className="mare-kind">{m.kind}</span>}
+            </span>
+            {m.tags.length > 0 && (
+              <span className="chip-tags">
+                {m.tags.map((t) => (
+                  <span key={t} className="mare-tag">
+                    {t}
+                  </span>
+                ))}
+              </span>
+            )}
+          </span>
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function PlaceBox({
+  zone,
+  byZone,
+  onOpen,
+  wide,
+}: {
+  zone: Zone;
+  byZone: Map<Zone, Mare[]>;
+  onOpen: (id: string) => void;
+  wide?: boolean;
+}) {
+  const list = byZone.get(zone) ?? [];
+  const meta = PLACE_META[zone];
+  return (
+    <section
+      className={`fplace tone-${meta.tone}${wide ? " wide" : ""}${
+        list.length ? " has-mares" : ""
+      }`}
+    >
+      <div className="fplace-head">
+        <span className="fplace-icon">{meta.icon}</span>
+        <span className="fplace-name">{zone}</span>
+        {list.length > 0 && <span className="fplace-count">{list.length}</span>}
+      </div>
+      <MareList list={list} onOpen={onOpen} />
+    </section>
   );
 }
 

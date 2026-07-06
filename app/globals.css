@@ -1678,94 +1678,162 @@ button {
 }
 
 /* ===== 施設マップ（配置図）表示 ===== */
-.map-flow {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 6px 8px;
-  padding: 9px 12px;
-  margin-bottom: 10px;
-  background: var(--panel);
-  border: 1px solid var(--line);
-  border-radius: 10px;
-  font-size: 13px;
-  font-weight: 800;
-  color: #3a4750;
-}
-.map-flow b {
-  color: var(--line-strong);
-  font-weight: 800;
-}
-
-.board-map {
-  display: grid;
-  gap: 10px;
-  grid-template-columns: 1.15fr 1fr 1fr 1.1fr 1fr;
-  grid-template-areas:
-    "umatsumi arai taiki tane1 horyu"
-    "umatsumi arai taiki tane2 kitaku";
-  align-items: stretch;
-}
-.map-place {
-  background: var(--panel);
-  border: 2px solid var(--line-strong);
-  border-radius: var(--radius);
-  box-shadow: var(--shadow);
+.fmap {
   display: flex;
   flex-direction: column;
-  overflow: hidden;
-  min-height: 132px;
+  gap: 14px;
 }
-.map-place-head {
+.fmap-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+}
+
+/* 場所ボックス（共通） */
+.fplace {
+  border: 2px solid var(--line-strong);
+  border-radius: 16px;
+  background: #fff;
+  min-height: 128px;
+  padding: 12px;
   display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 7px 10px;
-  background: #33404d;
-  color: #fff;
+  flex-direction: column;
+  gap: 10px;
 }
-.map-place-name {
-  font-size: 14px;
+.fplace.wide {
+  min-height: 76px;
+}
+.fplace-head {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  flex: 1;
+  text-align: center;
+}
+.fplace.wide .fplace-head {
+  flex-direction: row;
+}
+.fplace.has-mares .fplace-head {
+  flex: 0 0 auto;
+  flex-direction: row;
+  justify-content: flex-start;
+  gap: 8px;
+  text-align: left;
+}
+.fplace-icon {
+  font-size: 30px;
+  line-height: 1;
+}
+.fplace.has-mares .fplace-icon {
+  font-size: 20px;
+}
+.fplace-name {
+  font-size: 17px;
   font-weight: 800;
+  color: #3f4b53;
+}
+.fplace.has-mares .fplace-name {
+  font-size: 14px;
   flex: 1;
 }
-.map-place-count {
+.fplace-count {
   min-width: 22px;
   height: 22px;
   padding: 0 6px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.22);
+  background: rgba(0, 0, 0, 0.1);
   font-size: 12px;
   font-weight: 800;
+  color: #3f4b53;
   display: flex;
   align-items: center;
   justify-content: center;
 }
-.map-place-body {
-  padding: 7px;
+.fplace-body {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  flex: 1;
-}
-.map-empty {
-  text-align: center;
-  color: var(--line-strong);
-  font-weight: 800;
-  padding: 10px 0;
-  font-size: 13px;
+  gap: 8px;
 }
 
-/* 場所ごとのアクセント色 */
-.place-entry .map-place-head { background: #2f6f8f; }
-.place-wash .map-place-head { background: #3a7ca5; }
-.place-wait .map-place-head { background: #5a6b7a; }
-.place-mate .map-place-head { background: #2e8b57; }
-.place-mate { border-color: #2e8b57; }
-.place-hold .map-place-head { background: #c9820a; }
-.place-hold { border-color: #c9820a; background: #fff9ef; }
-.place-home .map-place-head { background: #7a5c9e; }
-.place-home { background: #f6f4fa; }
+/* 場所ごとの色（配置図どおりの淡色＋縁色） */
+.tone-spare { background: #faf6ee; border-color: #dccba4; }
+.tone-check { background: #faf4ea; border-color: #e2cda2; }
+.tone-wash { background: #eef4fa; border-color: #b9cbe1; }
+.tone-wait { background: #faf6ee; border-color: #e2cda2; }
+.tone-mate { background: #eef2ea; border-color: #bcccb0; }
+.tone-sedate { background: #f1eef7; border-color: #ccc0de; }
+.tone-home { background: #f2f3f5; border-color: #cbd2d8; }
+
+/* 馬積場（駐車枠の図） */
+.fyard {
+  border: 2px solid var(--line-strong);
+  border-radius: 16px;
+  background: #fff;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.fyard-label {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: 1.5px solid var(--line-strong);
+  border-radius: 12px;
+  padding: 8px 16px;
+  background: #fff;
+}
+.fyard-label .fplace-icon {
+  font-size: 20px;
+}
+.fyard-label .fplace-name {
+  font-size: 17px;
+}
+.fyard-diagram {
+  display: flex;
+  align-items: stretch;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+.fyard-lane {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-around;
+  gap: 6px;
+  padding-right: 10px;
+  border-right: 2px solid #4a5560;
+  flex-shrink: 0;
+}
+.fyard-lane span {
+  min-width: 22px;
+  text-align: right;
+  font-size: 15px;
+  font-weight: 800;
+  color: #3f4b53;
+}
+.fyard-frames {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(40px, 1fr));
+  flex: 1;
+  min-width: 520px;
+  border: 2px solid #4a5560;
+  border-left: none;
+  border-radius: 0 8px 8px 0;
+}
+.fyard-frame {
+  border-left: 1.5px solid #d3d9dd;
+  min-height: 78px;
+  padding: 6px 0 0 7px;
+  font-size: 15px;
+  font-weight: 800;
+  color: #3f4b53;
+}
+.fyard-frame:first-child {
+  border-left: none;
+}
 
 /* 牝馬チップ（マップ内） */
 .mare-chip {
@@ -1824,26 +1892,9 @@ button {
   margin-top: 2px;
 }
 
-@media (max-width: 980px) {
-  .board-map {
-    grid-template-columns: 1fr 1fr 1fr;
-    grid-template-areas:
-      "umatsumi arai taiki"
-      "tane1 tane2 horyu"
-      "kitaku kitaku kitaku";
-  }
-}
-@media (max-width: 620px) {
-  .board-map {
+@media (max-width: 720px) {
+  .fmap-row {
     grid-template-columns: 1fr;
-    grid-template-areas:
-      "umatsumi"
-      "arai"
-      "taiki"
-      "tane1"
-      "tane2"
-      "horyu"
-      "kitaku";
   }
 }
 
