@@ -1763,6 +1763,7 @@ button {
 .tone-wash { background: #eef4fa; border-color: #b9cbe1; }
 .tone-wait { background: #faf6ee; border-color: #e2cda2; }
 .tone-mate { background: #eef2ea; border-color: #bcccb0; }
+.tone-stall { background: #eaf2f6; border-color: #b6cdd9; }
 .tone-sedate { background: #f1eef7; border-color: #ccc0de; }
 .tone-home { background: #f2f3f5; border-color: #cbd2d8; }
 
@@ -2160,6 +2161,43 @@ button {
   background-repeat: no-repeat;
   background-position: right 12px center;
   background-size: auto 68%;
+}
+
+/* 処置バッジ（促進剤・ピン止め・陰部チェック） */
+.treat-badge {
+  align-self: flex-start;
+  font-size: 11px;
+  font-weight: 800;
+  color: #1a6a5a;
+  background: #e2f6f2;
+  border: 1px solid #9fd9cf;
+  border-radius: 6px;
+  padding: 1px 7px;
+  margin-top: 2px;
+  white-space: nowrap;
+}
+/* 処置ボタンは色を変えて目立たせる */
+.chip-adv.treat {
+  border-color: #159c85;
+  color: #0f7a68;
+}
+.chip-adv.treat:active {
+  background: #0f7a68;
+  color: #fff;
+}
+/* 中段4ボックス（洗い場＋待機馬房） */
+.fmap-row.four {
+  grid-template-columns: repeat(4, 1fr);
+}
+@media (max-width: 980px) {
+  .fmap-row.four {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+@media (max-width: 620px) {
+  .fmap-row.four {
+    grid-template-columns: 1fr;
+  }
 }
 
 /* 帰宅カードの情報（種付所・合計滞在・帰宅時刻） */

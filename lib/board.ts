@@ -6,6 +6,7 @@ export const ZONES = [
   "馬積場",
   "予備（馬積）",
   "洗い場",
+  "待機馬房",
   "待機",
   "第一種付所",
   "第二種付所",
@@ -38,6 +39,7 @@ export type Mare = {
   enteredTs?: number; // 馬積場到着（滞在時間の起点。ms）
   matedAt?: string; // 入った種付所（第一種付所 / 第二種付所）
   departedTs?: number; // 帰宅時刻（ms）
+  treat?: string; // 処置（促進剤 / ピン止め / 陰部チェック）
 };
 
 // 滞在時間の注意しきい値（分）
@@ -104,19 +106,51 @@ export function normCode(s: string): string {
     .toUpperCase();
 }
 
-// 場所の進行順（ワンタップで次へ）。待機は第一/第二に分岐。帰宅で終わり。
-const NEXT_ZONES: Partial<Record<Zone, Zone[]>> = {
-  "馬積場": ["洗い場"],
-  "予備（馬積）": ["洗い場"],
-  "洗い場": ["待機"],
-  "待機": ["第一種付所", "第二種付所"],
-  "第一種付所": ["第二種付所", "鎮静待ち", "P検待ち・直検待ち", "帰宅"],
-  "第二種付所": ["第一種付所", "鎮静待ち", "P検待ち・直検待ち", "帰宅"],
-  "P検待ち・直検待ち": ["第一種付所", "第二種付所", "帰宅"],
-  "鎮静待ち": ["第一種付所", "第二種付所", "帰宅"],
+// 進める先（ワンタップ移動）。label=ボタン表示、to=移動先、treat=処置記録
+export type Move = { label: string; to: Zone; treat?: string };
+
+const MATE_MOVES: Move[] = [
+  { label: "促進剤", to: "待機", treat: "促進剤" },
+  { label: "ピン止め", to: "洗い場", treat: "ピン止め" },
+  { label: "陰部チェック", to: "洗い場", treat: "陰部チェック" },
+  { label: "待機馬房", to: "待機馬房" },
+  { label: "鎮静待ち", to: "鎮静待ち" },
+  { label: "P検待ち・直検待ち", to: "P検待ち・直検待ち" },
+  { label: "帰宅", to: "帰宅" },
+];
+
+const ZONE_MOVES: Partial<Record<Zone, Move[]>> = {
+  "予備（馬積）": [
+    { label: "洗い場", to: "洗い場" },
+    { label: "待機馬房", to: "待機馬房" },
+  ],
+  "洗い場": [
+    { label: "待機", to: "待機" },
+    { label: "待機馬房", to: "待機馬房" },
+  ],
+  "待機馬房": [
+    { label: "待機", to: "待機" },
+    { label: "洗い場", to: "洗い場" },
+  ],
+  "待機": [
+    { label: "第一種付所", to: "第一種付所" },
+    { label: "第二種付所", to: "第二種付所" },
+  ],
+  "第一種付所": [{ label: "第二種付所", to: "第二種付所" }, ...MATE_MOVES],
+  "第二種付所": [{ label: "第一種付所", to: "第一種付所" }, ...MATE_MOVES],
+  "P検待ち・直検待ち": [
+    { label: "第一種付所", to: "第一種付所" },
+    { label: "第二種付所", to: "第二種付所" },
+    { label: "帰宅", to: "帰宅" },
+  ],
+  "鎮静待ち": [
+    { label: "第一種付所", to: "第一種付所" },
+    { label: "第二種付所", to: "第二種付所" },
+    { label: "帰宅", to: "帰宅" },
+  ],
 };
-export function nextZones(z: Zone): Zone[] {
-  return NEXT_ZONES[z] ?? [];
+export function zoneMoves(z: Zone): Move[] {
+  return ZONE_MOVES[z] ?? [];
 }
 
 // 注記の種類でスタイル分け（上り=赤/上り再発=青/鎮静=黄△!/OV=紫）
