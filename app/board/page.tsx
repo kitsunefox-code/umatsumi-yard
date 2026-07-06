@@ -6,16 +6,22 @@ import {
   Mare,
   Zone,
   MareTag,
+  RosterEntry,
   ZONES,
   MARE_TAGS,
   sireColor,
   newMare,
+  normCode,
+  mareFromRoster,
   sampleMares,
+  roster8Sample,
 } from "@/lib/board";
 import { cloudEnabled, subscribeBoard, saveBoard } from "@/lib/cloud";
+import { genId } from "@/lib/storage";
 import Modal from "@/components/Modal";
 
 const STORAGE = "mare-board-data";
+const ROSTER_STORAGE = "mare-roster-data";
 const ACCESS_KEY_STORAGE = "mare-transport-access-key";
 
 // 施設マップの各場所（配置図どおり）
@@ -31,33 +37,39 @@ const PLACE_META: Record<Zone, { icon: string; tone: string }> = {
   "帰宅": { icon: "🏠", tone: "home" },
 };
 
-function load(): Mare[] {
-  if (typeof window === "undefined") return sampleMares;
+function loadArr<T>(key: string, fallback: T[]): T[] {
+  if (typeof window === "undefined") return fallback;
   try {
-    const raw = window.localStorage.getItem(STORAGE);
-    if (!raw) return sampleMares;
+    const raw = window.localStorage.getItem(key);
+    if (!raw) return fallback;
     const p = JSON.parse(raw);
-    return Array.isArray(p) ? (p as Mare[]) : sampleMares;
+    return Array.isArray(p) ? (p as T[]) : fallback;
   } catch {
-    return sampleMares;
+    return fallback;
   }
 }
 
 export default function BoardPage() {
   const [mares, setMares] = useState<Mare[]>([]);
+  const [roster, setRoster] = useState<RosterEntry[]>([]);
   const [ready, setReady] = useState(false);
   const [openId, setOpenId] = useState<string | null>(null);
   const [adding, setAdding] = useState(false);
+  const [addingRoster, setAddingRoster] = useState(false);
+  const [codeInput, setCodeInput] = useState("");
+  const [codeMsg, setCodeMsg] = useState("");
 
   // 同期
   const [accessKey, setAccessKey] = useState<string | null>(null);
   const [keyInput, setKeyInput] = useState("");
   const [connected, setConnected] = useState(false);
   const maresRef = useRef<Mare[]>([]);
+  const rosterRef = useRef<RosterEntry[]>([]);
   const skipWrite = useRef(false);
 
   useEffect(() => {
-    setMares(load());
+    setMares(loadArr<Mare>(STORAGE, sampleMares));
+    setRoster(loadArr<RosterEntry>(ROSTER_STORAGE, roster8Sample));
     if (cloudEnabled) {
       try {
         setAccessKey(window.localStorage.getItem(ACCESS_KEY_STORAGE));
@@ -70,21 +82,23 @@ export default function BoardPage() {
 
   useEffect(() => {
     maresRef.current = mares;
-  }, [mares]);
+    rosterRef.current = roster;
+  }, [mares, roster]);
 
   // 保存（localStorage＋同期）
   useEffect(() => {
     if (!ready) return;
     try {
       window.localStorage.setItem(STORAGE, JSON.stringify(mares));
+      window.localStorage.setItem(ROSTER_STORAGE, JSON.stringify(roster));
     } catch {
       /* ignore */
     }
     if (cloudEnabled && accessKey) {
       if (skipWrite.current) skipWrite.current = false;
-      else saveBoard(accessKey, mares).catch(() => {});
+      else saveBoard(accessKey, mares, roster).catch(() => {});
     }
-  }, [mares, ready, accessKey]);
+  }, [mares, roster, ready, accessKey]);
 
   // 購読
   useEffect(() => {
@@ -92,10 +106,12 @@ export default function BoardPage() {
     let unsub: (() => void) | undefined;
     let cancelled = false;
     subscribeBoard(accessKey, (remote) => {
-      if (remote == null) saveBoard(accessKey, maresRef.current).catch(() => {});
+      if (remote == null)
+        saveBoard(accessKey, maresRef.current, rosterRef.current).catch(() => {});
       else {
         skipWrite.current = true;
-        setMares(remote);
+        setMares(remote.mares);
+        setRoster(remote.roster);
       }
       setConnected(true);
     })
@@ -145,12 +161,56 @@ export default function BoardPage() {
     );
   }
   function deleteMare(id: string) {
-    setMares((prev) => prev.filter((m) => m.id !== id));
+    const m = mares.find((x) => x.id === id);
+    setMares((prev) => prev.filter((x) => x.id !== id));
+    // 予定に戻す（未到着に）
+    if (m?.rosterId)
+      setRoster((prev) =>
+        prev.map((r) => (r.id === m.rosterId ? { ...r, arrived: false } : r))
+      );
     setOpenId(null);
   }
   function addMare(m: Mare) {
     setMares((prev) => [...prev, m]);
     setAdding(false);
+  }
+
+  // 予定の1件を「到着」させてボードの馬積場に出す
+  function arriveEntry(e: RosterEntry) {
+    setMares((prev) => [...prev, mareFromRoster(e, "馬積場")]);
+    setRoster((prev) =>
+      prev.map((r) => (r.id === e.id ? { ...r, arrived: true } : r))
+    );
+  }
+  // 父コードを入力して到着（未到着の中から最初の一致）
+  function arriveByCode(raw: string) {
+    const code = normCode(raw);
+    if (!code) return;
+    const e = roster.find((r) => !r.arrived && normCode(r.sireCode) === code);
+    if (!e) {
+      setCodeMsg(`「${raw}」の未到着の予定が見つかりません`);
+      return;
+    }
+    arriveEntry(e);
+    setCodeInput("");
+    setCodeMsg(`${e.mareName}（${e.sireCode}）を馬積場に出しました`);
+  }
+  // 予定を追加（進行中の追加＝NEW）
+  function addRosterEntry(e: RosterEntry) {
+    setRoster((prev) => [...prev, { ...e, isNew: true }]);
+    setAddingRoster(false);
+  }
+  // 順番表を（再）取り込み：未登録の予定だけNEWで追加
+  function importRoster() {
+    setRoster((prev) => {
+      const have = new Set(
+        prev.map((r) => normCode(r.sireCode) + "|" + r.mareName)
+      );
+      const add = roster8Sample
+        .filter((r) => !have.has(normCode(r.sireCode) + "|" + r.mareName))
+        .map((r) => ({ ...r, arrived: false, isNew: true }));
+      return [...prev, ...add];
+    });
   }
 
   const byZone = useMemo(() => {
@@ -159,6 +219,8 @@ export default function BoardPage() {
     mares.forEach((m) => map.get(m.zone)?.push(m));
     return map;
   }, [mares]);
+
+  const waiting = useMemo(() => roster.filter((r) => !r.arrived), [roster]);
 
   const open = mares.find((m) => m.id === openId) ?? null;
 
@@ -184,6 +246,81 @@ export default function BoardPage() {
         )}
       </div>
 
+      {/* ===== 本日の予定（順番表 8:00の組） ===== */}
+      <section className="roster-panel">
+        <div className="roster-head">
+          <span className="roster-title">
+            📋 本日の予定（8:00の組）
+            <span className="roster-count">残り {waiting.length}</span>
+          </span>
+          <div className="roster-actions">
+            <button className="btn btn-ghost btn-sm" onClick={importRoster}>
+              ⟳ 順番表を取り込む
+            </button>
+            <button
+              className="btn btn-ghost btn-sm"
+              onClick={() => setAddingRoster(true)}
+            >
+              ＋ 予定を追加
+            </button>
+          </div>
+        </div>
+
+        <div className="code-entry">
+          <span className="code-entry-label">父コードで到着：</span>
+          <input
+            type="text"
+            value={codeInput}
+            onChange={(e) => {
+              setCodeInput(e.target.value);
+              setCodeMsg("");
+            }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") arriveByCode(codeInput);
+            }}
+            placeholder="例 ＫＢＬ / KBL"
+          />
+          <button
+            className="btn btn-primary btn-sm"
+            onClick={() => arriveByCode(codeInput)}
+          >
+            到着
+          </button>
+          {codeMsg && <span className="code-msg">{codeMsg}</span>}
+        </div>
+
+        {waiting.length === 0 ? (
+          <div className="roster-empty">未到着の予定はありません 🎉</div>
+        ) : (
+          <div className="roster-chips">
+            {waiting.map((r) => (
+              <button
+                key={r.id}
+                className="roster-chip"
+                onClick={() => arriveEntry(r)}
+                title="タップで馬積場に到着"
+              >
+                {r.isNew && <span className="badge-new">NEW</span>}
+                <span
+                  className="chip-sire"
+                  style={{ background: sireColor(r.sireCode) }}
+                >
+                  {r.sireCode || "?"}
+                </span>
+                <span className="chip-body">
+                  <span className="chip-name">{r.mareName}</span>
+                  <span className="chip-sub">
+                    {r.farm && <span>{r.farm}</span>}
+                    {r.apptTime && <span className="mare-time">🕐{r.apptTime}</span>}
+                    {r.kind && <span className="mare-kind">{r.kind}</span>}
+                  </span>
+                </span>
+              </button>
+            ))}
+          </div>
+        )}
+      </section>
+
       <div className="fmap">
         {/* 馬積場（駐車枠 1〜15 の図） */}
         <section className="fyard">
@@ -195,10 +332,12 @@ export default function BoardPage() {
             </span>
           </div>
           <div className="fyard-diagram">
-            <div className="fyard-lane">
-              <span>3</span>
-              <span>2</span>
-              <span>1</span>
+            <div className="fyard-left">
+              {[3, 2, 1].map((n) => (
+                <div key={n} className="fyard-frame small">
+                  {n}
+                </div>
+              ))}
             </div>
             <div className="fyard-frames">
               {[4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15].map((n) => (
@@ -329,6 +468,14 @@ export default function BoardPage() {
         <AddMareForm onSave={addMare} onClose={() => setAdding(false)} />
       )}
 
+      {/* ===== 予定を追加（NEW） ===== */}
+      {addingRoster && (
+        <AddRosterForm
+          onSave={addRosterEntry}
+          onClose={() => setAddingRoster(false)}
+        />
+      )}
+
       {/* ===== 合言葉 ===== */}
       {cloudEnabled && !accessKey && (
         <Modal
@@ -385,6 +532,7 @@ function MareList({
           className="mare-chip"
           onClick={() => onOpen(m.id)}
         >
+          {m.isNew && <span className="badge-new">NEW</span>}
           <span
             className="chip-sire"
             style={{ background: sireColor(m.sireCode) }}
@@ -411,6 +559,107 @@ function MareList({
         </button>
       ))}
     </div>
+  );
+}
+
+function AddRosterForm({
+  onSave,
+  onClose,
+}: {
+  onSave: (e: RosterEntry) => void;
+  onClose: () => void;
+}) {
+  const [mareName, setMareName] = useState("");
+  const [sireCode, setSireCode] = useState("");
+  const [farm, setFarm] = useState("");
+  const [apptTime, setApptTime] = useState("");
+  const [kind, setKind] = useState<"新" | "再" | "">("新");
+
+  return (
+    <Modal
+      title="予定を追加（順番表）"
+      onClose={onClose}
+      footer={
+        <button
+          className="btn btn-primary btn-block"
+          disabled={!mareName.trim() || !sireCode.trim()}
+          onClick={() =>
+            onSave({
+              id: genId("r"),
+              mareName: mareName.trim(),
+              sireCode: sireCode.trim(),
+              farm: farm.trim(),
+              apptTime: apptTime.trim(),
+              kind,
+              arrived: false,
+              isNew: true,
+            })
+          }
+        >
+          予定に追加（NEW）
+        </button>
+      }
+    >
+      <div className="field-row">
+        <div className="field">
+          <label>牝馬名</label>
+          <input
+            type="text"
+            value={mareName}
+            onChange={(e) => setMareName(e.target.value)}
+          />
+        </div>
+        <div className="field">
+          <label>父（種牡馬）コード</label>
+          <input
+            type="text"
+            value={sireCode}
+            onChange={(e) => setSireCode(e.target.value)}
+            placeholder="例 ＫＢＬ"
+          />
+        </div>
+      </div>
+      <div className="field-row">
+        <div className="field">
+          <label>牧場</label>
+          <input
+            type="text"
+            value={farm}
+            onChange={(e) => setFarm(e.target.value)}
+          />
+        </div>
+        <div className="field">
+          <label>予定時間</label>
+          <input
+            type="text"
+            value={apptTime}
+            onChange={(e) => setApptTime(e.target.value)}
+            placeholder="例 8:30"
+          />
+        </div>
+      </div>
+      <div className="field">
+        <label>新 / 再</label>
+        <div className="seg" style={{ width: "100%" }}>
+          <button
+            type="button"
+            style={{ flex: 1 }}
+            className={kind === "新" ? "active-male" : ""}
+            onClick={() => setKind("新")}
+          >
+            新
+          </button>
+          <button
+            type="button"
+            style={{ flex: 1 }}
+            className={kind === "再" ? "active-female" : ""}
+            onClick={() => setKind("再")}
+          >
+            再
+          </button>
+        </div>
+      </div>
+    </Modal>
   );
 }
 

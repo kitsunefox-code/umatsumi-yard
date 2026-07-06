@@ -1892,6 +1892,151 @@ button {
   margin-top: 2px;
 }
 
+/* 馬積場の枠1〜3（左） */
+.fyard-left {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding-right: 10px;
+  flex-shrink: 0;
+}
+.fyard-frame.small {
+  border: 1.5px solid #4a5560;
+  border-radius: 6px;
+  min-height: 0;
+  flex: 1;
+  min-width: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 8px;
+}
+.fyard-frames {
+  border-left: 2px solid #4a5560;
+  border-radius: 8px;
+}
+
+/* ===== 本日の予定（順番表） ===== */
+.roster-panel {
+  border: 2px solid var(--line-strong);
+  border-radius: 16px;
+  background: var(--panel);
+  padding: 12px 14px;
+  margin-bottom: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.roster-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.roster-title {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 16px;
+  font-weight: 800;
+  color: #3f4b53;
+}
+.roster-count {
+  background: #33404d;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 800;
+  padding: 2px 10px;
+  border-radius: 999px;
+}
+.roster-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.btn-sm {
+  padding: 6px 12px;
+  font-size: 13px;
+  min-height: auto;
+}
+.code-entry {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 8px 10px;
+}
+.code-entry-label {
+  font-size: 13px;
+  font-weight: 800;
+  color: #3f4b53;
+}
+.code-entry input {
+  flex: 1;
+  min-width: 140px;
+  padding: 8px 10px;
+  font-size: 15px;
+  border: 1.5px solid var(--line-strong);
+  border-radius: 8px;
+}
+.code-msg {
+  width: 100%;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--color-double);
+}
+.roster-empty {
+  text-align: center;
+  color: var(--text-muted);
+  font-weight: 800;
+  padding: 8px;
+}
+.roster-chips {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 8px;
+}
+.roster-chip {
+  position: relative;
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  text-align: left;
+  border: 1px solid var(--line-strong);
+  border-radius: 10px;
+  background: #fff;
+  padding: 8px;
+  box-shadow: var(--shadow);
+  cursor: pointer;
+}
+.roster-chip:active {
+  transform: translateY(1px);
+}
+
+/* NEW バッジ */
+.mare-chip,
+.roster-chip {
+  position: relative;
+}
+.badge-new {
+  position: absolute;
+  top: -7px;
+  right: -6px;
+  background: #e2231a;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  z-index: 2;
+}
+
 @media (max-width: 720px) {
   .fmap-row {
     grid-template-columns: 1fr;

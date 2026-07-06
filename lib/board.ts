@@ -30,6 +30,20 @@ export type Mare = {
   tags: MareTag[]; // 状態タグ
   memo?: string;
   arrivedAt?: string; // 馬積場到着
+  rosterId?: string; // 元の予定（順番表）のID
+  isNew?: boolean; // 進行中に追加された予定（NEW表示）
+};
+
+// 順番表（本日の予定）の1件
+export type RosterEntry = {
+  id: string;
+  mareName: string; // 牝馬名
+  sireCode: string; // 交配する父（種牡馬）コード
+  farm?: string; // 牧場
+  kind?: "新" | "再" | ""; // 新/再
+  apptTime?: string; // 予定時間
+  arrived: boolean; // 馬積場に到着してボードに出したか
+  isNew?: boolean; // 取り込み後に追加された（NEW表示）
 };
 
 // 種牡馬コードごとの色（決定的ハッシュ）
@@ -65,15 +79,58 @@ export function newMare(patch: Partial<Mare> = {}): Mare {
   };
 }
 
-// 見本データ（順番表より）
+// 父コード比較用に正規化（全角/半角・大小・空白を無視）
+export function normCode(s: string): string {
+  return (s || "")
+    .replace(/[Ａ-Ｚａ-ｚ０-９]/g, (c) =>
+      String.fromCharCode(c.charCodeAt(0) - 0xfee0)
+    )
+    .replace(/\s/g, "")
+    .toUpperCase();
+}
+
+// 予定→牝馬カード
+export function mareFromRoster(e: RosterEntry, zone: Zone = "馬積場"): Mare {
+  return newMare({
+    mareName: e.mareName,
+    sireCode: e.sireCode,
+    farm: e.farm ?? "",
+    apptTime: e.apptTime ?? "",
+    kind: e.kind ?? "",
+    zone,
+    rosterId: e.id,
+    isNew: e.isNew,
+  });
+}
+
+// 本日の予定（順番表 8:00の組サンプル）
+export const roster8Sample: RosterEntry[] = [
+  { id: "r-kbl", mareName: "エジプシャンストーム", sireCode: "ＫＢＬ", farm: "ヤナガワ牧場", kind: "新", apptTime: "7:30", arrived: true },
+  { id: "r-eqx", mareName: "ネバーギブアップ", sireCode: "ＥＱＸ", farm: "服部牧場", kind: "再", apptTime: "7:30", arrived: true },
+  { id: "r-kzn", mareName: "ラブインジエア", sireCode: "ＫＺＮ", farm: "千代田牧場", kind: "新", apptTime: "", arrived: true },
+  { id: "r-dfo", mareName: "ドロミティ", sireCode: "ＤＦＯ", farm: "村上欽哉牧場", kind: "新", apptTime: "8:30", arrived: true },
+  { id: "r-ldk", mareName: "アートハウス", sireCode: "ＬＤＫ", farm: "", kind: "新", apptTime: "7:30", arrived: false },
+  { id: "r-orf", mareName: "モンゴリアンチャンガ", sireCode: "ＯＲＦ", farm: "", kind: "新", apptTime: "7:45", arrived: false },
+  { id: "r-rey", mareName: "チェルビック", sireCode: "ＲＥＹ", farm: "丸善橋本牧場", kind: "再", apptTime: "8:15", arrived: false },
+  { id: "r-dfo2", mareName: "セレッソブランコ", sireCode: "ＧＤＧ", farm: "天羽禮治牧場", kind: "新", apptTime: "8:30", arrived: false },
+  { id: "r-mau", mareName: "ダブルイプシロン", sireCode: "ＭＡＵ", farm: "奥山Ｆ", kind: "再", apptTime: "8:30", arrived: false },
+  { id: "r-bop", mareName: "ルクスドヌーヴ", sireCode: "ＢＯＰ", farm: "いとう牧場", kind: "新", apptTime: "8:30", arrived: false },
+  { id: "r-stn", mareName: "ヴィアフィレンツェ", sireCode: "ＳＴＮ", farm: "", kind: "新", apptTime: "8:45", arrived: false },
+  { id: "r-poe", mareName: "ハルワタート", sireCode: "ＰＯＥ", farm: "", kind: "新", apptTime: "8:45", arrived: false },
+  { id: "r-con", mareName: "テイハ", sireCode: "ＣＯＮ", farm: "", kind: "新", apptTime: "9:00", arrived: false },
+  { id: "r-shy", mareName: "ウィラビーオーサム", sireCode: "ＳＨＹ", farm: "", kind: "新", apptTime: "9:00", arrived: false },
+  { id: "r-hrc", mareName: "エスキモーキセス", sireCode: "ＨＲＣ", farm: "", kind: "新", apptTime: "9:00", arrived: false },
+  { id: "r-epn", mareName: "グランドマルク", sireCode: "ＥＰＮ", farm: "", kind: "新", apptTime: "9:15", arrived: false },
+  { id: "r-ndl", mareName: "チェエヴァソラ", sireCode: "ＮＤＬ", farm: "アシュリンジャパン", kind: "新", apptTime: "", arrived: false },
+  { id: "r-efo", mareName: "ベルフィオーレ", sireCode: "ＥＦＯ", farm: "ケイアイＦ", kind: "新", apptTime: "", arrived: false },
+  { id: "r-lvl", mareName: "シゲルチャグチャグ", sireCode: "ＬＶＬ", farm: "コスモヴューＦ", kind: "再", apptTime: "", arrived: false },
+  { id: "r-sis", mareName: "スカイラー", sireCode: "ＳＩＳ", farm: "高橋Ｆ", kind: "新", apptTime: "", arrived: false },
+];
+
+// 見本データ：到着済み4頭をボードに配置
 export const sampleMares: Mare[] = [
-  newMare({ mareName: "エジプシャンストーム", farm: "ヤナガワ牧場", sireCode: "ＫＢＬ", apptTime: "7:30", kind: "新", zone: "馬積場" }),
-  newMare({ mareName: "グレイスフル", farm: "坂東牧場", sireCode: "ＫＢＬ", apptTime: "16:45", kind: "新", zone: "洗い場" }),
-  newMare({ mareName: "コミッショニング", farm: "服部牧場", sireCode: "ＥＱＸ", apptTime: "12:45", kind: "新", zone: "待機" }),
-  newMare({ mareName: "ラブインジエア", farm: "千代田牧場", sireCode: "ＫＺＮ", apptTime: "", kind: "新", zone: "第一種付所" }),
-  newMare({ mareName: "アートハウス", farm: "ノースヒルズ", sireCode: "ＬＤＫ", apptTime: "7:30", kind: "新", zone: "第二種付所" }),
-  newMare({ mareName: "ドロミティ", farm: "村上欽哉牧場", sireCode: "ＤＦＯ", apptTime: "", kind: "新", zone: "P検待ち・直検待ち" }),
-  newMare({ mareName: "サトノレイナス", farm: "岡田牧場", sireCode: "ＥＱＸ", apptTime: "13:00", kind: "再", zone: "予備（馬積）" }),
-  newMare({ mareName: "ソダシ", farm: "白老ファーム", sireCode: "ＬＤＫ", apptTime: "", kind: "新", zone: "鎮静待ち" }),
-  newMare({ mareName: "フルーリア", farm: "ノースヒルズ", sireCode: "ＫＺＮ", apptTime: "", kind: "新", zone: "帰宅" }),
+  mareFromRoster(roster8Sample[0], "馬積場"),
+  mareFromRoster(roster8Sample[1], "洗い場"),
+  mareFromRoster(roster8Sample[2], "待機"),
+  mareFromRoster(roster8Sample[3], "第一種付所"),
 ];

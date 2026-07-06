@@ -1,7 +1,9 @@
 // リアルタイム同期（Firebase Firestore）。cloudConfig 未設定なら無効。
 import { cloudConfig } from "./cloudConfig";
 import { Vehicle } from "./types";
-import { Mare } from "./board";
+import { Mare, RosterEntry } from "./board";
+
+export type BoardData = { mares: Mare[]; roster: RosterEntry[] };
 
 export const cloudEnabled = !!cloudConfig.apiKey;
 
@@ -40,20 +42,32 @@ export async function saveYard(
   await setDoc(doc(db, "yards", key), { vehicles, updatedAt: Date.now() });
 }
 
-// ===== 所在ボード（牝馬の現在地）の同期 =====
+// ===== 所在ボード（牝馬の現在地＋本日の予定）の同期 =====
 export async function subscribeBoard(
   key: string,
-  cb: (mares: Mare[] | null) => void
+  cb: (data: BoardData | null) => void
 ): Promise<() => void> {
   const db = await ensureDb();
   const { doc, onSnapshot } = await import("firebase/firestore");
   return onSnapshot(doc(db, "boards", key), (snap) => {
-    cb(snap.exists() ? ((snap.data().mares as Mare[]) ?? []) : null);
+    if (!snap.exists()) {
+      cb(null);
+      return;
+    }
+    const d = snap.data();
+    cb({
+      mares: (d.mares as Mare[]) ?? [],
+      roster: (d.roster as RosterEntry[]) ?? [],
+    });
   });
 }
 
-export async function saveBoard(key: string, mares: Mare[]): Promise<void> {
+export async function saveBoard(
+  key: string,
+  mares: Mare[],
+  roster: RosterEntry[]
+): Promise<void> {
   const db = await ensureDb();
   const { doc, setDoc } = await import("firebase/firestore");
-  await setDoc(doc(db, "boards", key), { mares, updatedAt: Date.now() });
+  await setDoc(doc(db, "boards", key), { mares, roster, updatedAt: Date.now() });
 }
