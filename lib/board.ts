@@ -76,23 +76,31 @@ const SIRE_PALETTE = [
   "#334155",
   "#b8860b",
 ];
+// 勝負服（勝負服.xlsx）から抽出した種牡馬の代表色
+const SILK_COLOR: Record<string, string> = {
+  AMS: "#0050a0", BOP: "#c80028", CON: "#78c8f0", CRS: "#28a050",
+  DDC: "#141414", DFO: "#0050a0", DKG: "#a02828", EFO: "#28a050",
+  EPN: "#28a050", EQX: "#78c8f0", GDG: "#c80028", HRC: "#141414",
+  ISB: "#e0d000", KBL: "#a05028", KZN: "#78c8f0", LDK: "#2850c8",
+  LVL: "#c80028", MAU: "#c82828", MYB: "#a02828", NDL: "#e0d000",
+  ORF: "#c80028", POE: "#7850a0", REY: "#28a050", RSP: "#c80028",
+  SAO: "#78c8f0", SCW: "#28a050", SHY: "#c80028", SIS: "#4aa0a0",
+  SMR: "#c80028", STN: "#28a050", SVR: "#a02828",
+};
 export function sireColor(code: string): string {
+  const c = normCode(code);
+  if (SILK_COLOR[c]) return SILK_COLOR[c];
   let h = 0;
   for (const ch of code || "?") h = (h * 31 + ch.charCodeAt(0)) >>> 0;
   return SIRE_PALETTE[h % SIRE_PALETTE.length];
 }
-
-// 勝負服アイコンがある種牡馬コード（public/silks/{CODE}.png）
-const SILK_CODES = new Set([
-  "AMS", "EQX", "ISB", "EPN", "EFO", "ORF", "KZN", "KBL", "CRS", "GDG",
-  "CON", "STN", "SCW", "SAO", "SIS", "SHY", "SMR", "SVR", "DKG", "DDC",
-  "DFO", "NDL", "BOP", "POE", "HRC", "MYB", "MAU", "LVL", "RSP", "REY",
-  "LDK",
-]);
-// 種牡馬の勝負服画像パス（無ければ null）。/board/ からの相対で解決。
-export function sireSilk(code: string): string | null {
-  const c = normCode(code);
-  return SILK_CODES.has(c) ? `../silks/s_${c}.png` : null;
+// 背景色に対して読みやすい文字色（明るい服は黒字）
+export function sireTextColor(bg: string): string {
+  if (!/^#[0-9a-fA-F]{6}$/.test(bg)) return "#fff";
+  const r = parseInt(bg.slice(1, 3), 16);
+  const g = parseInt(bg.slice(3, 5), 16);
+  const b = parseInt(bg.slice(5, 7), 16);
+  return 0.299 * r + 0.587 * g + 0.114 * b > 150 ? "#1a1a1a" : "#fff";
 }
 
 export function newMare(patch: Partial<Mare> = {}): Mare {

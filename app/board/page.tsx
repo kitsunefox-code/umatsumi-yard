@@ -10,7 +10,7 @@ import {
   ZONES,
   MARE_TAGS,
   sireColor,
-  sireSilk,
+  sireTextColor,
   newMare,
   normCode,
   zoneMoves,
@@ -782,20 +782,12 @@ function StayWarn({ ts, now }: { ts?: number; now: number }) {
   return <span className="stay-warn">⚠ 滞在{m}分</span>;
 }
 
-// 種牡馬マーク（勝負服アイコン。無ければ色バッジ）
+// 種牡馬マーク（勝負服っぽい色の馬コードバッジ）
 function SireMark({ code, frame }: { code: string; frame?: boolean }) {
-  const silk = sireSilk(code);
+  const bg = sireColor(code);
   const cls = frame ? "frame-sire" : "chip-sire";
-  if (silk)
-    return (
-      <span className={`${cls} silk`}>
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={silk} alt="" width={36} height={45} />
-        <span className="silk-code">{code || "?"}</span>
-      </span>
-    );
   return (
-    <span className={cls} style={{ background: sireColor(code) }}>
+    <span className={cls} style={{ background: bg, color: sireTextColor(bg) }}>
       {code || "?"}
     </span>
   );
