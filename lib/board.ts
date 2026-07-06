@@ -123,6 +123,12 @@ const SILK: Record<string, [string, string | null, number]> = {
   SVR: [C.dred, null, 0],
   DKG: [C.red, null, 0],
 };
+// 主色が2頭以上で被っている色だけ2色分割して区別する（被ってなければ1色）
+const SILK_PRIMARY_COUNT: Record<string, number> = (() => {
+  const m: Record<string, number> = {};
+  for (const k in SILK) m[SILK[k][0]] = (m[SILK[k][0]] || 0) + 1;
+  return m;
+})();
 export function sireColor(code: string): string {
   const c = normCode(code);
   if (SILK[c]) return SILK[c][0];
@@ -146,7 +152,7 @@ export function sireBadge(code: string): {
 } {
   const c = normCode(code);
   const s = SILK[c];
-  if (s && s[1]) {
+  if (s && s[1] && SILK_PRIMARY_COUNT[s[0]] > 1) {
     return {
       background: `linear-gradient(${s[2]}deg, ${s[0]} 0 50%, ${s[1]} 50% 100%)`,
       color: "#fff",
