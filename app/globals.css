@@ -1918,6 +1918,29 @@ button {
   border-radius: 8px;
 }
 
+/* 縦画面（スマホ）：馬積場を横スクロールせず幅に合わせて折り返す */
+@media (max-width: 760px) {
+  .fyard-diagram {
+    flex-direction: column;
+    align-items: stretch;
+    overflow-x: visible;
+    gap: 6px;
+  }
+  .fyard-left {
+    flex-direction: row;
+    padding-right: 0;
+    gap: 5px;
+  }
+  .fyard-left .fyard-frame.small {
+    flex: 1 1 0;
+    min-width: 0;
+  }
+  .fyard-frames {
+    grid-template-columns: repeat(auto-fill, minmax(70px, 1fr));
+    min-width: 0;
+  }
+}
+
 /* 枠に入った牝馬 */
 .fyard-frame.occ {
   position: relative;
