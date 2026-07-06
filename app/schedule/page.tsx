@@ -9,27 +9,25 @@ import {
   sireBadge,
   normCode,
 } from "@/lib/board";
-import {
-  STALLIONS,
-  BARNS,
-  stallionName,
-  groomOf,
-  barnOf,
-} from "@/lib/barns";
+import { STALLIONS, BARNS, stallionName, groomOf, barnOf } from "@/lib/barns";
 import {
   Mating,
   Round,
+  Options,
   Priority,
-  Priorities,
   PRIORITY_ORDER,
   PRIORITY_LABEL,
+  ISSUE_LABEL,
+  defaultOptions,
   autoSchedule,
-  roundConflict,
-  slotTime,
+  roundIssues,
+  startTimes,
+  roundMinutes,
+  earlyFinishPick,
+  firstOnly,
   swapLane,
   moveCard,
   trimEmpty,
-  CONFLICT_LABEL,
 } from "@/lib/schedule";
 
 const START_BY_GROUP: Record<GroupKey, string> = {
@@ -53,11 +51,11 @@ function Badge({ code }: { code: string }) {
 export default function SchedulePage() {
   const [group, setGroup] = useState<GroupKey>("朝");
   const [start, setStart] = useState("8:00");
-  const [step, setStep] = useState(15);
   const [rounds, setRounds] = useState<Round[]>([]);
   const [showMap, setShowMap] = useState(false);
   const [showRules, setShowRules] = useState(false);
-  const [priorities, setPriorities] = useState<Priorities>({ LDK: "first" });
+  const [showEarly, setShowEarly] = useState(false);
+  const [opts, setOpts] = useState<Options>(defaultOptions());
 
   const matings: Mating[] = useMemo(
     () =>
@@ -70,13 +68,13 @@ export default function SchedulePage() {
     [group]
   );
 
-  // ルール（この日）の復元
+  // オプション復元
   useEffect(() => {
     if (typeof window === "undefined") return;
-    const saved = localStorage.getItem("sched:rules");
+    const saved = localStorage.getItem("sched:opts");
     if (saved) {
       try {
-        setPriorities(JSON.parse(saved));
+        setOpts({ ...defaultOptions(), ...JSON.parse(saved) });
       } catch {}
     }
   }, []);
@@ -94,42 +92,75 @@ export default function SchedulePage() {
         } catch {}
       }
     }
-    if (!restored) setRounds(autoSchedule(matings, priorities));
+    if (!restored) setRounds(autoSchedule(matings, opts));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [group]);
 
-  // 保存
+  // コマ保存
   useEffect(() => {
     if (typeof window !== "undefined" && rounds.length)
       localStorage.setItem("sched:" + group, JSON.stringify(rounds));
   }, [rounds, group]);
 
-  // ルール変更：保存して即組み直す（手動調整はリセット）
-  function setPriority(code: string, p: Priority | "") {
-    const next: Priorities = { ...priorities };
-    if (p) next[code] = p;
-    else delete next[code];
-    setPriorities(next);
+  // オプション変更→保存＆即組み直し
+  function applyOpts(next: Options) {
+    setOpts(next);
     if (typeof window !== "undefined")
-      localStorage.setItem("sched:rules", JSON.stringify(next));
+      localStorage.setItem("sched:opts", JSON.stringify(next));
     setRounds(autoSchedule(matings, next));
   }
+  function setPriority(code: string, p: Priority | "") {
+    const pr = { ...opts.priorities };
+    if (p) pr[code] = p;
+    else delete pr[code];
+    applyOpts({ ...opts, priorities: pr });
+  }
+  function toggleSolo(code: string) {
+    const has = opts.solo.includes(code);
+    applyOpts({
+      ...opts,
+      solo: has ? opts.solo.filter((c) => c !== code) : [...opts.solo, code],
+    });
+  }
+  function setDuration(code: string, min: number | null) {
+    const d = { ...opts.durations };
+    if (min && min > 0) d[code] = min;
+    else delete d[code];
+    applyOpts({ ...opts, durations: d });
+  }
+  function toggleGroom(g: string) {
+    const has = opts.noConsecGrooms.includes(g);
+    applyOpts({
+      ...opts,
+      noConsecGrooms: has
+        ? opts.noConsecGrooms.filter((x) => x !== g)
+        : [...opts.noConsecGrooms, g],
+    });
+  }
 
-  const conflicts = rounds.filter((r) => roundConflict(r)).length;
-  const scheduled = rounds.reduce(
-    (n, r) => n + (r.a ? 1 : 0) + (r.b ? 1 : 0),
-    0
-  );
+  function rebuild() {
+    setRounds(autoSchedule(matings, opts));
+  }
+
+  const times = useMemo(() => startTimes(rounds, start, opts), [rounds, start, opts]);
+  const issuesByRound = useMemo(() => {
+    let prev: string[] = [];
+    return rounds.map((r) => {
+      const iss = roundIssues(r, prev, opts);
+      prev = [r.a, r.b]
+        .filter(Boolean)
+        .map((m) => groomOf((m as Mating).sireCode));
+      return iss;
+    });
+  }, [rounds, opts]);
+  const badRounds = issuesByRound.filter((x) => x.length).length;
+  const scheduled = rounds.reduce((n, r) => n + (r.a ? 1 : 0) + (r.b ? 1 : 0), 0);
   const ldkFirst =
     rounds.length > 0 &&
     (normCode(rounds[0].a?.sireCode || "") === "LDK" ||
       normCode(rounds[0].b?.sireCode || "") === "LDK");
 
-  function rebuild() {
-    setRounds(autoSchedule(matings, priorities));
-  }
-
-  // この組に出てくる種牡馬（重複なし）
+  // この組に出てくる種牡馬・担当者
   const groupCodes = useMemo(() => {
     const seen: string[] = [];
     for (const m of matings) {
@@ -138,24 +169,44 @@ export default function SchedulePage() {
     }
     return seen;
   }, [matings]);
-  const ruleCount = groupCodes.filter((c) => priorities[c]).length;
+  const groupGrooms = useMemo(() => {
+    const seen: string[] = [];
+    for (const c of groupCodes) {
+      const g = groomOf(c);
+      if (g && !seen.includes(g)) seen.push(g);
+    }
+    return seen.sort();
+  }, [groupCodes]);
+  const ruleCount =
+    groupCodes.filter((c) => opts.priorities[c]).length +
+    opts.solo.length +
+    Object.keys(opts.durations).length +
+    opts.noConsecGrooms.length;
 
-  function Card({
-    m,
-    i,
-    lane,
-  }: {
-    m?: Mating;
-    i: number;
-    lane: "a" | "b";
-  }) {
-    if (!m) return <div className="sched-card empty">空き</div>;
+  function Card({ m, i, lane }: { m?: Mating; i: number; lane: "a" | "b" }) {
+    // 単独コマの第二レーンは使用不可表示
+    if (!m) {
+      const solo =
+        lane === "b" &&
+        rounds[i].a &&
+        opts.solo.includes(normCode(rounds[i].a!.sireCode));
+      return (
+        <div className={`sched-card empty${solo ? " blocked" : ""}`}>
+          {solo ? "第二 使用不可" : "空き"}
+        </div>
+      );
+    }
+    const fo = firstOnly(m);
+    const early = showEarly ? earlyFinishPick(rounds, i, lane, opts) : null;
     return (
       <div className="sched-card">
         <div className="sched-card-main">
           <Badge code={m.sireCode} />
           <div className="sched-card-txt">
-            <div className="sched-mare">{m.mareName || "（牝馬未定）"}</div>
+            <div className="sched-mare">
+              {m.mareName || "（牝馬未定）"}
+              {fo && <span className="first-tag">第一{fo}</span>}
+            </div>
             <div className="sched-sire">
               {stallionName(m.sireCode)}
               {groomOf(m.sireCode) && (
@@ -164,21 +215,24 @@ export default function SchedulePage() {
               {barnOf(m.sireCode) && (
                 <span className="sched-barn">{barnOf(m.sireCode)}</span>
               )}
+              <span className="sched-dur">
+                {opts.durations[normCode(m.sireCode)] || opts.defaultDur}分
+              </span>
             </div>
             {m.note && <div className="sched-note">{m.note}</div>}
+            {early && (
+              <div className="early-pick">
+                💡早く終わったら→{early.mareName || stallionName(early.sireCode)}
+                （{normCode(early.sireCode)}）
+              </div>
+            )}
           </div>
         </div>
         <div className="sched-ops">
-          <button
-            title="1つ上へ"
-            onClick={() => setRounds(moveCard(rounds, i, lane, -1))}
-          >
+          <button title="1つ上へ" onClick={() => setRounds(moveCard(rounds, i, lane, -1))}>
             ▲
           </button>
-          <button
-            title="1つ下へ"
-            onClick={() => setRounds(moveCard(rounds, i, lane, 1))}
-          >
+          <button title="1つ下へ" onClick={() => setRounds(moveCard(rounds, i, lane, 1))}>
             ▼
           </button>
           <button title="左右入替" onClick={() => setRounds(swapLane(rounds, i))}>
@@ -239,6 +293,12 @@ export default function SchedulePage() {
               🎌 この日のルール{ruleCount ? `（${ruleCount}）` : ""}
             </button>
             <button
+              className={`btn btn-sm ${showEarly ? "btn-primary" : "btn-ghost"}`}
+              onClick={() => setShowEarly((v) => !v)}
+            >
+              💡 早終わり候補
+            </button>
+            <button
               className="btn btn-ghost btn-sm"
               onClick={() => setShowMap((v) => !v)}
             >
@@ -256,21 +316,26 @@ export default function SchedulePage() {
             />
           </label>
           <label>
-            1コマ
+            既定の所要
             <input
               type="number"
               min={1}
               max={90}
-              value={step}
-              onChange={(e) => setStep(Math.max(1, Number(e.target.value) || 1))}
+              value={opts.defaultDur}
+              onChange={(e) =>
+                applyOpts({
+                  ...opts,
+                  defaultDur: Math.max(1, Number(e.target.value) || 1),
+                })
+              }
             />
             分
           </label>
           <span className="sched-stat">
             種付 {scheduled}頭 ／ {rounds.length}コマ
           </span>
-          <span className={`sched-stat ${conflicts ? "bad" : "ok"}`}>
-            {conflicts ? `⚠ 被り ${conflicts}件` : "✓ 被りなし"}
+          <span className={`sched-stat ${badRounds ? "bad" : "ok"}`}>
+            {badRounds ? `⚠ 要確認 ${badRounds}コマ` : "✓ 被りなし"}
           </span>
           <span className={`sched-stat ${ldkFirst ? "ok" : "bad"}`}>
             {ldkFirst ? "✓ カナロア先頭" : "⚠ カナロア先頭でない"}
@@ -278,22 +343,30 @@ export default function SchedulePage() {
         </div>
       </section>
 
-      {/* この日のルール（早め・最後など） */}
+      {/* この日のルール */}
       {showRules && (
         <section className="rules-panel">
           <div className="rules-hint">
-            種牡馬ごとに「最初・早め・遅め・最後」を設定すると、その順で自動提案します。変更すると即組み直します（手動調整はリセット）。
+            種牡馬ごとに <b>順番</b>・<b>単独（第二を使わない）</b>・<b>所要（分）</b> を設定できます。
+            変更すると即組み直します（手動調整はリセット）。※上り初回・鎮静は自動で第一に固定。
           </div>
           <div className="rules-grid">
             {groupCodes.map((c) => (
-              <div className={`rule-row${priorities[c] ? " set" : ""}`} key={c}>
+              <div
+                className={`rule-row${
+                  opts.priorities[c] ||
+                  opts.solo.includes(c) ||
+                  opts.durations[c]
+                    ? " set"
+                    : ""
+                }`}
+                key={c}
+              >
                 <Badge code={c} />
                 <span className="rule-name">{stallionName(c)}</span>
                 <select
-                  value={priorities[c] || ""}
-                  onChange={(e) =>
-                    setPriority(c, e.target.value as Priority | "")
-                  }
+                  value={opts.priorities[c] || ""}
+                  onChange={(e) => setPriority(c, e.target.value as Priority | "")}
                 >
                   <option value="">普通</option>
                   {PRIORITY_ORDER.map((p) => (
@@ -302,21 +375,48 @@ export default function SchedulePage() {
                     </option>
                   ))}
                 </select>
+                <label className="rule-solo" title="種付中は第二を使わない">
+                  <input
+                    type="checkbox"
+                    checked={opts.solo.includes(c)}
+                    onChange={() => toggleSolo(c)}
+                  />
+                  単独
+                </label>
+                <input
+                  className="rule-dur"
+                  type="number"
+                  min={1}
+                  max={90}
+                  placeholder={String(opts.defaultDur)}
+                  value={opts.durations[c] || ""}
+                  onChange={(e) =>
+                    setDuration(c, e.target.value ? Number(e.target.value) : null)
+                  }
+                />
+                <span className="rule-dur-u">分</span>
               </div>
             ))}
           </div>
-          {ruleCount > 0 && (
-            <div className="rules-tags">
-              {groupCodes
-                .filter((c) => priorities[c])
-                .map((c) => (
-                  <span className="rule-tag" key={c}>
-                    {stallionName(c)}＝{PRIORITY_LABEL[priorities[c]!]}
-                    <button onClick={() => setPriority(c, "")}>✕</button>
-                  </span>
-                ))}
-            </div>
-          )}
+          <div className="rules-grooms">
+            <span className="rules-sub">連続で入れない担当者：</span>
+            {groupGrooms.map((g) => (
+              <label
+                key={g}
+                className={`groom-chip${
+                  opts.noConsecGrooms.includes(g) ? " on" : ""
+                }`}
+              >
+                <input
+                  type="checkbox"
+                  checked={opts.noConsecGrooms.includes(g)}
+                  onChange={() => toggleGroom(g)}
+                />
+                {g}
+              </label>
+            ))}
+            {groupGrooms.length === 0 && <span className="rules-sub">—</span>}
+          </div>
         </section>
       )}
 
@@ -371,17 +471,20 @@ export default function SchedulePage() {
           <span>第二種付所</span>
         </div>
         {rounds.map((r, i) => {
-          const conf = roundConflict(r);
+          const iss = issuesByRound[i];
           return (
-            <div className={`sched-round${conf ? " bad" : ""}`} key={i}>
+            <div className={`sched-round${iss.length ? " bad" : ""}`} key={i}>
               <div className="sched-time">
                 <span className="sched-no">{i + 1}</span>
-                {slotTime(start, step, i)}
+                {times[i]}
+                <span className="sched-len">{roundMinutes(r, opts)}分</span>
               </div>
               <Card m={r.a} i={i} lane="a" />
               <Card m={r.b} i={i} lane="b" />
-              {conf && (
-                <div className="sched-warn">⚠ {CONFLICT_LABEL[conf]}</div>
+              {iss.length > 0 && (
+                <div className="sched-warn">
+                  ⚠ {iss.map((x) => ISSUE_LABEL[x]).join("・")}
+                </div>
               )}
             </div>
           );

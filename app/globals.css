@@ -2962,3 +2962,96 @@ button {
 .rule-tag button:hover {
   background: #b9d2ea;
 }
+
+/* 種付順番 v2：レーン固定・単独・所要・早終わり */
+.first-tag {
+  display: inline-block;
+  margin-left: 6px;
+  font-size: 10px;
+  font-weight: 800;
+  color: #fff;
+  background: #c0392b;
+  border-radius: 5px;
+  padding: 1px 5px;
+  vertical-align: middle;
+}
+.sched-dur {
+  color: #7a8891;
+  font-weight: 700;
+}
+.early-pick {
+  margin-top: 3px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #1c7a42;
+  background: #eafaf0;
+  border-radius: 5px;
+  padding: 2px 6px;
+  display: inline-block;
+}
+.sched-card.empty.blocked {
+  border-style: solid;
+  border-color: #e2c3c3;
+  background: #fbf1f1;
+  color: #b06a6a;
+}
+.sched-len {
+  font-size: 10px;
+  font-weight: 700;
+  color: #9aa6ad;
+  margin-top: 2px;
+}
+.rule-solo {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #4a5560;
+  flex: 0 0 auto;
+}
+.rule-dur {
+  width: 46px;
+  padding: 4px 5px;
+  border: 1.5px solid var(--line-strong, #c7d0d6);
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 700;
+  flex: 0 0 auto;
+}
+.rule-dur-u {
+  font-size: 11px;
+  color: #7a8891;
+}
+.rules-grooms {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px dashed #e2e8ec;
+}
+.rules-sub {
+  font-size: 12px;
+  font-weight: 800;
+  color: #55636c;
+}
+.groom-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #4a5560;
+  border: 1px solid var(--line-strong, #c7d0d6);
+  border-radius: 999px;
+  padding: 3px 9px;
+  cursor: pointer;
+  background: #fff;
+}
+.groom-chip.on {
+  background: #fdecec;
+  border-color: #e0a3a3;
+  color: #c0392b;
+}
