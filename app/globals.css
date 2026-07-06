@@ -2881,3 +2881,84 @@ button {
     height: 24px;
   }
 }
+
+/* この日のルール */
+.rules-panel {
+  border: 1.5px solid var(--line-strong, #c7d0d6);
+  border-radius: 10px;
+  background: #fff;
+  padding: 10px 12px 12px;
+  margin: 4px 2px 10px;
+}
+.rules-hint {
+  font-size: 12px;
+  color: #6b7780;
+  margin-bottom: 8px;
+}
+.rules-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+  gap: 8px;
+}
+.rule-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid #e2e8ec;
+  border-radius: 8px;
+  padding: 4px 8px;
+  background: #f8fafb;
+}
+.rule-row.set {
+  border-color: #9db6c6;
+  background: #eef5fb;
+}
+.rule-name {
+  flex: 1;
+  font-size: 13px;
+  font-weight: 700;
+  color: #2c353b;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.rule-row select {
+  padding: 4px 6px;
+  border: 1.5px solid var(--line-strong, #c7d0d6);
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 700;
+  flex: 0 0 auto;
+}
+.rules-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 10px;
+}
+.rule-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  font-weight: 800;
+  color: #2b5a8a;
+  background: #e6f0fa;
+  border-radius: 999px;
+  padding: 3px 6px 3px 10px;
+}
+.rule-tag button {
+  border: none;
+  background: #cfe0f0;
+  color: #2b5a8a;
+  border-radius: 999px;
+  width: 18px;
+  height: 18px;
+  font-size: 11px;
+  font-weight: 800;
+  cursor: pointer;
+  line-height: 1;
+}
+.rule-tag button:hover {
+  background: #b9d2ea;
+}

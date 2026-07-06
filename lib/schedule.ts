@@ -23,9 +23,33 @@ export const CONFLICT_LABEL: Record<ConflictKind, string> = {
   stall: "馬房が隣・正面・斜め",
 };
 
-// 自動で被らない順番を組む。firstCode（既定=ロードカナロア）を必ず1コマ目に。
-export function autoSchedule(matings: Mating[], firstCode = "LDK"): Round[] {
+// その日ごとのルール：種牡馬コード→優先度
+export type Priority = "first" | "early" | "late" | "last";
+export type Priorities = Record<string, Priority>;
+export const PRIORITY_ORDER: Priority[] = ["first", "early", "late", "last"];
+export const PRIORITY_LABEL: Record<Priority, string> = {
+  first: "最初",
+  early: "早め",
+  late: "遅め",
+  last: "最後",
+};
+function rankOf(code: string, pri: Priorities): number {
+  const p = pri[normCode(code)];
+  if (p === "first") return 0;
+  if (p === "early") return 1;
+  if (p === "late") return 3;
+  if (p === "last") return 4;
+  return 2; // 普通
+}
+
+// 自動で被らない順番を組む。priorities で早め/最後などを反映、firstCode を最優先で先頭に。
+export function autoSchedule(
+  matings: Mating[],
+  priorities: Priorities = {},
+  firstCode = "LDK"
+): Round[] {
   const fc = normCode(firstCode);
+  const rk = (m: Mating) => rankOf(m.sireCode, priorities);
   // 各種付の「同時に組めない相手の数」＝難易度
   const deg: Record<string, number> = {};
   for (const m of matings) {
@@ -34,9 +58,11 @@ export function autoSchedule(matings: Mating[], firstCode = "LDK"): Round[] {
     ).length;
   }
   const pool = [...matings].sort((x, y) => {
+    const rr = rk(x) - rk(y); // 優先度（最初→最後）
+    if (rr) return rr;
     const fx = normCode(x.sireCode) === fc ? 1 : 0;
     const fy = normCode(y.sireCode) === fc ? 1 : 0;
-    if (fx !== fy) return fy - fx; // firstCode を先頭へ
+    if (fx !== fy) return fy - fx; // 同順位なら firstCode を先頭へ
     return deg[y.id] - deg[x.id]; // 難しい（被りやすい）ものを先に
   });
   const rounds: Round[] = [];
@@ -49,6 +75,8 @@ export function autoSchedule(matings: Mating[], firstCode = "LDK"): Round[] {
     for (let j = i + 1; j < pool.length; j++) {
       const cand = pool[j];
       if (used.has(cand.id)) continue;
+      // pool は優先度順。相方は同順位か1つ隣まで（早めの馬に最後の馬を繰り上げない）
+      if (rk(cand) > rk(a) + 1) break;
       if (concurrentConflict(a.sireCode, cand.sireCode) === null) {
         b = cand;
         used.add(cand.id);

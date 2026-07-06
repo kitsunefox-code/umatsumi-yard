@@ -19,6 +19,10 @@ import {
 import {
   Mating,
   Round,
+  Priority,
+  Priorities,
+  PRIORITY_ORDER,
+  PRIORITY_LABEL,
   autoSchedule,
   roundConflict,
   slotTime,
@@ -52,6 +56,8 @@ export default function SchedulePage() {
   const [step, setStep] = useState(15);
   const [rounds, setRounds] = useState<Round[]>([]);
   const [showMap, setShowMap] = useState(false);
+  const [showRules, setShowRules] = useState(false);
+  const [priorities, setPriorities] = useState<Priorities>({ LDK: "first" });
 
   const matings: Mating[] = useMemo(
     () =>
@@ -63,6 +69,17 @@ export default function SchedulePage() {
       })),
     [group]
   );
+
+  // ルール（この日）の復元
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const saved = localStorage.getItem("sched:rules");
+    if (saved) {
+      try {
+        setPriorities(JSON.parse(saved));
+      } catch {}
+    }
+  }, []);
 
   // 組の切替：開始時刻を既定にし、保存があれば復元・無ければ自動生成
   useEffect(() => {
@@ -77,7 +94,7 @@ export default function SchedulePage() {
         } catch {}
       }
     }
-    if (!restored) setRounds(autoSchedule(matings));
+    if (!restored) setRounds(autoSchedule(matings, priorities));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [group]);
 
@@ -86,6 +103,17 @@ export default function SchedulePage() {
     if (typeof window !== "undefined" && rounds.length)
       localStorage.setItem("sched:" + group, JSON.stringify(rounds));
   }, [rounds, group]);
+
+  // ルール変更：保存して即組み直す（手動調整はリセット）
+  function setPriority(code: string, p: Priority | "") {
+    const next: Priorities = { ...priorities };
+    if (p) next[code] = p;
+    else delete next[code];
+    setPriorities(next);
+    if (typeof window !== "undefined")
+      localStorage.setItem("sched:rules", JSON.stringify(next));
+    setRounds(autoSchedule(matings, next));
+  }
 
   const conflicts = rounds.filter((r) => roundConflict(r)).length;
   const scheduled = rounds.reduce(
@@ -98,8 +126,19 @@ export default function SchedulePage() {
       normCode(rounds[0].b?.sireCode || "") === "LDK");
 
   function rebuild() {
-    setRounds(autoSchedule(matings));
+    setRounds(autoSchedule(matings, priorities));
   }
+
+  // この組に出てくる種牡馬（重複なし）
+  const groupCodes = useMemo(() => {
+    const seen: string[] = [];
+    for (const m of matings) {
+      const c = normCode(m.sireCode);
+      if (c && !seen.includes(c)) seen.push(c);
+    }
+    return seen;
+  }, [matings]);
+  const ruleCount = groupCodes.filter((c) => priorities[c]).length;
 
   function Card({
     m,
@@ -194,6 +233,12 @@ export default function SchedulePage() {
               ▮ 空きを詰める
             </button>
             <button
+              className={`btn btn-sm ${showRules ? "btn-primary" : "btn-ghost"}`}
+              onClick={() => setShowRules((v) => !v)}
+            >
+              🎌 この日のルール{ruleCount ? `（${ruleCount}）` : ""}
+            </button>
+            <button
               className="btn btn-ghost btn-sm"
               onClick={() => setShowMap((v) => !v)}
             >
@@ -232,6 +277,48 @@ export default function SchedulePage() {
           </span>
         </div>
       </section>
+
+      {/* この日のルール（早め・最後など） */}
+      {showRules && (
+        <section className="rules-panel">
+          <div className="rules-hint">
+            種牡馬ごとに「最初・早め・遅め・最後」を設定すると、その順で自動提案します。変更すると即組み直します（手動調整はリセット）。
+          </div>
+          <div className="rules-grid">
+            {groupCodes.map((c) => (
+              <div className={`rule-row${priorities[c] ? " set" : ""}`} key={c}>
+                <Badge code={c} />
+                <span className="rule-name">{stallionName(c)}</span>
+                <select
+                  value={priorities[c] || ""}
+                  onChange={(e) =>
+                    setPriority(c, e.target.value as Priority | "")
+                  }
+                >
+                  <option value="">普通</option>
+                  {PRIORITY_ORDER.map((p) => (
+                    <option value={p} key={p}>
+                      {PRIORITY_LABEL[p]}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            ))}
+          </div>
+          {ruleCount > 0 && (
+            <div className="rules-tags">
+              {groupCodes
+                .filter((c) => priorities[c])
+                .map((c) => (
+                  <span className="rule-tag" key={c}>
+                    {stallionName(c)}＝{PRIORITY_LABEL[priorities[c]!]}
+                    <button onClick={() => setPriority(c, "")}>✕</button>
+                  </span>
+                ))}
+            </div>
+          )}
+        </section>
+      )}
 
       {/* 厩舎マップ */}
       {showMap && (
