@@ -18,6 +18,17 @@ import Modal from "@/components/Modal";
 const STORAGE = "mare-board-data";
 const ACCESS_KEY_STORAGE = "mare-transport-access-key";
 
+// 施設マップ配置（実際の場所の並び／処理の流れ順）
+const PLACES: { zone: Zone; area: string; accent: string }[] = [
+  { zone: "馬積場", area: "umatsumi", accent: "entry" },
+  { zone: "洗い場", area: "arai", accent: "wash" },
+  { zone: "待機", area: "taiki", accent: "wait" },
+  { zone: "第1種付場", area: "tane1", accent: "mate" },
+  { zone: "第2種付所", area: "tane2", accent: "mate" },
+  { zone: "保留・処置", area: "horyu", accent: "hold" },
+  { zone: "帰宅", area: "kitaku", accent: "home" },
+];
+
 function load(): Mare[] {
   if (typeof window === "undefined") return sampleMares;
   try {
@@ -171,56 +182,74 @@ export default function BoardPage() {
         )}
       </div>
 
-      <div className="board-scroll-x">
-        <div className="board-cols">
-          {ZONES.map((z) => {
-            const list = byZone.get(z) ?? [];
-            return (
-              <div key={z} className="board-col">
-                <div className="board-col-head">
-                  <span className="board-col-name">{z}</span>
-                  <span className="board-col-count">{list.length}</span>
-                </div>
-                <div className="board-col-body">
-                  {list.length === 0 && (
-                    <div className="board-empty">—</div>
-                  )}
-                  {list.map((m) => (
-                    <button
-                      key={m.id}
-                      className="mare-card"
-                      onClick={() => setOpenId(m.id)}
+      <div className="map-flow">
+        <span>🚚 馬積場</span>
+        <b>→</b>
+        <span>洗い場</span>
+        <b>→</b>
+        <span>待機</span>
+        <b>→</b>
+        <span>種付場</span>
+        <b>→</b>
+        <span>（保留・処置）</span>
+        <b>→</b>
+        <span>🏠 帰宅</span>
+      </div>
+
+      <div className="board-map">
+        {PLACES.map((p) => {
+          const list = byZone.get(p.zone) ?? [];
+          return (
+            <section
+              key={p.zone}
+              className={`map-place place-${p.accent}`}
+              style={{ gridArea: p.area }}
+            >
+              <header className="map-place-head">
+                <span className="map-place-name">{p.zone}</span>
+                <span className="map-place-count">{list.length}</span>
+              </header>
+              <div className="map-place-body">
+                {list.length === 0 && <div className="map-empty">空き</div>}
+                {list.map((m) => (
+                  <button
+                    key={m.id}
+                    className="mare-chip"
+                    onClick={() => setOpenId(m.id)}
+                  >
+                    <span
+                      className="chip-sire"
+                      style={{ background: sireColor(m.sireCode) }}
                     >
-                      <span
-                        className="mare-sire"
-                        style={{ background: sireColor(m.sireCode) }}
-                      >
-                        {m.sireCode || "?"}
+                      {m.sireCode || "?"}
+                    </span>
+                    <span className="chip-body">
+                      <span className="chip-name">
+                        {m.mareName || "（名前未入力）"}
                       </span>
-                      <span className="mare-main">
-                        <span className="mare-name">{m.mareName || "（名前未入力）"}</span>
-                        <span className="mare-sub">
-                          {m.farm && <span>{m.farm}</span>}
-                          {m.apptTime && <span className="mare-time">🕐{m.apptTime}</span>}
-                          {m.kind && <span className="mare-kind">{m.kind}</span>}
-                        </span>
-                        {m.tags.length > 0 && (
-                          <span className="mare-tags">
-                            {m.tags.map((t) => (
-                              <span key={t} className="mare-tag">
-                                {t}
-                              </span>
-                            ))}
-                          </span>
+                      <span className="chip-sub">
+                        {m.farm && <span>{m.farm}</span>}
+                        {m.apptTime && (
+                          <span className="mare-time">🕐{m.apptTime}</span>
                         )}
+                        {m.kind && <span className="mare-kind">{m.kind}</span>}
                       </span>
-                    </button>
-                  ))}
-                </div>
+                      {m.tags.length > 0 && (
+                        <span className="chip-tags">
+                          {m.tags.map((t) => (
+                            <span key={t} className="mare-tag">
+                              {t}
+                            </span>
+                          ))}
+                        </span>
+                      )}
+                    </span>
+                  </button>
+                ))}
               </div>
-            );
-          })}
-        </div>
+            </section>
+          );
+        })}
       </div>
 
       {/* ===== カード操作シート ===== */}
