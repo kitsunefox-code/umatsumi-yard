@@ -36,6 +36,8 @@ export type Mare = {
   parkingRef?: string; // 連携元の馬積みの馬（vehicleId:horseId）。二重表示防止用
   note?: string; // 順番表の注記（上り・鎮静※・指定 昼ＫＺＮ など）
   enteredTs?: number; // 馬積場到着（滞在時間の起点。ms）
+  matedAt?: string; // 入った種付所（第一種付所 / 第二種付所）
+  departedTs?: number; // 帰宅時刻（ms）
 };
 
 // 滞在時間の注意しきい値（分）

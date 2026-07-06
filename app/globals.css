@@ -2162,6 +2162,36 @@ button {
   background-size: auto 68%;
 }
 
+/* 帰宅カードの情報（種付所・合計滞在・帰宅時刻） */
+.home-info {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 2px;
+}
+.home-info span {
+  font-size: 11px;
+  font-weight: 800;
+  padding: 1px 7px;
+  border-radius: 6px;
+  white-space: nowrap;
+}
+.hi-mate {
+  color: #2e6b45;
+  background: #eaf5ee;
+  border: 1px solid #b7d8c3;
+}
+.hi-stay {
+  color: #3a4750;
+  background: #eef1f4;
+  border: 1px solid #cdd6dd;
+}
+.hi-home {
+  color: #5a4a86;
+  background: #f0edf8;
+  border: 1px solid #cabfe6;
+}
+
 /* 2頭同時バッジ（馬積み連携） */
 .frame-head {
   display: flex;

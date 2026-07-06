@@ -178,6 +178,38 @@ export default function BoardPage() {
     };
   }, [accessKey]);
 
+  // 馬積みアプリで「下ろした」馬を自動で洗い場へ
+  useEffect(() => {
+    if (!ready) return;
+    const have = new Set(
+      maresRef.current.map((m) => m.parkingRef).filter(Boolean)
+    );
+    const add: Mare[] = [];
+    vehicles.forEach((v) => {
+      if (v.wentHome || v.parkingNo == null) return;
+      v.horses.forEach((h) => {
+        if (h.unloadStatus !== "unloaded") return;
+        const ref = `${v.id}:${h.id}`;
+        if (have.has(ref)) return;
+        have.add(ref);
+        add.push(
+          newMare({
+            mareName:
+              resolveMareName(roster, h.horseCode) ||
+              h.horseName ||
+              h.horseCode,
+            sireCode: h.horseCode,
+            zone: "洗い場",
+            parkingRef: ref,
+            note: resolveNote(roster, h.horseCode),
+            enteredTs: v.arrivedTs ?? Date.now(),
+          })
+        );
+      });
+    });
+    if (add.length) setMares((prev) => [...prev, ...add]);
+  }, [vehicles, roster, ready]);
+
   function submitKey() {
     const k = keyInput.trim();
     if (!k) return;
@@ -194,6 +226,13 @@ export default function BoardPage() {
   function updateMare(id: string, patch: Partial<Mare>) {
     setMares((prev) => prev.map((m) => (m.id === id ? { ...m, ...patch } : m)));
   }
+  // 場所変更に伴う付随情報（種付所の記録・帰宅時刻）
+  function zoneExtra(m: Mare, zone: Zone): Partial<Mare> {
+    const p: Partial<Mare> = {};
+    if (zone === "第一種付所" || zone === "第二種付所") p.matedAt = zone;
+    if (zone === "帰宅") p.departedTs = m.departedTs ?? Date.now();
+    return p;
+  }
   function moveMare(id: string, zone: Zone) {
     setMares((prev) =>
       prev.map((m) => {
@@ -202,7 +241,7 @@ export default function BoardPage() {
         if (zone !== "馬積場") frameNo = undefined;
         else if (!frameNo)
           frameNo = firstFreeFrame(prev.filter((x) => x.id !== m.id));
-        return { ...m, zone, frameNo };
+        return { ...m, zone, frameNo, ...zoneExtra(m, zone) };
       })
     );
   }
@@ -211,7 +250,12 @@ export default function BoardPage() {
     setMares((prev) =>
       prev.map((m) =>
         m.id === id
-          ? { ...m, zone, frameNo: zone === "馬積場" ? m.frameNo : undefined }
+          ? {
+              ...m,
+              zone,
+              frameNo: zone === "馬積場" ? m.frameNo : undefined,
+              ...zoneExtra(m, zone),
+            }
           : m
       )
     );
@@ -302,6 +346,7 @@ export default function BoardPage() {
       if (v.wentHome || v.parkingNo == null) return;
       const batch = effBatch(v);
       v.horses.forEach((h) => {
+        if (h.unloadStatus === "unloaded") return; // 下ろした馬は洗い場へ（自動移動）
         const ref = `${v.id}:${h.id}`;
         if (advancedRefs.has(ref)) return;
         const mareName =
@@ -650,6 +695,29 @@ function WarnIcon() {
   );
 }
 
+function fmtTime(ts?: number): string {
+  if (!ts) return "";
+  const d = new Date(ts);
+  return `${d.getHours()}:${String(d.getMinutes()).padStart(2, "0")}`;
+}
+
+function HomeInfo({ m }: { m: Mare }) {
+  if (m.zone !== "帰宅") return null;
+  const stay =
+    m.enteredTs && m.departedTs
+      ? Math.floor((m.departedTs - m.enteredTs) / 60000)
+      : null;
+  return (
+    <span className="home-info">
+      {m.matedAt && <span className="hi-mate">種付：{m.matedAt}</span>}
+      {stay != null && <span className="hi-stay">滞在 計{stay}分</span>}
+      {m.departedTs && (
+        <span className="hi-home">帰宅 {fmtTime(m.departedTs)}</span>
+      )}
+    </span>
+  );
+}
+
 function StayWarn({ ts, now }: { ts?: number; now: number }) {
   const m = stayMinutes(ts, now);
   if (m == null || m < STAY_WARN_MIN) return null;
@@ -709,7 +777,8 @@ function MareList({
                   {m.kind && <span className="mare-kind">{m.kind}</span>}
                 </span>
                 <NoteBadge note={m.note} />
-                <StayWarn ts={m.enteredTs} now={now} />
+                {m.zone !== "帰宅" && <StayWarn ts={m.enteredTs} now={now} />}
+                <HomeInfo m={m} />
                 {m.tags.length > 0 && (
                   <span className="chip-tags">
                     {m.tags.map((t) => (
