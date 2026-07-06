@@ -1,6 +1,7 @@
 // リアルタイム同期（Firebase Firestore）。cloudConfig 未設定なら無効。
 import { cloudConfig } from "./cloudConfig";
 import { Vehicle } from "./types";
+import { Mare } from "./board";
 
 export const cloudEnabled = !!cloudConfig.apiKey;
 
@@ -37,4 +38,22 @@ export async function saveYard(
   const db = await ensureDb();
   const { doc, setDoc } = await import("firebase/firestore");
   await setDoc(doc(db, "yards", key), { vehicles, updatedAt: Date.now() });
+}
+
+// ===== 所在ボード（牝馬の現在地）の同期 =====
+export async function subscribeBoard(
+  key: string,
+  cb: (mares: Mare[] | null) => void
+): Promise<() => void> {
+  const db = await ensureDb();
+  const { doc, onSnapshot } = await import("firebase/firestore");
+  return onSnapshot(doc(db, "boards", key), (snap) => {
+    cb(snap.exists() ? ((snap.data().mares as Mare[]) ?? []) : null);
+  });
+}
+
+export async function saveBoard(key: string, mares: Mare[]): Promise<void> {
+  const db = await ensureDb();
+  const { doc, setDoc } = await import("firebase/firestore");
+  await setDoc(doc(db, "boards", key), { mares, updatedAt: Date.now() });
 }

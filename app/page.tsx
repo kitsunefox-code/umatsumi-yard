@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import Link from "next/link";
 import { Vehicle, Horse, UnloadStatus, effBatch, wakuClass } from "@/lib/types";
 import { loadData, saveData, genId } from "@/lib/storage";
 import { cloudEnabled, subscribeYard, saveYard } from "@/lib/cloud";
@@ -461,6 +462,9 @@ export default function Page() {
           🐴 馬積み駐車場管理アプリ
           <span className="sub">Mare Transport Yard Manager</span>
         </h1>
+        <Link href="/board" className="btn btn-ghost">
+          📍 所在ボード
+        </Link>
         {cloudEnabled && (
           <button
             className={`sync-chip ${cloudConnected ? "on" : ""}`}

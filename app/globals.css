@@ -1542,3 +1542,188 @@ button {
   font-weight: 800;
   color: #3a4750;
 }
+
+/* ===== 所在ボード ===== */
+.board-scroll-x {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: 8px;
+}
+.board-cols {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  min-width: min-content;
+}
+.board-col {
+  flex: 1 1 0;
+  min-width: 188px;
+  background: var(--panel);
+  border: 2px solid var(--line-strong);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.board-col-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  background: #33404d;
+  color: #fff;
+}
+.board-col-name {
+  font-size: 14px;
+  font-weight: 800;
+  flex: 1;
+}
+.board-col-count {
+  min-width: 22px;
+  height: 22px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.22);
+  font-size: 12px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.board-col-body {
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 80px;
+}
+.board-empty {
+  text-align: center;
+  color: var(--line-strong);
+  font-weight: 800;
+  padding: 12px 0;
+}
+
+/* 牝馬カード */
+.mare-card {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  text-align: left;
+  border: 1px solid var(--line-strong);
+  border-radius: 10px;
+  background: #fff;
+  padding: 8px;
+  box-shadow: var(--shadow);
+  cursor: pointer;
+}
+.mare-card:active {
+  transform: translateY(1px);
+}
+.mare-sire {
+  min-width: 40px;
+  padding: 4px 4px;
+  border-radius: 8px;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 800;
+  text-align: center;
+  flex-shrink: 0;
+  align-self: stretch;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.mare-main {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  flex: 1;
+}
+.mare-name {
+  font-size: 15px;
+  font-weight: 800;
+  line-height: 1.2;
+}
+.mare-sub {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+.mare-time {
+  font-weight: 700;
+}
+.mare-kind {
+  font-weight: 800;
+  color: var(--color-double);
+}
+.mare-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 2px;
+}
+.mare-tag {
+  font-size: 11px;
+  font-weight: 800;
+  padding: 1px 7px;
+  border-radius: 6px;
+  background: var(--color-warning-bg);
+  color: var(--color-warning);
+  border: 1px solid var(--color-warning);
+}
+
+/* 操作シート */
+.sheet-label {
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--text-muted);
+  margin: 12px 0 6px;
+}
+.sheet-label:first-child {
+  margin-top: 0;
+}
+.zone-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+  gap: 6px;
+}
+.zone-btn {
+  border: 2px solid var(--line-strong);
+  background: #fff;
+  border-radius: 8px;
+  padding: 10px 6px;
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--text);
+  min-height: 44px;
+}
+.zone-btn.on {
+  background: var(--color-double);
+  border-color: var(--color-double);
+  color: #fff;
+}
+.tag-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.tag-btn {
+  border: 2px solid var(--line-strong);
+  background: #fff;
+  border-radius: 999px;
+  padding: 8px 14px;
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--text-muted);
+  min-height: 40px;
+}
+.tag-btn.on {
+  background: var(--color-warning);
+  border-color: var(--color-warning);
+  color: #fff;
+}
