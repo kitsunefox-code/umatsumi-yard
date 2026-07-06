@@ -12,15 +12,32 @@ import {
   sireColor,
   newMare,
   normCode,
-  mareFromRoster,
-  nextZone,
+  nextZones,
   firstFreeFrame,
+  resolveMareName,
   sampleMares,
   roster8Sample,
 } from "@/lib/board";
-import { cloudEnabled, subscribeBoard, saveBoard } from "@/lib/cloud";
+import { Vehicle } from "@/lib/types";
+import {
+  cloudEnabled,
+  subscribeBoard,
+  saveBoard,
+  subscribeYard,
+} from "@/lib/cloud";
 import { genId } from "@/lib/storage";
 import Modal from "@/components/Modal";
+
+// 馬積場の1頭ぶんの表示データ（馬積みアプリ or ボード由来）
+type YardOcc = {
+  key: string;
+  sireCode: string;
+  mareName: string;
+  foal?: string;
+  isNew?: boolean;
+  onAdvance: () => void;
+  onOpen?: () => void;
+};
 
 const STORAGE = "mare-board-data";
 const ROSTER_STORAGE = "mare-roster-data";
@@ -54,12 +71,11 @@ function loadArr<T>(key: string, fallback: T[]): T[] {
 export default function BoardPage() {
   const [mares, setMares] = useState<Mare[]>([]);
   const [roster, setRoster] = useState<RosterEntry[]>([]);
+  const [vehicles, setVehicles] = useState<Vehicle[]>([]); // 馬積みアプリ連携
   const [ready, setReady] = useState(false);
   const [openId, setOpenId] = useState<string | null>(null);
   const [adding, setAdding] = useState(false);
   const [addingRoster, setAddingRoster] = useState(false);
-  const [codeInput, setCodeInput] = useState("");
-  const [codeMsg, setCodeMsg] = useState("");
 
   // 同期
   const [accessKey, setAccessKey] = useState<string | null>(null);
@@ -129,6 +145,23 @@ export default function BoardPage() {
     };
   }, [accessKey]);
 
+  // 馬積みアプリ（yards）を購読＝馬積場に反映（読み取り専用）
+  useEffect(() => {
+    if (!cloudEnabled || !accessKey) return;
+    let unsub: (() => void) | undefined;
+    let cancelled = false;
+    subscribeYard(accessKey, (v) => setVehicles(v ?? []))
+      .then((u) => {
+        if (cancelled) u();
+        else unsub = u;
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+      if (unsub) unsub();
+    };
+  }, [accessKey]);
+
   function submitKey() {
     const k = keyInput.trim();
     if (!k) return;
@@ -157,15 +190,14 @@ export default function BoardPage() {
       })
     );
   }
-  // ワンタップで次の場所へ進める
-  function advanceMare(id: string) {
+  // ワンタップで指定の次の場所へ進める（待機→第一/第二の分岐対応）
+  function advanceMare(id: string, zone: Zone) {
     setMares((prev) =>
-      prev.map((m) => {
-        if (m.id !== id) return m;
-        const nz = nextZone(m.zone);
-        if (!nz) return m;
-        return { ...m, zone: nz, frameNo: nz === "馬積場" ? m.frameNo : undefined };
-      })
+      prev.map((m) =>
+        m.id === id
+          ? { ...m, zone, frameNo: zone === "馬積場" ? m.frameNo : undefined }
+          : m
+      )
     );
   }
   function toggleTag(id: string, tag: MareTag) {
@@ -183,13 +215,7 @@ export default function BoardPage() {
     );
   }
   function deleteMare(id: string) {
-    const m = mares.find((x) => x.id === id);
     setMares((prev) => prev.filter((x) => x.id !== id));
-    // 予定に戻す（未到着に）
-    if (m?.rosterId)
-      setRoster((prev) =>
-        prev.map((r) => (r.id === m.rosterId ? { ...r, arrived: false } : r))
-      );
     setOpenId(null);
   }
   function addMare(m: Mare) {
@@ -197,28 +223,16 @@ export default function BoardPage() {
     setAdding(false);
   }
 
-  // 予定の1件を「到着」させてボードの馬積場（空き枠）に出す
-  function arriveEntry(e: RosterEntry) {
+  // 馬積場（馬積みアプリ）の1頭を「洗い場へ進める」＝種付けの流れに入れる
+  function advanceYardOcc(
+    ref: string,
+    mareName: string,
+    sireCode: string
+  ) {
     setMares((prev) => [
       ...prev,
-      { ...mareFromRoster(e, "馬積場"), frameNo: firstFreeFrame(prev) },
+      newMare({ mareName, sireCode, zone: "洗い場", parkingRef: ref }),
     ]);
-    setRoster((prev) =>
-      prev.map((r) => (r.id === e.id ? { ...r, arrived: true } : r))
-    );
-  }
-  // 父コードを入力して到着（未到着の中から最初の一致）
-  function arriveByCode(raw: string) {
-    const code = normCode(raw);
-    if (!code) return;
-    const e = roster.find((r) => !r.arrived && normCode(r.sireCode) === code);
-    if (!e) {
-      setCodeMsg(`「${raw}」の未到着の予定が見つかりません`);
-      return;
-    }
-    arriveEntry(e);
-    setCodeInput("");
-    setCodeMsg(`${e.mareName}（${e.sireCode}）を馬積場に出しました`);
   }
   // 予定を追加（進行中の追加＝NEW）
   function addRosterEntry(e: RosterEntry) {
@@ -245,21 +259,69 @@ export default function BoardPage() {
     return map;
   }, [mares]);
 
-  const waiting = useMemo(() => roster.filter((r) => !r.arrived), [roster]);
+  // 既に種付けの流れに入った馬積みの馬（二重表示しない）
+  const advancedRefs = useMemo(
+    () => new Set(mares.map((m) => m.parkingRef).filter(Boolean)),
+    [mares]
+  );
 
-  // 馬積場の枠番号→牝馬
-  const frameMap = useMemo(() => {
-    const map = new Map<number, Mare>();
+  // 馬積場の枠番号→そこにいる馬（馬積みアプリ由来＋手動でボードに置いた馬）
+  const occByFrame = useMemo(() => {
+    const map = new Map<number, YardOcc[]>();
+    const push = (n: number, o: YardOcc) => {
+      const arr = map.get(n) ?? [];
+      arr.push(o);
+      map.set(n, arr);
+    };
+    // 馬積みアプリの駐車枠から
+    vehicles.forEach((v) => {
+      if (v.wentHome || v.parkingNo == null) return;
+      v.horses.forEach((h) => {
+        const ref = `${v.id}:${h.id}`;
+        if (advancedRefs.has(ref)) return;
+        const mareName =
+          resolveMareName(roster, h.horseCode) ||
+          h.horseName ||
+          h.horseCode;
+        push(v.parkingNo as number, {
+          key: ref,
+          sireCode: h.horseCode,
+          mareName,
+          foal:
+            h.foalBirthDate || h.foalSex
+              ? `${h.foalBirthDate ?? ""}${h.foalSex ? " " + h.foalSex : ""}`
+              : undefined,
+          onAdvance: () => advanceYardOcc(ref, mareName, h.horseCode),
+        });
+      });
+    });
+    // 手動でボードの馬積場に置いた馬（あれば）
     mares.forEach((m) => {
-      if (m.zone === "馬積場" && m.frameNo) map.set(m.frameNo, m);
+      if (m.zone === "馬積場" && m.frameNo)
+        push(m.frameNo, {
+          key: m.id,
+          sireCode: m.sireCode,
+          mareName: m.mareName || "（名前未入力）",
+          isNew: m.isNew,
+          onAdvance: () => advanceMare(m.id, "洗い場"),
+          onOpen: () => setOpenId(m.id),
+        });
     });
     return map;
-  }, [mares]);
-  // 枠に入っていない馬積場の馬（あふれ）
-  const yardNoFrame = useMemo(
-    () => (byZone.get("馬積場") ?? []).filter((m) => !m.frameNo),
-    [byZone]
+  }, [vehicles, advancedRefs, roster, mares]);
+
+  const yardCount = useMemo(
+    () => Array.from(occByFrame.values()).reduce((a, l) => a + l.length, 0),
+    [occByFrame]
   );
+
+  // 予定の来場状況（馬積場 or ボードに同じ父コードがいれば来場済）
+  const presentCodes = useMemo(() => {
+    const s = new Set<string>();
+    occByFrame.forEach((l) => l.forEach((o) => s.add(normCode(o.sireCode))));
+    mares.forEach((m) => s.add(normCode(m.sireCode)));
+    return s;
+  }, [occByFrame, mares]);
 
   const open = mares.find((m) => m.id === openId) ?? null;
 
@@ -285,12 +347,14 @@ export default function BoardPage() {
         )}
       </div>
 
-      {/* ===== 本日の予定（順番表 8:00の組） ===== */}
+      {/* ===== 本日の予定（順番表 8:00の組）＝参照リスト ===== */}
       <section className="roster-panel">
         <div className="roster-head">
           <span className="roster-title">
             📋 本日の予定（8:00の組）
-            <span className="roster-count">残り {waiting.length}</span>
+            <span className="roster-count">
+              来場 {roster.filter((r) => presentCodes.has(normCode(r.sireCode))).length}／{roster.length}
+            </span>
           </span>
           <div className="roster-actions">
             <button className="btn btn-ghost btn-sm" onClick={importRoster}>
@@ -304,104 +368,64 @@ export default function BoardPage() {
             </button>
           </div>
         </div>
-
-        <div className="code-entry">
-          <span className="code-entry-label">父コードで到着：</span>
-          <input
-            type="text"
-            value={codeInput}
-            onChange={(e) => {
-              setCodeInput(e.target.value);
-              setCodeMsg("");
-            }}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") arriveByCode(codeInput);
-            }}
-            placeholder="例 ＫＢＬ / KBL"
-          />
-          <button
-            className="btn btn-primary btn-sm"
-            onClick={() => arriveByCode(codeInput)}
-          >
-            到着
-          </button>
-          {codeMsg && <span className="code-msg">{codeMsg}</span>}
-        </div>
-
-        {waiting.length === 0 ? (
-          <div className="roster-empty">未到着の予定はありません 🎉</div>
+        <p className="roster-hint">
+          馬積みアプリでスタッフが枠に馬を置くと、下の「馬積場」に自動で出ます。父コードで牝馬名を照合します。
+        </p>
+        {roster.length === 0 ? (
+          <div className="roster-empty">予定がありません</div>
         ) : (
           <div className="roster-chips">
-            {waiting.map((r) => (
-              <button
-                key={r.id}
-                className="roster-chip"
-                onClick={() => arriveEntry(r)}
-                title="タップで馬積場に到着"
-              >
-                {r.isNew && <span className="badge-new">NEW</span>}
-                <span
-                  className="chip-sire"
-                  style={{ background: sireColor(r.sireCode) }}
+            {roster.map((r) => {
+              const here = presentCodes.has(normCode(r.sireCode));
+              return (
+                <div
+                  key={r.id}
+                  className={`roster-chip${here ? " arrived" : ""}`}
                 >
-                  {r.sireCode || "?"}
-                </span>
-                <span className="chip-body">
-                  <span className="chip-name">{r.mareName}</span>
-                  <span className="chip-sub">
-                    {r.farm && <span>{r.farm}</span>}
-                    {r.apptTime && <span className="mare-time">🕐{r.apptTime}</span>}
-                    {r.kind && <span className="mare-kind">{r.kind}</span>}
+                  {r.isNew && <span className="badge-new">NEW</span>}
+                  <span
+                    className="chip-sire"
+                    style={{ background: sireColor(r.sireCode) }}
+                  >
+                    {r.sireCode || "?"}
                   </span>
-                </span>
-              </button>
-            ))}
+                  <span className="chip-body">
+                    <span className="chip-name">{r.mareName}</span>
+                    <span className="chip-sub">
+                      {r.farm && <span>{r.farm}</span>}
+                      {r.apptTime && <span className="mare-time">🕐{r.apptTime}</span>}
+                      {r.kind && <span className="mare-kind">{r.kind}</span>}
+                    </span>
+                  </span>
+                  <span className="roster-status">{here ? "✅来場" : "未着"}</span>
+                </div>
+              );
+            })}
           </div>
         )}
       </section>
 
       <div className="fmap">
-        {/* 馬積場（駐車枠 1〜15 の図） */}
+        {/* 馬積場（馬積みアプリ連携。駐車枠 1〜15） */}
         <section className="fyard">
           <div className="fyard-label">
             <span className="fplace-icon">🐴</span>
             <span className="fplace-name">馬積場</span>
-            <span className="fplace-count">
-              {(byZone.get("馬積場") ?? []).length}
-            </span>
+            <span className="fplace-count">{yardCount}</span>
+            <span className="fyard-note">馬積みアプリと連携</span>
           </div>
           <div className="fyard-diagram">
             <div className="fyard-left">
               {[3, 2, 1].map((n) => (
-                <FrameCell
-                  key={n}
-                  n={n}
-                  mare={frameMap.get(n)}
-                  onOpen={setOpenId}
-                  onAdvance={advanceMare}
-                  small
-                />
+                <FrameCell key={n} n={n} occs={occByFrame.get(n)} small />
               ))}
             </div>
             <div className="fyard-frames">
               {[4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15].map((n) => (
-                <FrameCell
-                  key={n}
-                  n={n}
-                  mare={frameMap.get(n)}
-                  onOpen={setOpenId}
-                  onAdvance={advanceMare}
-                />
+                <FrameCell key={n} n={n} occs={occByFrame.get(n)} />
               ))}
             </div>
           </div>
-          {yardNoFrame.length > 0 && (
-            <MareList
-              list={yardNoFrame}
-              onOpen={setOpenId}
-              onAdvance={advanceMare}
-            />
-          )}
         </section>
 
         {/* 中段3ボックス */}
@@ -577,13 +601,13 @@ function MareList({
 }: {
   list: Mare[];
   onOpen: (id: string) => void;
-  onAdvance?: (id: string) => void;
+  onAdvance?: (id: string, zone: Zone) => void;
 }) {
   if (!list.length) return null;
   return (
     <div className="fplace-body">
       {list.map((m) => {
-        const nz = nextZone(m.zone);
+        const nexts = nextZones(m.zone);
         return (
           <div key={m.id} className="mare-chip">
             {m.isNew && <span className="badge-new">NEW</span>}
@@ -612,15 +636,20 @@ function MareList({
                 )}
               </span>
             </button>
-            {onAdvance && nz && (
-              <button
-                className="chip-adv"
-                onClick={() => onAdvance(m.id)}
-                title={`${nz}へ進める`}
-              >
-                <span className="chip-adv-arrow">▶</span>
-                <span className="chip-adv-label">{nz}</span>
-              </button>
+            {onAdvance && nexts.length > 0 && (
+              <span className="chip-advs">
+                {nexts.map((nz) => (
+                  <button
+                    key={nz}
+                    className="chip-adv"
+                    onClick={() => onAdvance(m.id, nz)}
+                    title={`${nz}へ進める`}
+                  >
+                    <span className="chip-adv-arrow">▶</span>
+                    <span className="chip-adv-label">{nz}</span>
+                  </button>
+                ))}
+              </span>
             )}
           </div>
         );
@@ -631,40 +660,44 @@ function MareList({
 
 function FrameCell({
   n,
-  mare,
-  onOpen,
-  onAdvance,
+  occs,
   small,
 }: {
   n: number;
-  mare?: Mare;
-  onOpen: (id: string) => void;
-  onAdvance: (id: string) => void;
+  occs?: YardOcc[];
   small?: boolean;
 }) {
-  if (!mare) {
+  if (!occs || occs.length === 0) {
     return <div className={`fyard-frame${small ? " small" : ""}`}>{n}</div>;
   }
   return (
     <div className={`fyard-frame occ${small ? " small" : ""}`}>
       <span className="frame-no">{n}</span>
-      {mare.isNew && <span className="badge-new">NEW</span>}
-      <button className="frame-mare" onClick={() => onOpen(mare.id)}>
-        <span
-          className="frame-sire"
-          style={{ background: sireColor(mare.sireCode) }}
-        >
-          {mare.sireCode || "?"}
-        </span>
-        <span className="frame-name">{mare.mareName}</span>
-      </button>
-      <button
-        className="frame-adv"
-        onClick={() => onAdvance(mare.id)}
-        title="洗い場へ進める"
-      >
-        ▶ 進む
-      </button>
+      {occs.map((o) => (
+        <div key={o.key} className="frame-occ">
+          {o.isNew && <span className="badge-new">NEW</span>}
+          <button
+            className="frame-mare"
+            onClick={() => (o.onOpen ? o.onOpen() : o.onAdvance())}
+          >
+            <span
+              className="frame-sire"
+              style={{ background: sireColor(o.sireCode) }}
+            >
+              {o.sireCode || "?"}
+            </span>
+            <span className="frame-name">{o.mareName}</span>
+            {o.foal && <span className="frame-foal">{o.foal}</span>}
+          </button>
+          <button
+            className="frame-adv"
+            onClick={o.onAdvance}
+            title="洗い場へ進める"
+          >
+            ▶洗い場
+          </button>
+        </div>
+      ))}
     </div>
   );
 }
@@ -780,7 +813,7 @@ function PlaceBox({
   zone: Zone;
   byZone: Map<Zone, Mare[]>;
   onOpen: (id: string) => void;
-  onAdvance: (id: string) => void;
+  onAdvance: (id: string, z: Zone) => void;
   wide?: boolean;
 }) {
   const list = byZone.get(zone) ?? [];

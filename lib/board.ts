@@ -33,6 +33,7 @@ export type Mare = {
   rosterId?: string; // 元の予定（順番表）のID
   isNew?: boolean; // 進行中に追加された予定（NEW表示）
   frameNo?: number; // 馬積場の枠番号（1〜15）
+  parkingRef?: string; // 連携元の馬積みの馬（vehicleId:horseId）。二重表示防止用
 };
 
 // 順番表（本日の予定）の1件
@@ -90,19 +91,28 @@ export function normCode(s: string): string {
     .toUpperCase();
 }
 
-// 場所の進行順（ワンタップで次へ）。帰宅で終わり。
-const NEXT_ZONE: Partial<Record<Zone, Zone>> = {
-  "馬積場": "洗い場",
-  "予備（馬積）": "洗い場",
-  "洗い場": "待機",
-  "待機": "第一種付所",
-  "第一種付所": "帰宅",
-  "第二種付所": "帰宅",
-  "P検待ち・直検待ち": "帰宅",
-  "鎮静待ち": "帰宅",
+// 場所の進行順（ワンタップで次へ）。待機は第一/第二に分岐。帰宅で終わり。
+const NEXT_ZONES: Partial<Record<Zone, Zone[]>> = {
+  "馬積場": ["洗い場"],
+  "予備（馬積）": ["洗い場"],
+  "洗い場": ["待機"],
+  "待機": ["第一種付所", "第二種付所"],
+  "第一種付所": ["帰宅"],
+  "第二種付所": ["帰宅"],
+  "P検待ち・直検待ち": ["帰宅"],
+  "鎮静待ち": ["帰宅"],
 };
-export function nextZone(z: Zone): Zone | null {
-  return NEXT_ZONE[z] ?? null;
+export function nextZones(z: Zone): Zone[] {
+  return NEXT_ZONES[z] ?? [];
+}
+
+// 父コード（種牡馬）→ 本日の予定の牝馬名を照合（無ければ空）
+export function resolveMareName(
+  roster: RosterEntry[],
+  code: string
+): string {
+  const c = normCode(code);
+  return roster.find((r) => normCode(r.sireCode) === c)?.mareName ?? "";
 }
 
 // 馬積場の空いている最小の枠番号（1〜15）
@@ -152,9 +162,8 @@ export const roster8Sample: RosterEntry[] = [
   { id: "r-sis", mareName: "スカイラー", sireCode: "ＳＩＳ", farm: "高橋Ｆ", kind: "新", apptTime: "", arrived: false },
 ];
 
-// 見本データ：到着済み4頭をボードに配置（馬積場は枠1）
+// 見本データ：種付けの流れに入った数頭（馬積場は馬積みアプリから反映される）
 export const sampleMares: Mare[] = [
-  { ...mareFromRoster(roster8Sample[0], "馬積場"), frameNo: 1 },
   mareFromRoster(roster8Sample[1], "洗い場"),
   mareFromRoster(roster8Sample[2], "待機"),
   mareFromRoster(roster8Sample[3], "第一種付所"),
