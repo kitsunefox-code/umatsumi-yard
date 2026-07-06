@@ -2369,6 +2369,34 @@ button {
   font-weight: 800;
   color: #3f4b53;
 }
+.group-tabs {
+  display: inline-flex;
+  gap: 4px;
+}
+.group-tab {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  line-height: 1.05;
+  border: 1.5px solid var(--line-strong);
+  background: #fff;
+  color: var(--text-muted);
+  border-radius: 8px;
+  padding: 4px 12px;
+  font-size: 14px;
+  font-weight: 800;
+  cursor: pointer;
+}
+.group-tab.on {
+  background: #33404d;
+  color: #fff;
+  border-color: #33404d;
+}
+.group-time {
+  font-size: 9px;
+  font-weight: 700;
+  opacity: 0.85;
+}
 .roster-count {
   background: #33404d;
   color: #fff;

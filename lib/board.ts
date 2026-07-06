@@ -232,5 +232,50 @@ export const roster8Sample: RosterEntry[] = [
   { id: "r-sis", mareName: "スカイラー", sireCode: "ＳＩＳ", farm: "高橋Ｆ", kind: "新", apptTime: "", arrived: false },
 ];
 
+// 昼（13:00）の組
+export const roster13Sample: RosterEntry[] = [
+  { id: "r13-kbl", mareName: "ワグニス", sireCode: "ＫＢＬ", farm: "", kind: "新", apptTime: "12:45", arrived: false },
+  { id: "r13-eqx", mareName: "コミッショニング", sireCode: "ＥＱＸ", farm: "服部牧場", kind: "再", apptTime: "12:45", arrived: false },
+  { id: "r13-kzn", mareName: "フルーリア", sireCode: "ＫＺＮ", farm: "ノースヒルズ", kind: "新", apptTime: "", arrived: false },
+  { id: "r13-ddc", mareName: "プリモシーン", sireCode: "ＤＤＣ", farm: "", kind: "再", apptTime: "12:45", arrived: false },
+  { id: "r13-stn", mareName: "タンザニアブラック", sireCode: "ＳＴＮ", farm: "前川勝春", kind: "新", apptTime: "13:45", arrived: false },
+  { id: "r13-dfo", mareName: "キャリックアリード", sireCode: "ＤＦＯ", farm: "", kind: "再", apptTime: "", arrived: false },
+  { id: "r13-ndl", mareName: "クローリスノキセキ", sireCode: "ＮＤＬ", farm: "岡田牧場", kind: "新", apptTime: "12:45", arrived: false },
+  { id: "r13-mau", mareName: "シングルハーテッド", sireCode: "ＭＡＵ", farm: "", kind: "新", apptTime: "13:45", arrived: false },
+  { id: "r13-ams", mareName: "インディゴブルー", sireCode: "ＡＭＳ", farm: "奥山Ｆ", kind: "新", apptTime: "13:30", arrived: false },
+  { id: "r13-efo", mareName: "オパールムーン", sireCode: "ＥＦＯ", farm: "ＢｌｏｏｍｉｎｇＦ", kind: "新", apptTime: "", arrived: false },
+  { id: "r13-lvl", mareName: "クリストフォリ", sireCode: "ＬＶＬ", farm: "奥山Ｆ", kind: "新", apptTime: "", arrived: false },
+  { id: "r13-sis", mareName: "ポールネイロン", sireCode: "ＳＩＳ", farm: "ノースヒルズ", kind: "新", apptTime: "13:30", arrived: false },
+  { id: "r13-bop", mareName: "ベネフィット", sireCode: "ＢＯＰ", farm: "ナカノＦ", kind: "新", apptTime: "13:30", arrived: false },
+  { id: "r13-rey", mareName: "ガートルード", sireCode: "ＲＥＹ", farm: "三村卓也", kind: "新", apptTime: "", arrived: false },
+  { id: "r13-gdg", mareName: "マーブルサニー", sireCode: "ＧＤＧ", farm: "丸村村下Ｆ", kind: "新", apptTime: "13:30", arrived: false },
+  { id: "r13-poe", mareName: "メモリーレゾン", sireCode: "ＰＯＥ", farm: "谷川牧場", kind: "新", apptTime: "13:30", arrived: false },
+];
+
+// 夕（17:00）の組
+export const roster17Sample: RosterEntry[] = [
+  { id: "r17-kbl", mareName: "グレイスフル", sireCode: "ＫＢＬ", farm: "坂東牧場", kind: "新", apptTime: "16:45", arrived: false },
+  { id: "r17-eqx", mareName: "ポウリナズラヴ", sireCode: "ＥＱＸ", farm: "パカパカＦ", kind: "新", apptTime: "16:45", arrived: false },
+  { id: "r17-kzn", mareName: "マーゴットディド", sireCode: "ＫＺＮ", farm: "", kind: "新", apptTime: "", arrived: false },
+  { id: "r17-ldk", mareName: "コンクシェル", sireCode: "ＬＤＫ", farm: "ノースヒルズ", kind: "新", apptTime: "16:30", arrived: false },
+  { id: "r17-ddc", mareName: "ティケイプルメリア", sireCode: "ＤＤＣ", farm: "モリナガＦ", kind: "新", apptTime: "16:40", arrived: false },
+  { id: "r17-dfo", mareName: "ファナティック", sireCode: "ＤＦＯ", farm: "天羽禮治牧場", kind: "新", apptTime: "", arrived: false },
+  { id: "r17-ams", mareName: "トーホウラビアン", sireCode: "ＡＭＳ", farm: "吉田Ｆ", kind: "新", apptTime: "", arrived: false },
+  { id: "r17-efo", mareName: "ナオミエキスプレス", sireCode: "ＥＦＯ", farm: "ヒダカＦ", kind: "再", apptTime: "", arrived: false },
+  { id: "r17-lvl", mareName: "モディカ", sireCode: "ＬＶＬ", farm: "", kind: "新", apptTime: "", arrived: false },
+  { id: "r17-hrc", mareName: "ホローポ", sireCode: "ＨＲＣ", farm: "長谷川牧場", kind: "新", apptTime: "16:30", arrived: false },
+];
+
+// 時間帯の組（朝/昼/夕）
+export type GroupKey = "朝" | "昼" | "夕";
+export const ROSTER_GROUPS: { key: GroupKey; time: string; mares: RosterEntry[] }[] = [
+  { key: "朝", time: "8:00", mares: roster8Sample },
+  { key: "昼", time: "13:00", mares: roster13Sample },
+  { key: "夕", time: "17:00", mares: roster17Sample },
+];
+export function groupRoster(g: GroupKey): RosterEntry[] {
+  return (ROSTER_GROUPS.find((x) => x.key === g) ?? ROSTER_GROUPS[0]).mares;
+}
+
 // 見本データ：流れの馬は最初は空（馬積場は馬積みアプリから反映、進めると流れに入る）
 export const sampleMares: Mare[] = [];

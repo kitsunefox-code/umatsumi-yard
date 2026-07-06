@@ -21,6 +21,9 @@ import {
   resolveNote,
   stayMinutes,
   STAY_WARN_MIN,
+  GroupKey,
+  ROSTER_GROUPS,
+  groupRoster,
   sampleMares,
   roster8Sample,
 } from "@/lib/board";
@@ -50,6 +53,7 @@ type YardOcc = {
 
 const STORAGE = "mare-board-data";
 const ROSTER_STORAGE = "mare-roster-data";
+const GROUP_STORAGE = "mare-board-group";
 const ACCESS_KEY_STORAGE = "mare-transport-access-key";
 
 // 施設マップの各場所（配置図どおり）
@@ -81,6 +85,7 @@ function loadArr<T>(key: string, fallback: T[]): T[] {
 export default function BoardPage() {
   const [mares, setMares] = useState<Mare[]>([]);
   const [roster, setRoster] = useState<RosterEntry[]>([]);
+  const [group, setGroup] = useState<GroupKey>("朝"); // 朝/昼/夕
   const [vehicles, setVehicles] = useState<Vehicle[]>([]); // 馬積みアプリ連携
   const [ready, setReady] = useState(false);
   const [openId, setOpenId] = useState<string | null>(null);
@@ -101,11 +106,18 @@ export default function BoardPage() {
   const [connected, setConnected] = useState(false);
   const maresRef = useRef<Mare[]>([]);
   const rosterRef = useRef<RosterEntry[]>([]);
+  const groupRef = useRef<GroupKey>("朝");
   const skipWrite = useRef(false);
 
   useEffect(() => {
     setMares(loadArr<Mare>(STORAGE, sampleMares));
     setRoster(loadArr<RosterEntry>(ROSTER_STORAGE, roster8Sample));
+    try {
+      const g = window.localStorage.getItem(GROUP_STORAGE) as GroupKey | null;
+      if (g) setGroup(g);
+    } catch {
+      /* ignore */
+    }
     if (cloudEnabled) {
       try {
         setAccessKey(window.localStorage.getItem(ACCESS_KEY_STORAGE));
@@ -119,7 +131,8 @@ export default function BoardPage() {
   useEffect(() => {
     maresRef.current = mares;
     rosterRef.current = roster;
-  }, [mares, roster]);
+    groupRef.current = group;
+  }, [mares, roster, group]);
 
   // 保存（localStorage＋同期）
   useEffect(() => {
@@ -127,14 +140,15 @@ export default function BoardPage() {
     try {
       window.localStorage.setItem(STORAGE, JSON.stringify(mares));
       window.localStorage.setItem(ROSTER_STORAGE, JSON.stringify(roster));
+      window.localStorage.setItem(GROUP_STORAGE, group);
     } catch {
       /* ignore */
     }
     if (cloudEnabled && accessKey) {
       if (skipWrite.current) skipWrite.current = false;
-      else saveBoard(accessKey, mares, roster).catch(() => {});
+      else saveBoard(accessKey, mares, roster, group).catch(() => {});
     }
-  }, [mares, roster, ready, accessKey]);
+  }, [mares, roster, group, ready, accessKey]);
 
   // 購読
   useEffect(() => {
@@ -143,11 +157,17 @@ export default function BoardPage() {
     let cancelled = false;
     subscribeBoard(accessKey, (remote) => {
       if (remote == null)
-        saveBoard(accessKey, maresRef.current, rosterRef.current).catch(() => {});
+        saveBoard(
+          accessKey,
+          maresRef.current,
+          rosterRef.current,
+          groupRef.current
+        ).catch(() => {});
       else {
         skipWrite.current = true;
         setMares(remote.mares);
         setRoster(remote.roster);
+        if (remote.group) setGroup(remote.group);
       }
       setConnected(true);
     })
@@ -318,17 +338,32 @@ export default function BoardPage() {
     setRoster((prev) => [...prev, { ...e, isNew: true }]);
     setAddingRoster(false);
   }
-  // 順番表を（再）取り込み：未登録の予定だけNEWで追加
+  // 順番表を（再）取り込み：今の組で未登録の予定だけNEWで追加
   function importRoster() {
     setRoster((prev) => {
       const have = new Set(
         prev.map((r) => normCode(r.sireCode) + "|" + r.mareName)
       );
-      const add = roster8Sample
+      const add = groupRoster(group)
         .filter((r) => !have.has(normCode(r.sireCode) + "|" + r.mareName))
         .map((r) => ({ ...r, arrived: false, isNew: true }));
       return [...prev, ...add];
     });
+  }
+  // 朝/昼/夕を切り替え：その組の予定を読み込む（置き換え）
+  function switchGroup(g: GroupKey) {
+    if (g === group) return;
+    setGroup(g);
+    setRoster(groupRoster(g).map((r) => ({ ...r })));
+  }
+  // 所在ボードをクリア（流れの馬を空に。予定は残す）
+  function clearBoard() {
+    if (
+      confirm(
+        "所在ボードの馬（流れ）をすべてクリアしますか？\n（本日の予定リストは残ります）"
+      )
+    )
+      setMares([]);
   }
 
   const byZone = useMemo(() => {
@@ -432,6 +467,9 @@ export default function BoardPage() {
         <button className="btn btn-primary" onClick={() => setAdding(true)}>
           ＋ 馬を追加
         </button>
+        <button className="btn btn-danger" onClick={clearBoard}>
+          クリア
+        </button>
         {cloudEnabled && (
           <span className={`sync-chip ${connected ? "on" : ""}`}>
             {connected ? `🔄 同期中${accessKey ? `：${accessKey}` : ""}` : "⚪ 未接続"}
@@ -439,18 +477,30 @@ export default function BoardPage() {
         )}
       </div>
 
-      {/* ===== 本日の予定（順番表 8:00の組）＝参照リスト ===== */}
+      {/* ===== 本日の予定（順番表・朝/昼/夕）＝参照リスト ===== */}
       <section className="roster-panel">
         <div className="roster-head">
           <span className="roster-title">
-            📋 本日の予定（8:00の組）
+            📋 本日の予定
+            <span className="group-tabs">
+              {ROSTER_GROUPS.map((g) => (
+                <button
+                  key={g.key}
+                  className={`group-tab ${group === g.key ? "on" : ""}`}
+                  onClick={() => switchGroup(g.key)}
+                >
+                  {g.key}
+                  <span className="group-time">{g.time}</span>
+                </button>
+              ))}
+            </span>
             <span className="roster-count">
               到着待ち {pendingRoster.length}／{roster.length}
             </span>
           </span>
           <div className="roster-actions">
             <button className="btn btn-ghost btn-sm" onClick={importRoster}>
-              ⟳ 順番表を取り込む
+              ⟳ この組を取り込む
             </button>
             <button
               className="btn btn-ghost btn-sm"

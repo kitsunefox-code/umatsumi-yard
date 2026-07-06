@@ -1,9 +1,13 @@
 // リアルタイム同期（Firebase Firestore）。cloudConfig 未設定なら無効。
 import { cloudConfig } from "./cloudConfig";
 import { Vehicle } from "./types";
-import { Mare, RosterEntry } from "./board";
+import { Mare, RosterEntry, GroupKey } from "./board";
 
-export type BoardData = { mares: Mare[]; roster: RosterEntry[] };
+export type BoardData = {
+  mares: Mare[];
+  roster: RosterEntry[];
+  group?: GroupKey;
+};
 
 export const cloudEnabled = !!cloudConfig.apiKey;
 
@@ -58,6 +62,7 @@ export async function subscribeBoard(
     cb({
       mares: (d.mares as Mare[]) ?? [],
       roster: (d.roster as RosterEntry[]) ?? [],
+      group: (d.group as GroupKey) ?? undefined,
     });
   });
 }
@@ -65,9 +70,15 @@ export async function subscribeBoard(
 export async function saveBoard(
   key: string,
   mares: Mare[],
-  roster: RosterEntry[]
+  roster: RosterEntry[],
+  group?: GroupKey
 ): Promise<void> {
   const db = await ensureDb();
   const { doc, setDoc } = await import("firebase/firestore");
-  await setDoc(doc(db, "boards", key), { mares, roster, updatedAt: Date.now() });
+  await setDoc(doc(db, "boards", key), {
+    mares,
+    roster,
+    group: group ?? "朝",
+    updatedAt: Date.now(),
+  });
 }
