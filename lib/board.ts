@@ -76,20 +76,56 @@ const SIRE_PALETTE = [
   "#334155",
   "#b8860b",
 ];
-// 勝負服（勝負服.xlsx）から抽出した種牡馬の代表色
-const SILK_COLOR: Record<string, string> = {
-  AMS: "#0050a0", BOP: "#c80028", CON: "#78c8f0", CRS: "#28a050",
-  DDC: "#141414", DFO: "#0050a0", DKG: "#a02828", EFO: "#28a050",
-  EPN: "#28a050", EQX: "#78c8f0", GDG: "#c80028", HRC: "#141414",
-  ISB: "#e0d000", KBL: "#a05028", KZN: "#78c8f0", LDK: "#2850c8",
-  LVL: "#c80028", MAU: "#c82828", MYB: "#a02828", NDL: "#e0d000",
-  ORF: "#c80028", POE: "#7850a0", REY: "#28a050", RSP: "#c80028",
-  SAO: "#78c8f0", SCW: "#28a050", SHY: "#c80028", SIS: "#4aa0a0",
-  SMR: "#c80028", STN: "#28a050", SVR: "#a02828",
+// 勝負服の基本色パレット
+const C = {
+  navy: "#0050a0", blue: "#2850c8", lblue: "#78c8f0", red: "#c80028",
+  dred: "#9c2632", green: "#28a050", teal: "#4aa0a0", purple: "#7850a0",
+  pink: "#d070b0", yellow: "#e0d000", black: "#1e1e1e", brown: "#9c6a3c",
+  gray: "#5a5a5a", white: "#eaeaea", lgreen: "#74b48c", orange: "#e07820",
+};
+// 勝負服（勝負服.xlsx）から抽出した種牡馬の色。
+// [主色, 副色|null, 割り角度]。同じ2色でも角度違いで見分けられるようにする。
+const SILK: Record<string, [string, string | null, number]> = {
+  AMS: [C.navy, C.lblue, 135],
+  ISB: [C.black, C.yellow, 135],
+  KBL: [C.black, C.brown, 135],
+  SCW: [C.green, C.yellow, 135],
+  SIS: [C.teal, C.pink, 135],
+  NDL: [C.navy, C.yellow, 45],
+  POE: [C.purple, C.black, 135],
+  HRC: [C.green, C.black, 45],
+  LDK: [C.navy, C.white, 135],
+  // 水色＋赤（ノースヒルズ／シルクレーシング）
+  CON: [C.lblue, C.red, 135],
+  KZN: [C.lblue, C.red, 45],
+  EQX: [C.lblue, C.red, 90],
+  SAO: [C.lblue, C.red, 0],
+  // 緑＋赤（同一デザインの服）
+  EPN: [C.green, C.red, 135],
+  EFO: [C.green, C.red, 45],
+  CRS: [C.green, C.red, 90],
+  STN: [C.green, C.red, 0],
+  REY: [C.green, C.red, 25],
+  // 黒＋赤
+  ORF: [C.black, C.red, 135],
+  GDG: [C.black, C.red, 45],
+  SHY: [C.black, C.red, 90],
+  SMR: [C.black, C.red, 0],
+  RSP: [C.black, C.red, 25],
+  MYB: [C.black, C.dred, 155],
+  LVL: [C.black, C.dred, 65],
+  // 赤＋黄
+  BOP: [C.red, C.yellow, 135],
+  MAU: [C.red, C.yellow, 45],
+  // 単色
+  DFO: [C.navy, null, 0],
+  DDC: [C.gray, null, 0],
+  SVR: [C.dred, null, 0],
+  DKG: [C.red, null, 0],
 };
 export function sireColor(code: string): string {
   const c = normCode(code);
-  if (SILK_COLOR[c]) return SILK_COLOR[c];
+  if (SILK[c]) return SILK[c][0];
   let h = 0;
   for (const ch of code || "?") h = (h * 31 + ch.charCodeAt(0)) >>> 0;
   return SIRE_PALETTE[h % SIRE_PALETTE.length];
@@ -102,23 +138,21 @@ export function sireTextColor(bg: string): string {
   const b = parseInt(bg.slice(5, 7), 16);
   return 0.299 * r + 0.587 * g + 0.114 * b > 150 ? "#1a1a1a" : "#fff";
 }
-
-// 同じ馬主で服色が被る種牡馬は2色＋配置違いで個性を出す（水色＋赤）
-const SILK_2TONE: Record<string, string> = {
-  CON: "linear-gradient(135deg,#78c8f0 50%,#c80028 50%)", // ノースヒルズ 斜め＼
-  KZN: "linear-gradient(45deg,#78c8f0 50%,#c80028 50%)", // ノースヒルズ 斜め／
-  EQX: "linear-gradient(#78c8f0 0 34%,#c80028 34% 66%,#78c8f0 66%)", // シルク 横帯
-  SAO: "linear-gradient(90deg,#78c8f0 0 34%,#c80028 34% 66%,#78c8f0 66%)", // シルク 縦帯
-};
-// 種牡馬バッジの背景・文字色（2色服は grad＋文字影）
+// 種牡馬バッジの背景・文字色（2色服は角度違いの2分割グラデ＋文字影）
 export function sireBadge(code: string): {
   background: string;
   color: string;
   twoTone: boolean;
 } {
   const c = normCode(code);
-  if (SILK_2TONE[c])
-    return { background: SILK_2TONE[c], color: "#fff", twoTone: true };
+  const s = SILK[c];
+  if (s && s[1]) {
+    return {
+      background: `linear-gradient(${s[2]}deg, ${s[0]} 0 50%, ${s[1]} 50% 100%)`,
+      color: "#fff",
+      twoTone: true,
+    };
+  }
   const bg = sireColor(code);
   return { background: bg, color: sireTextColor(bg), twoTone: false };
 }

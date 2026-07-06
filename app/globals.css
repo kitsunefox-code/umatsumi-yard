@@ -1819,7 +1819,8 @@ button {
 }
 .fyard-frames {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(62px, 1fr));
+  /* 4〜15の12枠を折り返さず1列に（幅に合わせて縮小、横スクロールなし） */
+  grid-template-columns: repeat(12, minmax(0, 1fr));
   flex: 1;
   min-width: 0;
   border: 2px solid #4a5560;
@@ -1964,7 +1965,7 @@ button {
   border-radius: 8px;
 }
 
-/* 縦画面（スマホ）：馬積場を横スクロールせず幅に合わせて折り返す */
+/* 縦画面（スマホ）：1列に入らない時だけ 6＋6 の2列にする */
 @media (max-width: 760px) {
   .fyard-diagram {
     flex-direction: column;
@@ -1982,7 +1983,7 @@ button {
     min-width: 0;
   }
   .fyard-frames {
-    grid-template-columns: repeat(auto-fill, minmax(70px, 1fr));
+    grid-template-columns: repeat(6, minmax(0, 1fr));
     min-width: 0;
   }
 }
