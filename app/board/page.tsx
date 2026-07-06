@@ -333,6 +333,12 @@ export default function BoardPage() {
     return s;
   }, [occByFrame, mares]);
 
+  // 未着の予定だけ（到着したら予定から消す）
+  const pendingRoster = useMemo(
+    () => roster.filter((r) => !presentCodes.has(normCode(r.sireCode))),
+    [roster, presentCodes]
+  );
+
   const open = mares.find((m) => m.id === openId) ?? null;
 
   if (!ready) return null;
@@ -363,7 +369,7 @@ export default function BoardPage() {
           <span className="roster-title">
             📋 本日の予定（8:00の組）
             <span className="roster-count">
-              来場 {roster.filter((r) => presentCodes.has(normCode(r.sireCode))).length}／{roster.length}
+              到着待ち {pendingRoster.length}／{roster.length}
             </span>
           </span>
           <div className="roster-actions">
@@ -379,39 +385,34 @@ export default function BoardPage() {
           </div>
         </div>
         <p className="roster-hint">
-          馬積みアプリでスタッフが枠に馬を置くと、下の「馬積場」に自動で出ます。父コードで牝馬名を照合します。
+          馬積みアプリでスタッフが枠に馬を置くと、下の「馬積場」に出て、この予定からは消えます（到着待ちだけ表示）。
         </p>
-        {roster.length === 0 ? (
-          <div className="roster-empty">予定がありません</div>
+        {pendingRoster.length === 0 ? (
+          <div className="roster-empty">
+            {roster.length === 0 ? "予定がありません" : "全頭 到着しました 🎉"}
+          </div>
         ) : (
           <div className="roster-chips">
-            {roster.map((r) => {
-              const here = presentCodes.has(normCode(r.sireCode));
-              return (
-                <div
-                  key={r.id}
-                  className={`roster-chip${here ? " arrived" : ""}`}
+            {pendingRoster.map((r) => (
+              <div key={r.id} className="roster-chip">
+                {r.isNew && <span className="badge-new">NEW</span>}
+                <span
+                  className="chip-sire"
+                  style={{ background: sireColor(r.sireCode) }}
                 >
-                  {r.isNew && <span className="badge-new">NEW</span>}
-                  <span
-                    className="chip-sire"
-                    style={{ background: sireColor(r.sireCode) }}
-                  >
-                    {r.sireCode || "?"}
+                  {r.sireCode || "?"}
+                </span>
+                <span className="chip-body">
+                  <span className="chip-name">{r.mareName}</span>
+                  <span className="chip-sub">
+                    {r.farm && <span>{r.farm}</span>}
+                    {r.apptTime && <span className="mare-time">🕐{r.apptTime}</span>}
+                    {r.kind && <span className="mare-kind">{r.kind}</span>}
                   </span>
-                  <span className="chip-body">
-                    <span className="chip-name">{r.mareName}</span>
-                    <span className="chip-sub">
-                      {r.farm && <span>{r.farm}</span>}
-                      {r.apptTime && <span className="mare-time">🕐{r.apptTime}</span>}
-                      {r.kind && <span className="mare-kind">{r.kind}</span>}
-                    </span>
-                    {r.note && <span className="mare-note">{r.note}</span>}
-                  </span>
-                  <span className="roster-status">{here ? "✅来場" : "未着"}</span>
-                </div>
-              );
-            })}
+                  {r.note && <span className="mare-note">{r.note}</span>}
+                </span>
+              </div>
+            ))}
           </div>
         )}
       </section>
