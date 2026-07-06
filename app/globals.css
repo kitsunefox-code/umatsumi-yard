@@ -2619,3 +2619,265 @@ button {
   border-color: var(--color-warning);
   color: #fff;
 }
+
+/* ===== 種付順番ページ ===== */
+.sched-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 40px;
+  padding: 3px 6px;
+  border-radius: 7px;
+  font-weight: 800;
+  font-size: 13px;
+  letter-spacing: 0.5px;
+  flex: 0 0 auto;
+}
+.sched-badge.twotone {
+  text-shadow: 0 0 2px rgba(0, 0, 0, 0.9), 0 1px 1px rgba(0, 0, 0, 0.7);
+}
+.sched-config {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 14px;
+  padding: 8px 14px 12px;
+}
+.sched-config label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #3f4b53;
+}
+.sched-config input[type="time"],
+.sched-config input[type="number"] {
+  padding: 5px 8px;
+  border: 1.5px solid var(--line-strong, #c7d0d6);
+  border-radius: 7px;
+  font-size: 14px;
+  font-weight: 700;
+}
+.sched-config input[type="number"] {
+  width: 58px;
+}
+.sched-stat {
+  font-size: 13px;
+  font-weight: 800;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: #eef2f4;
+  color: #3f4b53;
+}
+.sched-stat.ok {
+  background: #e6f6ec;
+  color: #1c7a42;
+}
+.sched-stat.bad {
+  background: #fde8e8;
+  color: #c0392b;
+}
+
+/* 厩舎マップ */
+.barn-map {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 4px 2px 8px;
+}
+.barn-box {
+  border: 1.5px solid var(--line-strong, #c7d0d6);
+  border-radius: 10px;
+  padding: 8px 10px 10px;
+  background: #fff;
+  min-width: 220px;
+}
+.barn-name {
+  font-weight: 800;
+  font-size: 13px;
+  color: #4a5560;
+  margin-bottom: 6px;
+}
+.barn-row {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 6px;
+  flex-wrap: wrap;
+}
+.stall {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid #e2e8ec;
+  border-radius: 8px;
+  padding: 4px 7px;
+  background: #f8fafb;
+  opacity: 0.55;
+}
+.stall.on {
+  opacity: 1;
+  border-color: #b9c6cf;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+.stall-txt {
+  line-height: 1.15;
+}
+.stall-name {
+  font-size: 12px;
+  font-weight: 700;
+  color: #2c353b;
+}
+.stall-groom {
+  font-size: 11px;
+  color: #6b7780;
+}
+.barn-hint {
+  font-size: 12px;
+  color: #6b7780;
+  padding: 4px 6px;
+  width: 100%;
+}
+
+/* タイムライン */
+.sched-timeline {
+  padding: 4px 2px 40px;
+}
+.sched-legend {
+  display: grid;
+  grid-template-columns: 84px 1fr 1fr;
+  gap: 10px;
+  padding: 2px 6px 6px;
+  font-size: 12px;
+  font-weight: 800;
+  color: #6b7780;
+}
+.sched-round {
+  display: grid;
+  grid-template-columns: 84px 1fr 1fr;
+  gap: 10px;
+  align-items: stretch;
+  padding: 7px 6px;
+  border-top: 1px solid #eef2f4;
+  position: relative;
+}
+.sched-round.bad {
+  background: #fdecec;
+  border-radius: 8px;
+}
+.sched-time {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 16px;
+  color: #2c353b;
+}
+.sched-no {
+  font-size: 11px;
+  font-weight: 800;
+  color: #fff;
+  background: #7a8891;
+  border-radius: 999px;
+  padding: 1px 7px;
+  margin-bottom: 3px;
+}
+.sched-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  border: 1.5px solid var(--line-strong, #c7d0d6);
+  border-radius: 10px;
+  background: #fff;
+  padding: 7px 9px;
+  min-height: 52px;
+}
+.sched-card.empty {
+  border-style: dashed;
+  color: #aeb8bf;
+  font-size: 13px;
+  font-weight: 700;
+  justify-content: center;
+  background: #fbfcfd;
+}
+.sched-card-main {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-width: 0;
+}
+.sched-card-txt {
+  min-width: 0;
+}
+.sched-mare {
+  font-weight: 800;
+  font-size: 15px;
+  color: #22303a;
+}
+.sched-sire {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: #55636c;
+  font-weight: 600;
+}
+.sched-groom {
+  color: #2c6e49;
+  font-weight: 800;
+}
+.sched-barn {
+  color: #7a8891;
+}
+.sched-note {
+  font-size: 11px;
+  color: #c0392b;
+  font-weight: 700;
+  margin-top: 2px;
+}
+.sched-ops {
+  display: flex;
+  gap: 3px;
+  flex: 0 0 auto;
+}
+.sched-ops button {
+  width: 26px;
+  height: 26px;
+  border: 1px solid var(--line-strong, #c7d0d6);
+  border-radius: 6px;
+  background: #f4f7f8;
+  font-size: 12px;
+  font-weight: 800;
+  color: #4a5560;
+  cursor: pointer;
+}
+.sched-ops button:hover {
+  background: #e6ecef;
+}
+.sched-warn {
+  position: absolute;
+  right: 12px;
+  bottom: 3px;
+  font-size: 11px;
+  font-weight: 800;
+  color: #c0392b;
+}
+
+@media (max-width: 720px) {
+  .sched-legend,
+  .sched-round {
+    grid-template-columns: 60px 1fr 1fr;
+    gap: 6px;
+  }
+  .sched-mare {
+    font-size: 13px;
+  }
+  .sched-ops button {
+    width: 24px;
+    height: 24px;
+  }
+}

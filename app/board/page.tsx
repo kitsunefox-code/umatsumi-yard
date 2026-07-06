@@ -461,6 +461,9 @@ export default function BoardPage() {
           📍 種付 所在ボード
           <span className="sub">今どの馬がどこにいるか</span>
         </h1>
+        <Link href="/schedule" className="btn btn-ghost">
+          🗓️ 種付順番へ
+        </Link>
         <Link href="/" className="btn btn-ghost">
           🚚 馬積みへ
         </Link>
