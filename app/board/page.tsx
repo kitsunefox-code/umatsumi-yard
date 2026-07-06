@@ -639,7 +639,7 @@ function NoteBadge({ note, frame }: { note?: string; frame?: boolean }) {
   const k = noteKind(note);
   return (
     <span className={`${frame ? "frame-note" : "mare-note"} note-${k}`}>
-      {k === "sedate" && <WarnIcon />}
+      {k === "sedate" && frame && <WarnIcon />}
       {note}
     </span>
   );
