@@ -10,6 +10,7 @@ import {
   ZONES,
   MARE_TAGS,
   sireColor,
+  sireSilk,
   newMare,
   normCode,
   zoneMoves,
@@ -522,12 +523,7 @@ export default function BoardPage() {
             {pendingRoster.map((r) => (
               <div key={r.id} className={`roster-chip ${cardClass(r.note)}`}>
                 {r.isNew && <span className="badge-new">NEW</span>}
-                <span
-                  className="chip-sire"
-                  style={{ background: sireColor(r.sireCode) }}
-                >
-                  {r.sireCode || "?"}
-                </span>
+                <SireMark code={r.sireCode} />
                 <span className="chip-body">
                   <span className="chip-name">{r.mareName}</span>
                   <span className="chip-sub">
@@ -786,6 +782,25 @@ function StayWarn({ ts, now }: { ts?: number; now: number }) {
   return <span className="stay-warn">⚠ 滞在{m}分</span>;
 }
 
+// 種牡馬マーク（勝負服アイコン。無ければ色バッジ）
+function SireMark({ code, frame }: { code: string; frame?: boolean }) {
+  const silk = sireSilk(code);
+  const cls = frame ? "frame-sire" : "chip-sire";
+  if (silk)
+    return (
+      <span className={`${cls} silk`}>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={silk} alt="" loading="lazy" />
+        <span className="silk-code">{code || "?"}</span>
+      </span>
+    );
+  return (
+    <span className={cls} style={{ background: sireColor(code) }}>
+      {code || "?"}
+    </span>
+  );
+}
+
 function NoteBadge({ note, frame }: { note?: string; frame?: boolean }) {
   if (!note) return null;
   const k = noteKind(note);
@@ -825,12 +840,7 @@ function MareList({
           >
             {m.isNew && <span className="badge-new">NEW</span>}
             <button className="chip-open" onClick={() => onOpen(m.id)}>
-              <span
-                className="chip-sire"
-                style={{ background: sireColor(m.sireCode) }}
-              >
-                {m.sireCode || "?"}
-              </span>
+              <SireMark code={m.sireCode} />
               <span className="chip-body">
                 <span className="chip-name">{m.mareName || "（名前未入力）"}</span>
                 <span className="chip-sub">
@@ -916,12 +926,7 @@ function FrameCell({
             className="frame-mare"
             onClick={() => (o.onOpen ? o.onOpen() : o.onAdvanceTo("洗い場"))}
           >
-            <span
-              className="frame-sire"
-              style={{ background: sireColor(o.sireCode) }}
-            >
-              {o.sireCode || "?"}
-            </span>
+            <SireMark code={o.sireCode} frame />
             <span className="frame-name">{o.mareName}</span>
             <NoteBadge note={o.note} frame />
             <StayWarn ts={o.arrivedTs} now={now} />

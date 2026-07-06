@@ -82,6 +82,18 @@ export function sireColor(code: string): string {
   return SIRE_PALETTE[h % SIRE_PALETTE.length];
 }
 
+// 勝負服アイコンがある種牡馬コード（public/silks/{CODE}.png）
+const SILK_CODES = new Set([
+  "AMS", "EQX", "ISB", "EPN", "EFO", "ORF", "KZN", "KBL", "CRS", "GDG",
+  "CON", "STN", "SCW", "SAO", "SIS", "SHY", "SMR", "SVR", "DKG", "DDC",
+  "DFO", "NDL", "BOP", "POE", "HRC", "MYB", "MAU", "LVL", "RSP", "REY",
+]);
+// 種牡馬の勝負服画像パス（無ければ null）。/board/ からの相対で解決。
+export function sireSilk(code: string): string | null {
+  const c = normCode(code);
+  return SILK_CODES.has(c) ? `../silks/s_${c}.png` : null;
+}
+
 export function newMare(patch: Partial<Mare> = {}): Mare {
   return {
     id: genId("mare"),
