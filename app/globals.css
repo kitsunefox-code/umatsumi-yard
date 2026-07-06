@@ -1816,9 +1816,9 @@ button {
 }
 .fyard-frames {
   display: grid;
-  grid-template-columns: repeat(12, minmax(40px, 1fr));
+  grid-template-columns: repeat(12, minmax(62px, 1fr));
   flex: 1;
-  min-width: 520px;
+  min-width: 760px;
   border: 2px solid #4a5560;
   border-left: none;
   border-radius: 0 8px 8px 0;
@@ -1914,6 +1914,110 @@ button {
 .fyard-frames {
   border-left: 2px solid #4a5560;
   border-radius: 8px;
+}
+
+/* 枠に入った牝馬 */
+.fyard-frame.occ {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 3px;
+  padding: 3px 3px 4px;
+  background: #fff;
+}
+.fyard-frame .frame-no {
+  font-size: 10px;
+  font-weight: 800;
+  color: #99a2a8;
+  line-height: 1;
+}
+.frame-mare {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  padding: 0;
+  flex: 1;
+  min-width: 0;
+}
+.frame-sire {
+  min-width: 30px;
+  padding: 2px 5px;
+  border-radius: 6px;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 800;
+}
+.frame-name {
+  font-size: 10px;
+  font-weight: 800;
+  color: #3f4b53;
+  line-height: 1.15;
+  text-align: center;
+  word-break: break-all;
+}
+.frame-adv {
+  border: 1px solid var(--color-double);
+  color: var(--color-double);
+  background: #fff;
+  border-radius: 6px;
+  font-size: 10px;
+  font-weight: 800;
+  padding: 2px 0;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.frame-adv:active {
+  background: var(--color-double);
+  color: #fff;
+}
+
+/* 牝馬チップ：本体＋ワンタップ「進める」 */
+.chip-open {
+  display: flex;
+  gap: 7px;
+  align-items: flex-start;
+  flex: 1;
+  min-width: 0;
+  text-align: left;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  padding: 0;
+}
+.chip-adv {
+  flex-shrink: 0;
+  align-self: stretch;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+  min-width: 52px;
+  padding: 2px 6px;
+  border: 1.5px solid var(--color-double);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--color-double);
+  cursor: pointer;
+}
+.chip-adv:active {
+  background: var(--color-double);
+  color: #fff;
+}
+.chip-adv-arrow {
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1;
+}
+.chip-adv-label {
+  font-size: 9px;
+  font-weight: 800;
+  line-height: 1;
 }
 
 /* ===== 本日の予定（順番表） ===== */

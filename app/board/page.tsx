@@ -13,6 +13,8 @@ import {
   newMare,
   normCode,
   mareFromRoster,
+  nextZone,
+  firstFreeFrame,
   sampleMares,
   roster8Sample,
 } from "@/lib/board";
@@ -144,7 +146,27 @@ export default function BoardPage() {
     setMares((prev) => prev.map((m) => (m.id === id ? { ...m, ...patch } : m)));
   }
   function moveMare(id: string, zone: Zone) {
-    updateMare(id, { zone });
+    setMares((prev) =>
+      prev.map((m) => {
+        if (m.id !== id) return m;
+        let frameNo = m.frameNo;
+        if (zone !== "馬積場") frameNo = undefined;
+        else if (!frameNo)
+          frameNo = firstFreeFrame(prev.filter((x) => x.id !== m.id));
+        return { ...m, zone, frameNo };
+      })
+    );
+  }
+  // ワンタップで次の場所へ進める
+  function advanceMare(id: string) {
+    setMares((prev) =>
+      prev.map((m) => {
+        if (m.id !== id) return m;
+        const nz = nextZone(m.zone);
+        if (!nz) return m;
+        return { ...m, zone: nz, frameNo: nz === "馬積場" ? m.frameNo : undefined };
+      })
+    );
   }
   function toggleTag(id: string, tag: MareTag) {
     setMares((prev) =>
@@ -175,9 +197,12 @@ export default function BoardPage() {
     setAdding(false);
   }
 
-  // 予定の1件を「到着」させてボードの馬積場に出す
+  // 予定の1件を「到着」させてボードの馬積場（空き枠）に出す
   function arriveEntry(e: RosterEntry) {
-    setMares((prev) => [...prev, mareFromRoster(e, "馬積場")]);
+    setMares((prev) => [
+      ...prev,
+      { ...mareFromRoster(e, "馬積場"), frameNo: firstFreeFrame(prev) },
+    ]);
     setRoster((prev) =>
       prev.map((r) => (r.id === e.id ? { ...r, arrived: true } : r))
     );
@@ -221,6 +246,20 @@ export default function BoardPage() {
   }, [mares]);
 
   const waiting = useMemo(() => roster.filter((r) => !r.arrived), [roster]);
+
+  // 馬積場の枠番号→牝馬
+  const frameMap = useMemo(() => {
+    const map = new Map<number, Mare>();
+    mares.forEach((m) => {
+      if (m.zone === "馬積場" && m.frameNo) map.set(m.frameNo, m);
+    });
+    return map;
+  }, [mares]);
+  // 枠に入っていない馬積場の馬（あふれ）
+  const yardNoFrame = useMemo(
+    () => (byZone.get("馬積場") ?? []).filter((m) => !m.frameNo),
+    [byZone]
+  );
 
   const open = mares.find((m) => m.id === openId) ?? null;
 
@@ -334,41 +373,56 @@ export default function BoardPage() {
           <div className="fyard-diagram">
             <div className="fyard-left">
               {[3, 2, 1].map((n) => (
-                <div key={n} className="fyard-frame small">
-                  {n}
-                </div>
+                <FrameCell
+                  key={n}
+                  n={n}
+                  mare={frameMap.get(n)}
+                  onOpen={setOpenId}
+                  onAdvance={advanceMare}
+                  small
+                />
               ))}
             </div>
             <div className="fyard-frames">
               {[4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15].map((n) => (
-                <div key={n} className="fyard-frame">
-                  {n}
-                </div>
+                <FrameCell
+                  key={n}
+                  n={n}
+                  mare={frameMap.get(n)}
+                  onOpen={setOpenId}
+                  onAdvance={advanceMare}
+                />
               ))}
             </div>
           </div>
-          <MareList list={byZone.get("馬積場") ?? []} onOpen={setOpenId} />
+          {yardNoFrame.length > 0 && (
+            <MareList
+              list={yardNoFrame}
+              onOpen={setOpenId}
+              onAdvance={advanceMare}
+            />
+          )}
         </section>
 
         {/* 中段3ボックス */}
         <div className="fmap-row">
-          <PlaceBox zone="P検待ち・直検待ち" byZone={byZone} onOpen={setOpenId} />
-          <PlaceBox zone="予備（馬積）" byZone={byZone} onOpen={setOpenId} />
-          <PlaceBox zone="洗い場" byZone={byZone} onOpen={setOpenId} />
+          <PlaceBox zone="P検待ち・直検待ち" byZone={byZone} onOpen={setOpenId} onAdvance={advanceMare} />
+          <PlaceBox zone="予備（馬積）" byZone={byZone} onOpen={setOpenId} onAdvance={advanceMare} />
+          <PlaceBox zone="洗い場" byZone={byZone} onOpen={setOpenId} onAdvance={advanceMare} />
         </div>
 
         {/* 待機（横長） */}
-        <PlaceBox zone="待機" byZone={byZone} onOpen={setOpenId} wide />
+        <PlaceBox zone="待機" byZone={byZone} onOpen={setOpenId} onAdvance={advanceMare} wide />
 
         {/* 下段3ボックス */}
         <div className="fmap-row">
-          <PlaceBox zone="第二種付所" byZone={byZone} onOpen={setOpenId} />
-          <PlaceBox zone="第一種付所" byZone={byZone} onOpen={setOpenId} />
-          <PlaceBox zone="鎮静待ち" byZone={byZone} onOpen={setOpenId} />
+          <PlaceBox zone="第二種付所" byZone={byZone} onOpen={setOpenId} onAdvance={advanceMare} />
+          <PlaceBox zone="第一種付所" byZone={byZone} onOpen={setOpenId} onAdvance={advanceMare} />
+          <PlaceBox zone="鎮静待ち" byZone={byZone} onOpen={setOpenId} onAdvance={advanceMare} />
         </div>
 
         {/* 帰宅（横長・出口） */}
-        <PlaceBox zone="帰宅" byZone={byZone} onOpen={setOpenId} wide />
+        <PlaceBox zone="帰宅" byZone={byZone} onOpen={setOpenId} onAdvance={advanceMare} wide />
       </div>
 
       {/* ===== カード操作シート ===== */}
@@ -519,45 +573,98 @@ export default function BoardPage() {
 function MareList({
   list,
   onOpen,
+  onAdvance,
 }: {
   list: Mare[];
   onOpen: (id: string) => void;
+  onAdvance?: (id: string) => void;
 }) {
   if (!list.length) return null;
   return (
     <div className="fplace-body">
-      {list.map((m) => (
-        <button
-          key={m.id}
-          className="mare-chip"
-          onClick={() => onOpen(m.id)}
-        >
-          {m.isNew && <span className="badge-new">NEW</span>}
-          <span
-            className="chip-sire"
-            style={{ background: sireColor(m.sireCode) }}
-          >
-            {m.sireCode || "?"}
-          </span>
-          <span className="chip-body">
-            <span className="chip-name">{m.mareName || "（名前未入力）"}</span>
-            <span className="chip-sub">
-              {m.farm && <span>{m.farm}</span>}
-              {m.apptTime && <span className="mare-time">🕐{m.apptTime}</span>}
-              {m.kind && <span className="mare-kind">{m.kind}</span>}
-            </span>
-            {m.tags.length > 0 && (
-              <span className="chip-tags">
-                {m.tags.map((t) => (
-                  <span key={t} className="mare-tag">
-                    {t}
-                  </span>
-                ))}
+      {list.map((m) => {
+        const nz = nextZone(m.zone);
+        return (
+          <div key={m.id} className="mare-chip">
+            {m.isNew && <span className="badge-new">NEW</span>}
+            <button className="chip-open" onClick={() => onOpen(m.id)}>
+              <span
+                className="chip-sire"
+                style={{ background: sireColor(m.sireCode) }}
+              >
+                {m.sireCode || "?"}
               </span>
+              <span className="chip-body">
+                <span className="chip-name">{m.mareName || "（名前未入力）"}</span>
+                <span className="chip-sub">
+                  {m.farm && <span>{m.farm}</span>}
+                  {m.apptTime && <span className="mare-time">🕐{m.apptTime}</span>}
+                  {m.kind && <span className="mare-kind">{m.kind}</span>}
+                </span>
+                {m.tags.length > 0 && (
+                  <span className="chip-tags">
+                    {m.tags.map((t) => (
+                      <span key={t} className="mare-tag">
+                        {t}
+                      </span>
+                    ))}
+                  </span>
+                )}
+              </span>
+            </button>
+            {onAdvance && nz && (
+              <button
+                className="chip-adv"
+                onClick={() => onAdvance(m.id)}
+                title={`${nz}へ進める`}
+              >
+                <span className="chip-adv-arrow">▶</span>
+                <span className="chip-adv-label">{nz}</span>
+              </button>
             )}
-          </span>
-        </button>
-      ))}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function FrameCell({
+  n,
+  mare,
+  onOpen,
+  onAdvance,
+  small,
+}: {
+  n: number;
+  mare?: Mare;
+  onOpen: (id: string) => void;
+  onAdvance: (id: string) => void;
+  small?: boolean;
+}) {
+  if (!mare) {
+    return <div className={`fyard-frame${small ? " small" : ""}`}>{n}</div>;
+  }
+  return (
+    <div className={`fyard-frame occ${small ? " small" : ""}`}>
+      <span className="frame-no">{n}</span>
+      {mare.isNew && <span className="badge-new">NEW</span>}
+      <button className="frame-mare" onClick={() => onOpen(mare.id)}>
+        <span
+          className="frame-sire"
+          style={{ background: sireColor(mare.sireCode) }}
+        >
+          {mare.sireCode || "?"}
+        </span>
+        <span className="frame-name">{mare.mareName}</span>
+      </button>
+      <button
+        className="frame-adv"
+        onClick={() => onAdvance(mare.id)}
+        title="洗い場へ進める"
+      >
+        ▶ 進む
+      </button>
     </div>
   );
 }
@@ -667,11 +774,13 @@ function PlaceBox({
   zone,
   byZone,
   onOpen,
+  onAdvance,
   wide,
 }: {
   zone: Zone;
   byZone: Map<Zone, Mare[]>;
   onOpen: (id: string) => void;
+  onAdvance: (id: string) => void;
   wide?: boolean;
 }) {
   const list = byZone.get(zone) ?? [];
@@ -687,7 +796,7 @@ function PlaceBox({
         <span className="fplace-name">{zone}</span>
         {list.length > 0 && <span className="fplace-count">{list.length}</span>}
       </div>
-      <MareList list={list} onOpen={onOpen} />
+      <MareList list={list} onOpen={onOpen} onAdvance={onAdvance} />
     </section>
   );
 }

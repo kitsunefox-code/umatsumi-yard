@@ -32,6 +32,7 @@ export type Mare = {
   arrivedAt?: string; // 馬積場到着
   rosterId?: string; // 元の予定（順番表）のID
   isNew?: boolean; // 進行中に追加された予定（NEW表示）
+  frameNo?: number; // 馬積場の枠番号（1〜15）
 };
 
 // 順番表（本日の予定）の1件
@@ -89,6 +90,30 @@ export function normCode(s: string): string {
     .toUpperCase();
 }
 
+// 場所の進行順（ワンタップで次へ）。帰宅で終わり。
+const NEXT_ZONE: Partial<Record<Zone, Zone>> = {
+  "馬積場": "洗い場",
+  "予備（馬積）": "洗い場",
+  "洗い場": "待機",
+  "待機": "第一種付所",
+  "第一種付所": "帰宅",
+  "第二種付所": "帰宅",
+  "P検待ち・直検待ち": "帰宅",
+  "鎮静待ち": "帰宅",
+};
+export function nextZone(z: Zone): Zone | null {
+  return NEXT_ZONE[z] ?? null;
+}
+
+// 馬積場の空いている最小の枠番号（1〜15）
+export function firstFreeFrame(mares: Mare[]): number | undefined {
+  const used = new Set(
+    mares.filter((m) => m.zone === "馬積場" && m.frameNo).map((m) => m.frameNo)
+  );
+  for (let n = 1; n <= 15; n++) if (!used.has(n)) return n;
+  return undefined;
+}
+
 // 予定→牝馬カード
 export function mareFromRoster(e: RosterEntry, zone: Zone = "馬積場"): Mare {
   return newMare({
@@ -127,9 +152,9 @@ export const roster8Sample: RosterEntry[] = [
   { id: "r-sis", mareName: "スカイラー", sireCode: "ＳＩＳ", farm: "高橋Ｆ", kind: "新", apptTime: "", arrived: false },
 ];
 
-// 見本データ：到着済み4頭をボードに配置
+// 見本データ：到着済み4頭をボードに配置（馬積場は枠1）
 export const sampleMares: Mare[] = [
-  mareFromRoster(roster8Sample[0], "馬積場"),
+  { ...mareFromRoster(roster8Sample[0], "馬積場"), frameNo: 1 },
   mareFromRoster(roster8Sample[1], "洗い場"),
   mareFromRoster(roster8Sample[2], "待機"),
   mareFromRoster(roster8Sample[3], "第一種付所"),
