@@ -201,7 +201,7 @@ export default function BoardPage() {
               h.horseName ||
               h.horseCode,
             sireCode: h.horseCode,
-            zone: "洗い場",
+            zone: h.unloadTo === "待機馬房" ? "待機馬房" : "洗い場",
             parkingRef: ref,
             note: resolveNote(roster, h.horseCode),
             enteredTs: v.arrivedTs ?? Date.now(),

@@ -14,6 +14,7 @@ export type Horse = {
   from?: string; // どこから来たか
   memo?: string;
   unloadStatus: UnloadStatus;
+  unloadTo?: string; // 降ろし先（所在ボード用：洗い場 / 待機馬房。未指定は洗い場）
 };
 
 export type Vehicle = {

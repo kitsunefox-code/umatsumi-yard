@@ -184,6 +184,24 @@ export default function Page() {
     );
   }
 
+  // 降ろす（行き先つき）：所在ボードで洗い場 or 待機馬房 へ
+  function unloadHorseTo(vehicleId: string, horseId: string, to: string) {
+    setVehicles((prev) =>
+      prev.map((v) =>
+        v.id !== vehicleId
+          ? v
+          : {
+              ...v,
+              horses: v.horses.map((h) =>
+                h.id === horseId
+                  ? { ...h, unloadStatus: "unloaded" as UnloadStatus, unloadTo: to }
+                  : h
+              ),
+            }
+      )
+    );
+  }
+
   // 同時降ろし：設定頭数ぶん（未降ろしの先頭から）まとめて降ろす
   function unloadBatchNow(vehicleId: string) {
     setVehicles((prev) =>
@@ -421,7 +439,8 @@ export default function Page() {
         vehicle={v}
         staging={staging0}
         onOpen={() => activateVehicle(v.id)}
-        onQuickUnload={(horseId) => setHorseStatus(v.id, horseId, "unloaded")}
+        onQuickUnload={(horseId) => unloadHorseTo(v.id, horseId, "洗い場")}
+        onUnloadStall={(horseId) => unloadHorseTo(v.id, horseId, "待機馬房")}
         onCycleBatch={() => cycleUnloadBatch(v.id)}
         onEditFoal={(horseId) => setEditingFoal({ vehicleId: v.id, horseId })}
         onDropHorse={() => placeOnVehicle(v.id)}

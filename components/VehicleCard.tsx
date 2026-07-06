@@ -26,6 +26,7 @@ export default function VehicleCard({
   staging,
   onOpen,
   onQuickUnload,
+  onUnloadStall,
   onCycleBatch,
   onEditFoal,
   onDropHorse,
@@ -36,6 +37,7 @@ export default function VehicleCard({
   staging: boolean;
   onOpen: () => void;
   onQuickUnload: (horseId: string) => void;
+  onUnloadStall: (horseId: string) => void;
   onCycleBatch: () => void;
   onEditFoal: (horseId: string) => void;
   onDropHorse: () => void;
@@ -197,17 +199,30 @@ export default function VehicleCard({
                 誕生日
               </button>
               {h.unloadStatus !== "unloaded" ? (
-                <button
-                  className="btn btn-sm btn-primary"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onQuickUnload(h.id);
-                  }}
-                >
-                  降ろす
-                </button>
+                <>
+                  <button
+                    className="btn btn-sm btn-primary"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onQuickUnload(h.id);
+                    }}
+                  >
+                    降ろす
+                  </button>
+                  <button
+                    className="btn btn-sm btn-stall"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onUnloadStall(h.id);
+                    }}
+                  >
+                    待機馬房
+                  </button>
+                </>
               ) : (
-                <span className="horse-status st-unloaded">完了</span>
+                <span className="horse-status st-unloaded">
+                  完了{h.unloadTo === "待機馬房" ? "・待機馬房" : ""}
+                </span>
               )}
             </div>
           </div>

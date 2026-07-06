@@ -112,6 +112,7 @@ button {
 }
 .btn:active { transform: translateY(1px); }
 .btn-primary { background: #1e6fd9; color: #fff; }
+.btn-stall { background: #0f7a68; color: #fff; }
 .btn-danger { background: var(--color-warning); color: #fff; }
 .btn-ghost { background: transparent; border: 1px solid var(--line-strong); }
 .btn-block { width: 100%; }
