@@ -790,7 +790,7 @@ function SireMark({ code, frame }: { code: string; frame?: boolean }) {
     return (
       <span className={`${cls} silk`}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={silk} alt="" loading="lazy" />
+        <img src={silk} alt="" width={36} height={45} />
         <span className="silk-code">{code || "?"}</span>
       </span>
     );
