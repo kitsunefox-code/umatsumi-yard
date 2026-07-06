@@ -4,7 +4,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { Vehicle, Horse, UnloadStatus, effBatch, wakuClass } from "@/lib/types";
 import { loadData, saveData, genId } from "@/lib/storage";
-import { cloudEnabled, subscribeYard, saveYard } from "@/lib/cloud";
+import { cloudEnabled, subscribeYard, saveYard, subscribeBoard } from "@/lib/cloud";
+import { normCode, RosterEntry, GroupKey } from "@/lib/board";
 import { initialVehicles, initialHorseCodes } from "@/lib/initialData";
 import VehicleCard from "@/components/VehicleCard";
 import VehicleModal from "@/components/VehicleModal";
@@ -28,6 +29,9 @@ export default function Page() {
   const [cloudConnected, setCloudConnected] = useState(false);
   const vehiclesRef = useRef<Vehicle[]>([]);
   const skipCloudWrite = useRef(false);
+  // 所在ボードの本日の予定（馬コード一覧を今の組に絞る用）
+  const [boardRoster, setBoardRoster] = useState<RosterEntry[]>([]);
+  const [boardGroup, setBoardGroup] = useState<GroupKey | null>(null);
 
   // 配置する馬（複数選択・最大3頭）
   const [staging, setStaging] = useState<StagedHorse[]>([]);
@@ -102,6 +106,39 @@ export default function Page() {
       setCloudConnected(false);
     };
   }, [accessKey]);
+
+  // 所在ボードの予定を購読（馬コード一覧を今の時間帯の顔ぶれに絞る）
+  useEffect(() => {
+    if (!cloudEnabled || !accessKey) return;
+    let unsub: (() => void) | undefined;
+    let cancelled = false;
+    subscribeBoard(accessKey, (remote) => {
+      setBoardRoster(remote?.roster ?? []);
+      setBoardGroup(remote?.group ?? null);
+    })
+      .then((u) => {
+        if (cancelled) u();
+        else unsub = u;
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+      if (unsub) unsub();
+    };
+  }, [accessKey]);
+
+  // 今の組にいる父コード集合（あれば馬コード一覧を絞る）
+  const activeCodes = useMemo(
+    () => new Set(boardRoster.map((r) => normCode(r.sireCode))),
+    [boardRoster]
+  );
+  const shownCodes = useMemo(
+    () =>
+      activeCodes.size > 0
+        ? initialHorseCodes.filter((c) => activeCodes.has(normCode(c)))
+        : initialHorseCodes,
+    [activeCodes]
+  );
 
   function submitAccessKey() {
     const k = keyInput.trim();
@@ -587,6 +624,9 @@ export default function Page() {
       <div className="code-list">
         <div className="yard-section-title">
           馬コード一覧
+          {boardGroup && activeCodes.size > 0 && (
+            <span className="code-group">（{boardGroup}の組）</span>
+          )}
           <span className="code-hint">👆 タップ／ドラッグで枠に配置</span>
           <button
             className={`nyuba-btn ${
@@ -599,7 +639,7 @@ export default function Page() {
         </div>
 
         <div className="code-grid">
-          {initialHorseCodes.map((code, i) => {
+          {shownCodes.map((code, i) => {
             const isStaged = staging.some((h) => h.code === code);
             return (
               <button
