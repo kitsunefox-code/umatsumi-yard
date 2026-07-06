@@ -2053,6 +2053,23 @@ button {
   line-height: 1.4;
 }
 
+/* 注記の種類別カラー（鎮静=赤 / OV=紫 / 上り=緑） */
+.note-sedate {
+  color: #c0392b !important;
+  background: #fdecec !important;
+  border-color: #e6a3a3 !important;
+}
+.note-ov {
+  color: #6b3fa0 !important;
+  background: #f2edfa !important;
+  border-color: #cbb8e6 !important;
+}
+.note-agari {
+  color: #1f7a4d !important;
+  background: #e9f6ef !important;
+  border-color: #a9d8bf !important;
+}
+
 /* 進めるボタン（待機は第一/第二の2つ） */
 .chip-advs {
   flex-shrink: 0;
@@ -2061,19 +2078,29 @@ button {
   flex-direction: column;
   gap: 4px;
 }
-/* 待機の第一/第二＝大きく */
+/* 分岐（待機の第一/第二、種付所の鎮静/P検/帰宅）＝大きく */
+.mare-chip.branching {
+  flex-direction: column;
+  align-items: stretch;
+}
 .chip-advs.branch {
   flex-direction: row;
-  gap: 6px;
+  flex-wrap: wrap;
+  width: 100%;
+  gap: 8px;
+  margin-top: 6px;
+  padding-top: 6px;
+  border-top: 1px dashed var(--line);
 }
 .chip-advs.branch .chip-adv {
-  min-width: 92px;
-  padding: 8px 10px;
+  flex: 1 1 88px;
+  min-width: 88px;
+  padding: 10px 8px;
   border-width: 2px;
   border-radius: 10px;
 }
 .chip-advs.branch .chip-adv-arrow {
-  font-size: 14px;
+  font-size: 15px;
 }
 .chip-advs.branch .chip-adv-label {
   font-size: 14px;

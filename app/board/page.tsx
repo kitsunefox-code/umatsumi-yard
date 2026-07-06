@@ -13,6 +13,7 @@ import {
   newMare,
   normCode,
   nextZones,
+  noteKind,
   firstFreeFrame,
   resolveMareName,
   resolveNote,
@@ -409,7 +410,11 @@ export default function BoardPage() {
                     {r.apptTime && <span className="mare-time">🕐{r.apptTime}</span>}
                     {r.kind && <span className="mare-kind">{r.kind}</span>}
                   </span>
-                  {r.note && <span className="mare-note">{r.note}</span>}
+                  {r.note && (
+                    <span className={`mare-note note-${noteKind(r.note)}`}>
+                      {r.note}
+                    </span>
+                  )}
                 </span>
               </div>
             ))}
@@ -627,8 +632,12 @@ function MareList({
     <div className="fplace-body">
       {list.map((m) => {
         const nexts = nextZones(m.zone);
+        const branching = !!onAdvance && nexts.length > 1;
         return (
-          <div key={m.id} className="mare-chip">
+          <div
+            key={m.id}
+            className={`mare-chip${branching ? " branching" : ""}`}
+          >
             {m.isNew && <span className="badge-new">NEW</span>}
             <button className="chip-open" onClick={() => onOpen(m.id)}>
               <span
@@ -644,7 +653,11 @@ function MareList({
                   {m.apptTime && <span className="mare-time">🕐{m.apptTime}</span>}
                   {m.kind && <span className="mare-kind">{m.kind}</span>}
                 </span>
-                {m.note && <span className="mare-note">{m.note}</span>}
+                {m.note && (
+                  <span className={`mare-note note-${noteKind(m.note)}`}>
+                    {m.note}
+                  </span>
+                )}
                 {m.tags.length > 0 && (
                   <span className="chip-tags">
                     {m.tags.map((t) => (
@@ -707,7 +720,11 @@ function FrameCell({
               {o.sireCode || "?"}
             </span>
             <span className="frame-name">{o.mareName}</span>
-            {o.note && <span className="frame-note">{o.note}</span>}
+            {o.note && (
+              <span className={`frame-note note-${noteKind(o.note)}`}>
+                {o.note}
+              </span>
+            )}
             {o.foal && <span className="frame-foal">{o.foal}</span>}
           </button>
           <button
