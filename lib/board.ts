@@ -119,12 +119,13 @@ const SILK: Record<string, [string, string | null]> = {
   MYB: [C.black, C.dred],
   // 赤＋黄
   BOP: [C.red, C.yellow],
+  // 赤＋白
+  SVR: [C.red, C.white],
   // 黄
   MAU: [C.yellow, null],
   // 単色
   DFO: [C.navy, null],
   DDC: [C.gray, null],
-  SVR: [C.dred, null],
 };
 // 主色が2頭以上で被っている色だけ2色分割して区別する（被ってなければ1色）
 const SILK_PRIMARY_COUNT: Record<string, number> = (() => {
