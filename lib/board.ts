@@ -87,6 +87,7 @@ const SILK_CODES = new Set([
   "AMS", "EQX", "ISB", "EPN", "EFO", "ORF", "KZN", "KBL", "CRS", "GDG",
   "CON", "STN", "SCW", "SAO", "SIS", "SHY", "SMR", "SVR", "DKG", "DDC",
   "DFO", "NDL", "BOP", "POE", "HRC", "MYB", "MAU", "LVL", "RSP", "REY",
+  "LDK",
 ]);
 // 種牡馬の勝負服画像パス（無ければ null）。/board/ からの相対で解決。
 export function sireSilk(code: string): string | null {
