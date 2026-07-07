@@ -221,12 +221,10 @@ export function autoSchedule(
 
   function enforceNoConsecGaps() {
     if (!o.noConsecGrooms.length) return;
-    let changed = true;
     let guard = 0;
-    while (changed && guard++ < rounds.length * rounds.length) {
-      changed = false;
-      resort();
+    while (guard++ < 200) {
       const starts = actualStarts();
+      let changed = false;
       for (let i = 1; i < rounds.length; i++) {
         const prev = groomsOf(rounds[i - 1]);
         const cur = groomsOf(rounds[i]);
@@ -251,12 +249,14 @@ export function autoSchedule(
             break;
           }
         }
-        rounds.splice(i, 0, {});
+        const spacerStart =
+          starts[i - 1] + roundMinutes(rounds[i - 1], o);
+        rounds.splice(i, 0, { startMin: spacerStart });
         changed = true;
         break;
       }
+      if (!changed) break;
     }
-    resort();
   }
 
   // 処理順：固定時刻→リリース時刻→優先度→カナロア優先→難易度
@@ -285,7 +285,6 @@ export function autoSchedule(
   resort();
   enforceFixedAnchors();
   enforceNoConsecGaps();
-  enforceFixedAnchors();
   return rounds;
 }
 
