@@ -98,7 +98,7 @@ export function roundIssues(
   return out;
 }
 
-// 時刻ベースで自動編成（4h間隔・固定時刻を守り、赤＝被り/間隔違反を出さない）
+// 時刻ベースで自動編成。赤（被り・4h違反・連続禁止担当者）を出さないことを最優先する。
 // earliest=種牡馬コード→この組で種付できる最早の絶対分、fixed=牝馬id→固定開始分、baseStart=組開始の絶対分
 export function autoSchedule(
   matings: Mating[],
@@ -108,34 +108,59 @@ export function autoSchedule(
   baseStart = 480
 ): Round[] {
   const rk = (m: Mating) => rankOf(m.sireCode, o.priorities);
-  const earliestOf = (m: Mating) =>
+  const releaseOf = (m: Mating) =>
     fixed[m.id] ?? earliest[normCode(m.sireCode)] ?? baseStart;
+
   const rounds: Round[] = [];
-  const times = () => startMinutesBase(rounds, baseStart, o);
-  const lastEnd = () => {
-    if (!rounds.length) return baseStart;
-    const ts = times();
-    return ts[rounds.length - 1] + roundMinutes(rounds[rounds.length - 1], o);
-  };
+
+  // ラウンドの並び替え用キー（固定時刻 or 収容馬の最遅リリース時刻）
+  function nominalKey(r: Round): number {
+    if (r.startMin != null) return r.startMin;
+    const rs = [r.a, r.b].filter(Boolean).map((m) => releaseOf(m as Mating));
+    return rs.length ? Math.max(...rs) : -Infinity;
+  }
+  function resort() {
+    rounds.sort((x, y) => nominalKey(x) - nominalKey(y));
+  }
+  // 各ラウンドの実開始（収容馬のリリース時刻も下限にする）
+  function actualStarts(): number[] {
+    let t = baseStart;
+    const out: number[] = [];
+    for (const r of rounds) {
+      const occRel = [r.a, r.b].filter(Boolean).map((m) => releaseOf(m as Mating));
+      const floor = Math.max(r.startMin ?? -Infinity, ...occRel, -Infinity);
+      const s = floor > -Infinity ? Math.max(t, floor) : t;
+      out.push(s);
+      t = s + roundMinutes(r, o);
+    }
+    return out;
+  }
+  const groomsOf = (r?: Round) =>
+    r ? [r.a, r.b].filter(Boolean).map((m) => groomOf((m as Mating).sireCode)) : [];
+  // 連続禁止の担当者が、隣接ラウンド（前後どちらか）に既にいるか
+  function hasConsec(groom: string, prev?: Round, next?: Round): boolean {
+    if (!groom || !o.noConsecGrooms.includes(groom)) return false;
+    return groomsOf(prev).includes(groom) || groomsOf(next).includes(groom);
+  }
 
   function place(m: Mating) {
-    const et = earliestOf(m);
+    resort();
+    const rel = releaseOf(m);
     const pinned = fixed[m.id] != null;
     const solo = isSolo(m, o);
+    const groom = groomOf(m.sireCode);
+
     if (!solo && !pinned) {
-      // 既存コマ（時刻順）で、et以降かつ相方に組める空きレーンを探す
-      const ts = times();
-      const order = rounds.map((_, i) => i).sort((x, y) => ts[x] - ts[y]);
-      for (const i of order) {
+      const starts = actualStarts();
+      for (let i = 0; i < rounds.length; i++) {
         const r = rounds[i];
-        if (ts[i] < et) continue;
-        const other = r.a || r.b;
+        if (starts[i] < rel) continue;
         if (r.a && r.b) continue;
+        const other = r.a || r.b;
         if (other && isSolo(other, o)) continue;
-        if (other) {
-          if (concurrentConflict(m.sireCode, other.sireCode) !== null) continue;
-          if (nf(m) && nf(other)) continue;
-        }
+        if (other && concurrentConflict(m.sireCode, other.sireCode) !== null) continue;
+        if (other && nf(m) && nf(other)) continue;
+        if (hasConsec(groom, rounds[i - 1], rounds[i + 1])) continue;
         if (!r.a) r.a = m;
         else if (nf(m) && !nf(r.a)) {
           r.b = r.a;
@@ -144,11 +169,102 @@ export function autoSchedule(
         return;
       }
     }
-    // 新規コマ（必要なら間隔待ちのギャップ／固定でピン）
-    const startMin = pinned || et > lastEnd() ? et : undefined;
+    // 新規ラウンド（末尾に追加。連続禁止に触れるなら間に空きラウンドを1つ挟む）
+    const starts = actualStarts();
+    const tailIdx = rounds.length - 1;
+    const tailEnd = rounds.length ? starts[tailIdx] + roundMinutes(rounds[tailIdx], o) : baseStart;
+    if (!pinned && hasConsec(groom, rounds[tailIdx])) {
+      rounds.push({ startMin: tailEnd });
+    }
+    const afterSpacerEnd = rounds.length
+      ? (() => {
+          const s2 = actualStarts();
+          const li = rounds.length - 1;
+          return s2[li] + roundMinutes(rounds[li], o);
+        })()
+      : baseStart;
+    const startMin = pinned ? rel : rel > afterSpacerEnd ? rel : undefined;
     rounds.push({ a: m, startMin });
   }
 
+  function enforceFixedAnchors() {
+    let changed = true;
+    let guard = 0;
+    while (changed && guard++ < rounds.length * rounds.length) {
+      changed = false;
+      resort();
+      let t = baseStart;
+      for (let i = 0; i < rounds.length; i++) {
+        const r = rounds[i];
+        const s = r.startMin != null ? Math.max(r.startMin, t) : t;
+        if (r.startMin != null && s > r.startMin) {
+          let move = -1;
+          for (let j = i - 1; j >= 0; j--) {
+            if (rounds[j].startMin == null) {
+              move = j;
+              break;
+            }
+          }
+          if (move >= 0) {
+            const [moved] = rounds.splice(move, 1);
+            moved.startMin = r.startMin + roundMinutes(r, o);
+            rounds.push(moved);
+            changed = true;
+            break;
+          }
+        }
+        t = s + roundMinutes(r, o);
+      }
+    }
+    resort();
+  }
+
+  function enforceNoConsecGaps() {
+    if (!o.noConsecGrooms.length) return;
+    let changed = true;
+    let guard = 0;
+    while (changed && guard++ < rounds.length * rounds.length) {
+      changed = false;
+      resort();
+      const starts = actualStarts();
+      for (let i = 1; i < rounds.length; i++) {
+        const prev = groomsOf(rounds[i - 1]);
+        const cur = groomsOf(rounds[i]);
+        const bad = cur.some(
+          (g) => g && o.noConsecGrooms.includes(g) && prev.includes(g)
+        );
+        if (!bad) continue;
+        if (rounds[i].startMin != null) {
+          let move = -1;
+          for (let j = i - 1; j >= 0; j--) {
+            if (rounds[j].startMin == null) {
+              move = j;
+              break;
+            }
+          }
+          if (move >= 0) {
+            const fixedEnd = starts[i] + roundMinutes(rounds[i], o);
+            const [moved] = rounds.splice(move, 1);
+            moved.startMin = fixedEnd;
+            rounds.push(moved);
+            changed = true;
+            break;
+          }
+        }
+        rounds.splice(i, 0, {});
+        changed = true;
+        break;
+      }
+    }
+    resort();
+  }
+
+  // 処理順：固定時刻→リリース時刻→優先度→カナロア優先→難易度
+  const deg: Record<string, number> = {};
+  for (const m of matings)
+    deg[m.id] = matings.filter(
+      (x) => x.id !== m.id && concurrentConflict(m.sireCode, x.sireCode) !== null
+    ).length;
   const fixedM = matings
     .filter((m) => fixed[m.id] != null)
     .sort((a, b) => fixed[a.id] - fixed[b.id]);
@@ -157,20 +273,20 @@ export function autoSchedule(
     .sort((x, y) => {
       const rr = rk(x) - rk(y);
       if (rr) return rr;
-      const ee = earliestOf(x) - earliestOf(y); // 早く呼べない馬は後ろへ
+      const ee = releaseOf(x) - releaseOf(y); // 早く呼べない馬は後ろへ
       if (ee) return ee;
       const fx = normCode(x.sireCode) === "LDK" ? 1 : 0;
       const fy = normCode(y.sireCode) === "LDK" ? 1 : 0;
-      return fy - fx;
+      if (fx !== fy) return fy - fx;
+      return deg[y.id] - deg[x.id];
     });
   for (const m of fixedM) place(m);
   for (const m of rest) place(m);
-  // 時刻順に並べ替えて返す
-  const ts = times();
-  return rounds
-    .map((_, i) => i)
-    .sort((a, b) => ts[a] - ts[b])
-    .map((i) => rounds[i]);
+  resort();
+  enforceFixedAnchors();
+  enforceNoConsecGaps();
+  enforceFixedAnchors();
+  return rounds;
 }
 
 // 1コマの所要（分）＝2頭の長い方

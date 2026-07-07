@@ -115,7 +115,7 @@ export default function SchedulePage() {
   const [start, setStart] = useState("8:00");
   const [rounds, setRounds] = useState<Round[]>([]);
   const [showMap, setShowMap] = useState(false);
-  const [showRules, setShowRules] = useState(false);
+  const [showRules, setShowRules] = useState(true);
   const [showEarly, setShowEarly] = useState(false);
   const [showCall, setShowCall] = useState(false);
   const [opts, setOpts] = useState<Options>(defaultOptions());
@@ -197,9 +197,10 @@ export default function SchedulePage() {
     );
   }
 
-  // 組の切替：開始時刻を既定にし、保存があれば復元・無ければ自動生成
+  // 組の切替：開始時刻を既定にし、保存があれば復元。無ければ「未生成」のまま（生成ボタンを押すまで組まない）
   useEffect(() => {
     setStart(START_BY_GROUP[group]);
+    setSel(null);
     let restored = false;
     if (typeof window !== "undefined") {
       const saved = localStorage.getItem("sched:" + group);
@@ -210,36 +211,30 @@ export default function SchedulePage() {
         } catch {}
       }
     }
-    if (!restored) setRounds(buildRounds(opts));
+    if (!restored) setRounds([]);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [group]);
 
-  // コマ保存
+  // コマ保存（生成・手動調整の結果のみ保存。未生成＝空のままなら保存しない）
   useEffect(() => {
     if (typeof window !== "undefined" && rounds.length)
       localStorage.setItem("sched:" + group, JSON.stringify(rounds));
   }, [rounds, group]);
 
-  // オプション変更→保存＆即組み直し
+  // ルール変更は保存のみ（即座には組み直さない）。反映するには「生成」を押す。
   function applyOpts(next: Options) {
-    setSel(null);
     setOpts(next);
     if (typeof window !== "undefined")
       localStorage.setItem("sched:opts", JSON.stringify(next));
-    setRounds(buildRounds(next));
   }
-  // 固定時刻の設定
+  // 固定時刻の設定（これも保存のみ。反映には「生成」を押す）
   function setFixed(id: string, hhmm: string) {
     const next = { ...fixedTimes };
     if (hhmm) next[id] = hhmm;
     else delete next[id];
     setFixedTimes(next);
-    setSel(null);
     if (typeof window !== "undefined")
       localStorage.setItem("sched:fixed:" + group, JSON.stringify(next));
-    const fx: Record<string, number> = {};
-    for (const k in next) if (next[k]) fx[k] = toMin(next[k]);
-    setRounds(buildRounds(opts, fx));
   }
   function setPriority(code: string, p: Priority | "") {
     const pr = { ...opts.priorities };
@@ -270,9 +265,10 @@ export default function SchedulePage() {
     });
   }
 
-  function rebuild() {
+  // 「生成」＝この時点のルール・固定時刻を使って一から組み立てる（唯一の編成トリガー）
+  function generate() {
     setSel(null);
-    setRounds(buildRounds(opts));
+    setRounds(buildRounds(opts, fixedMin));
   }
 
   // この組で各種牡馬を呼べる最早時刻（4h間隔）＋各コマの絶対分
@@ -476,20 +472,24 @@ export default function SchedulePage() {
             </span>
           </span>
           <div className="roster-actions">
-            <button className="btn btn-primary btn-sm" onClick={rebuild}>
-              ⟳ 自動で組み直す
+            <button
+              className={`btn btn-sm ${showRules ? "btn-primary" : "btn-ghost"}`}
+              onClick={() => setShowRules((v) => !v)}
+            >
+              🎌 この日のルール{ruleCount ? `（${ruleCount}）` : ""}
+            </button>
+            <button
+              className="btn btn-primary btn-generate"
+              onClick={generate}
+              disabled={matings.length === 0}
+            >
+              🚀 {rounds.length ? "この内容で組み直す" : "生成する"}
             </button>
             <button
               className="btn btn-ghost btn-sm"
               onClick={() => setRounds(trimEmpty(rounds))}
             >
               ▮ 空きを詰める
-            </button>
-            <button
-              className={`btn btn-sm ${showRules ? "btn-primary" : "btn-ghost"}`}
-              onClick={() => setShowRules((v) => !v)}
-            >
-              🎌 この日のルール{ruleCount ? `（${ruleCount}）` : ""}
             </button>
             <button
               className={`btn btn-sm ${showCall ? "btn-primary" : "btn-ghost"}`}
@@ -586,8 +586,9 @@ export default function SchedulePage() {
       {showRules && (
         <section className="rules-panel">
           <div className="rules-hint">
-            種牡馬ごとに <b>順番</b>・<b>所要（分）</b> を設定できます。変更すると即組み直します（手動調整はリセット）。
-            ※上り初回・鎮静は自動で第一に固定。
+            種牡馬ごとに <b>順番</b>・<b>所要（分）</b> を設定できます。設定したら下の
+            <b>🚀 生成する</b>を押してください（ここでの変更はまだ反映されません）。
+            ※上り初回・鎮静は自動で第一に固定、連続禁止の担当者は必ず避けて組みます。
           </div>
           <label className="ldk-solo">
             <input
@@ -699,12 +700,18 @@ export default function SchedulePage() {
       )}
 
       {/* 呼び出し表（時刻順・誰を何時に呼ぶか） */}
-      {showCall && (
+      {showCall && rounds.length === 0 && (
+        <section className="call-sheet">
+          <div className="call-head">📞 呼び出し表（時刻順）</div>
+          <p className="barn-hint">まだ生成していません。上の「🚀 生成する」を押すと表示されます。</p>
+        </section>
+      )}
+      {showCall && rounds.length > 0 && (
         <section className="call-sheet">
           <div className="call-head">
             📞 呼び出し表（時刻順）
             <span className="call-note">
-              呼ぶ時刻＝種付{opts.prepMin}分前（待機＋洗い場）／📌で時刻固定
+              呼ぶ時刻＝種付{opts.prepMin}分前（待機＋洗い場）／📌で時刻固定（設定後「生成」で反映）
             </span>
           </div>
           <div className="call-legend">
@@ -769,18 +776,36 @@ export default function SchedulePage() {
         </section>
       )}
 
+      {/* 未生成：ルールを選んで生成を促す */}
+      {rounds.length === 0 && matings.length > 0 && (
+        <section className="generate-cta">
+          <div className="generate-cta-txt">
+            <b>まだ何も組んでいません。</b>
+            🎌の日のルール（順番・単独・所要・連続禁止担当者）を確認・設定してから、
+            <b>🚀 生成する</b>を押してください。被り・4時間間隔・連続禁止の担当者は必ず避けて組みます。
+          </div>
+          <button className="btn btn-primary btn-generate" onClick={generate}>
+            🚀 生成する（{matings.length}頭）
+          </button>
+        </section>
+      )}
+
       {/* タイムライン */}
       <section className="sched-timeline">
-        <div className={`tap-hint${sel ? " active" : ""}`}>
-          {sel
-            ? "入れ替え先のカード（または空き枠）をタップ。もう一度同じカードで取消。"
-            : "👆 カードをタップ→もう1枚タップで入れ替えできます。"}
-        </div>
-        <div className="sched-legend">
-          <span>時刻</span>
-          <span>第一種付所</span>
-          <span>第二種付所</span>
-        </div>
+        {rounds.length > 0 && (
+          <>
+            <div className={`tap-hint${sel ? " active" : ""}`}>
+              {sel
+                ? "入れ替え先のカード（または空き枠）をタップ。もう一度同じカードで取消。"
+                : "👆 カードをタップ→もう1枚タップで入れ替えできます。"}
+            </div>
+            <div className="sched-legend">
+              <span>時刻</span>
+              <span>第一種付所</span>
+              <span>第二種付所</span>
+            </div>
+          </>
+        )}
         {rounds.map((r, i) => {
           const iss = issuesByRound[i];
           const gap = gapBad[i];
@@ -808,7 +833,7 @@ export default function SchedulePage() {
             </div>
           );
         })}
-        {rounds.length === 0 && (
+        {rounds.length === 0 && matings.length === 0 && (
           <p className="barn-hint">
             この組の予定がありません。所在ボードで順番表を確認してください。
           </p>
