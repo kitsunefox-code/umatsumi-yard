@@ -191,10 +191,13 @@ export default function SchedulePage() {
     return out;
   }, [matings]);
 
-  const effectiveFixedTimes = useMemo(
-    () => ({ ...rosterFixedTimes, ...fixedTimes }),
-    [rosterFixedTimes, fixedTimes]
-  );
+  const effectiveFixedTimes = useMemo(() => {
+    const out = { ...rosterFixedTimes };
+    for (const id in fixedTimes) {
+      if (fixedTimes[id]) out[id] = fixedTimes[id];
+    }
+    return out;
+  }, [rosterFixedTimes, fixedTimes]);
 
   const fixedMin = useMemo(() => {
     const m: Record<string, number> = {};
@@ -234,16 +237,15 @@ export default function SchedulePage() {
   // 固定時刻の設定（これも保存のみ。反映には「生成」を押す）
   function setFixed(id: string, hhmm: string) {
     const next = { ...fixedTimes };
-    next[id] = hhmm;
+    if (hhmm) next[id] = hhmm;
+    else delete next[id];
     setFixedTimes(next);
     if (typeof window !== "undefined")
       localStorage.setItem("sched:fixedCall:" + group, JSON.stringify(next));
   }
   function fixedCallTime(id: string): string {
-    if (Object.prototype.hasOwnProperty.call(fixedTimes, id)) {
-      return fixedTimes[id] ? fixedTimes[id].padStart(5, "0") : "";
-    }
-    return rosterFixedTimes[id] ? rosterFixedTimes[id].padStart(5, "0") : "";
+    const t = effectiveFixedTimes[id];
+    return t ? t.padStart(5, "0") : "";
   }
   function setFixedCallTime(id: string, hhmm: string) {
     setFixed(id, quarterTime(hhmm));
