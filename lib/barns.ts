@@ -69,7 +69,9 @@ export function stallionName(code: string): string {
   return CODE2NAME[normCode(code)] || code;
 }
 export function groomOf(code: string): string {
-  return BY_CODE[normCode(code)]?.groom || "";
+  // 「筒井(登石)」は「筒井」と同一人物として扱う（括弧内を除去）
+  const g = BY_CODE[normCode(code)]?.groom || "";
+  return g.replace(/[（(].*?[）)]/g, "").trim();
 }
 export function barnOf(code: string): string {
   return BY_CODE[normCode(code)]?.barn || "";

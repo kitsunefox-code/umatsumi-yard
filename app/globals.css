@@ -3134,3 +3134,90 @@ button {
     min-height: 38px;
   }
 }
+
+/* 4hルール・呼び出し表・上り再発 */
+.ldk-solo {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #2c353b;
+  background: #eef5fb;
+  border: 1px solid #cddff0;
+  border-radius: 8px;
+  padding: 8px 11px;
+  margin-bottom: 10px;
+  cursor: pointer;
+}
+.first-tag.re {
+  background: #2850c8;
+}
+.gap-info {
+  margin-top: 3px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #55636c;
+  background: #eef2f4;
+  border-radius: 5px;
+  padding: 2px 6px;
+  display: inline-block;
+}
+.gap-info.bad {
+  color: #fff;
+  background: #c0392b;
+}
+.call-sheet {
+  border: 1.5px solid var(--line-strong, #c7d0d6);
+  border-radius: 10px;
+  background: #fff;
+  padding: 8px 4px 10px;
+  margin: 2px 2px 12px;
+}
+.call-head {
+  font-weight: 800;
+  font-size: 14px;
+  color: #2c353b;
+  padding: 4px 10px 8px;
+}
+.call-rows {
+  display: flex;
+  flex-direction: column;
+}
+.call-row {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 8px 10px;
+  border-top: 1px solid #eef2f4;
+  font-size: 14px;
+}
+.call-time {
+  font-weight: 800;
+  font-size: 17px;
+  color: #1f6feb;
+  min-width: 58px;
+}
+.call-mare {
+  font-weight: 800;
+  color: #22303a;
+  min-width: 120px;
+}
+.call-sire {
+  color: #55636c;
+  font-weight: 600;
+  font-size: 13px;
+}
+.call-groom {
+  color: #2c6e49;
+  font-weight: 800;
+  font-size: 13px;
+}
+@media (max-width: 720px) {
+  .call-mare {
+    min-width: 0;
+  }
+  .call-sire {
+    display: none;
+  }
+}

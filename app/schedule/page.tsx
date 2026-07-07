@@ -8,6 +8,7 @@ import {
   groupRoster,
   sireBadge,
   normCode,
+  noteKind,
 } from "@/lib/board";
 import { STALLIONS, BARNS, stallionName, groomOf, barnOf } from "@/lib/barns";
 import {
@@ -22,18 +23,55 @@ import {
   autoSchedule,
   roundIssues,
   startTimes,
+  startMinutes,
+  matingTimes,
+  fmtTime,
   roundMinutes,
   earlyFinishPick,
   firstOnly,
   swapSlots,
   trimEmpty,
 } from "@/lib/schedule";
+import type { Mating as M2 } from "@/lib/schedule";
 
 const START_BY_GROUP: Record<GroupKey, string> = {
   朝: "8:00",
   昼: "13:00",
   夕: "17:00",
 };
+const DAY_ORDER: GroupKey[] = ["朝", "昼", "夕"];
+
+const toMating = (r: {
+  id: string;
+  mareName: string;
+  sireCode: string;
+  note?: string;
+}): M2 => ({ id: r.id, mareName: r.mareName, sireCode: r.sireCode, note: r.note });
+
+// 先行する組（朝→昼→夕）の種付時刻＋間隔から、この組で呼べる最早時刻を求める
+function computeEarliest(g: GroupKey, o: Options): Record<string, number> {
+  const idx = DAY_ORDER.indexOf(g);
+  const out: Record<string, number> = {};
+  for (let k = 0; k < idx; k++) {
+    const gk = DAY_ORDER[k];
+    let rs: Round[] | null = null;
+    if (typeof window !== "undefined") {
+      const s = localStorage.getItem("sched:" + gk);
+      if (s) {
+        try {
+          rs = JSON.parse(s);
+        } catch {}
+      }
+    }
+    if (!rs) rs = autoSchedule(groupRoster(gk).map(toMating), o);
+    const t = matingTimes(rs, START_BY_GROUP[gk], o);
+    for (const c in t) {
+      const e = t[c] + o.gapMin;
+      if (out[c] == null || e > out[c]) out[c] = e;
+    }
+  }
+  return out;
+}
 
 function Badge({ code }: { code: string }) {
   const b = sireBadge(code);
@@ -54,6 +92,7 @@ export default function SchedulePage() {
   const [showMap, setShowMap] = useState(false);
   const [showRules, setShowRules] = useState(false);
   const [showEarly, setShowEarly] = useState(false);
+  const [showCall, setShowCall] = useState(false);
   const [opts, setOpts] = useState<Options>(defaultOptions());
   const [sel, setSel] = useState<{ i: number; lane: "a" | "b" } | null>(null);
 
@@ -92,7 +131,8 @@ export default function SchedulePage() {
         } catch {}
       }
     }
-    if (!restored) setRounds(autoSchedule(matings, opts));
+    if (!restored)
+      setRounds(autoSchedule(matings, opts, computeEarliest(group, opts)));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [group]);
 
@@ -108,7 +148,7 @@ export default function SchedulePage() {
     setOpts(next);
     if (typeof window !== "undefined")
       localStorage.setItem("sched:opts", JSON.stringify(next));
-    setRounds(autoSchedule(matings, next));
+    setRounds(autoSchedule(matings, next, computeEarliest(group, next)));
   }
   function setPriority(code: string, p: Priority | "") {
     const pr = { ...opts.priorities };
@@ -141,8 +181,18 @@ export default function SchedulePage() {
 
   function rebuild() {
     setSel(null);
-    setRounds(autoSchedule(matings, opts));
+    setRounds(autoSchedule(matings, opts, computeEarliest(group, opts)));
   }
+
+  // この組で各種牡馬を呼べる最早時刻（4h間隔）＋各コマの絶対分
+  const earliest = useMemo(
+    () => computeEarliest(group, opts),
+    [group, opts]
+  );
+  const startMins = useMemo(
+    () => startMinutes(rounds, start, opts),
+    [rounds, start, opts]
+  );
 
   // タップで入れ替え：1枚目タップ→選択、2枚目タップ→入れ替え
   function tapSlot(i: number, lane: "a" | "b", blocked: boolean) {
@@ -171,7 +221,23 @@ export default function SchedulePage() {
       return iss;
     });
   }, [rounds, opts]);
-  const badRounds = issuesByRound.filter((x) => x.length).length;
+  // 4時間ルール：この組で早すぎる種付（前の組から間隔不足）
+  const gapBad = useMemo(
+    () =>
+      rounds.map((r, i) => {
+        const bad: { code: string; prev: number }[] = [];
+        for (const m of [r.a, r.b]) {
+          if (!m) continue;
+          const c = normCode(m.sireCode);
+          if (earliest[c] != null && startMins[i] < earliest[c])
+            bad.push({ code: c, prev: earliest[c] - opts.gapMin });
+        }
+        return bad;
+      }),
+    [rounds, startMins, earliest, opts.gapMin]
+  );
+  const badRounds = issuesByRound.filter((x, i) => x.length || gapBad[i].length)
+    .length;
   const scheduled = rounds.reduce((n, r) => n + (r.a ? 1 : 0) + (r.b ? 1 : 0), 0);
   const ldkFirst =
     rounds.length > 0 &&
@@ -223,6 +289,10 @@ export default function SchedulePage() {
       );
     }
     const fo = firstOnly(m);
+    const k = noteKind(m.note);
+    const code = normCode(m.sireCode);
+    const e = earliest[code];
+    const bad4h = e != null && startMins[i] < e;
     const early = showEarly ? earlyFinishPick(rounds, i, lane, opts) : null;
     return (
       <button
@@ -237,7 +307,8 @@ export default function SchedulePage() {
           <div className="sched-card-txt">
             <div className="sched-mare">
               {m.mareName || "（牝馬未定）"}
-              {fo && <span className="first-tag">第一{fo}</span>}
+              {fo && <span className="first-tag">{fo}</span>}
+              {k === "agari-re" && <span className="first-tag re">上り再発</span>}
             </div>
             <div className="sched-sire">
               {stallionName(m.sireCode)}
@@ -248,10 +319,18 @@ export default function SchedulePage() {
                 <span className="sched-barn">{barnOf(m.sireCode)}</span>
               )}
               <span className="sched-dur">
-                {opts.durations[normCode(m.sireCode)] || opts.defaultDur}分
+                {opts.durations[code] || opts.defaultDur}分
               </span>
             </div>
-            {m.note && <div className="sched-note">{m.note}</div>}
+            {m.note && !["agari", "sedate", "agari-re"].includes(k) && (
+              <div className="sched-note">{m.note}</div>
+            )}
+            {e != null && (
+              <div className={`gap-info${bad4h ? " bad" : ""}`}>
+                {bad4h ? "⚠ " : "🕒 "}
+                {fmtTime(e)}以降OK（前回{fmtTime(e - opts.gapMin)}）
+              </div>
+            )}
             {early && (
               <div className="early-pick">
                 💡早く終わったら→{early.mareName || stallionName(early.sireCode)}
@@ -273,8 +352,8 @@ export default function SchedulePage() {
     <div className="app board-app">
       <div className="topbar">
         <h1>
-          🗓️ 種付順番
-          <span className="sub">馬房・担当者が被らない並び</span>
+          🗓️ 種付順番・呼び出し
+          <span className="sub">どの馬を何時に呼ぶか</span>
         </h1>
         <Link href="/board" className="btn btn-ghost">
           📍 所在ボードへ
@@ -319,6 +398,12 @@ export default function SchedulePage() {
               🎌 この日のルール{ruleCount ? `（${ruleCount}）` : ""}
             </button>
             <button
+              className={`btn btn-sm ${showCall ? "btn-primary" : "btn-ghost"}`}
+              onClick={() => setShowCall((v) => !v)}
+            >
+              📞 呼び出し表
+            </button>
+            <button
               className={`btn btn-sm ${showEarly ? "btn-primary" : "btn-ghost"}`}
               onClick={() => setShowEarly((v) => !v)}
             >
@@ -357,6 +442,23 @@ export default function SchedulePage() {
             />
             分
           </label>
+          <label title="同じ種牡馬の種付と種付の間にあける時間">
+            種付間隔
+            <input
+              type="number"
+              min={0}
+              max={12}
+              step={0.5}
+              value={opts.gapMin / 60}
+              onChange={(e) =>
+                applyOpts({
+                  ...opts,
+                  gapMin: Math.max(0, Math.round((Number(e.target.value) || 0) * 60)),
+                })
+              }
+            />
+            時間
+          </label>
           <span className="sched-stat">
             種付 {scheduled}頭 ／ {rounds.length}コマ
           </span>
@@ -373,18 +475,22 @@ export default function SchedulePage() {
       {showRules && (
         <section className="rules-panel">
           <div className="rules-hint">
-            種牡馬ごとに <b>順番</b>・<b>単独（第二を使わない）</b>・<b>所要（分）</b> を設定できます。
-            変更すると即組み直します（手動調整はリセット）。※上り初回・鎮静は自動で第一に固定。
+            種牡馬ごとに <b>順番</b>・<b>所要（分）</b> を設定できます。変更すると即組み直します（手動調整はリセット）。
+            ※上り初回・鎮静は自動で第一に固定。
           </div>
+          <label className="ldk-solo">
+            <input
+              type="checkbox"
+              checked={opts.solo.includes("LDK")}
+              onChange={() => toggleSolo("LDK")}
+            />
+            ロードカナロアの種付中は第二種付所を使わない（単独）
+          </label>
           <div className="rules-grid">
             {groupCodes.map((c) => (
               <div
                 className={`rule-row${
-                  opts.priorities[c] ||
-                  opts.solo.includes(c) ||
-                  opts.durations[c]
-                    ? " set"
-                    : ""
+                  opts.priorities[c] || opts.durations[c] ? " set" : ""
                 }`}
                 key={c}
               >
@@ -401,14 +507,6 @@ export default function SchedulePage() {
                     </option>
                   ))}
                 </select>
-                <label className="rule-solo" title="種付中は第二を使わない">
-                  <input
-                    type="checkbox"
-                    checked={opts.solo.includes(c)}
-                    onChange={() => toggleSolo(c)}
-                  />
-                  単独
-                </label>
                 <input
                   className="rule-dur"
                   type="number"
@@ -489,6 +587,37 @@ export default function SchedulePage() {
         </section>
       )}
 
+      {/* 呼び出し表（時刻順・誰を何時に呼ぶか） */}
+      {showCall && (
+        <section className="call-sheet">
+          <div className="call-head">📞 呼び出し表（時刻順）</div>
+          <div className="call-rows">
+            {rounds.flatMap((r, i) =>
+              (["a", "b"] as const)
+                .map((ln) => r[ln])
+                .filter((m): m is Mating => !!m)
+                .map((m) => {
+                  const fo = firstOnly(m);
+                  return (
+                    <div className="call-row" key={m.id}>
+                      <span className="call-time">{times[i]}</span>
+                      <span className="call-mare">
+                        {m.mareName || "（牝馬未定）"}
+                      </span>
+                      <Badge code={m.sireCode} />
+                      <span className="call-sire">{stallionName(m.sireCode)}</span>
+                      {groomOf(m.sireCode) && (
+                        <span className="call-groom">👤{groomOf(m.sireCode)}</span>
+                      )}
+                      {fo && <span className="first-tag">{fo}</span>}
+                    </div>
+                  );
+                })
+            )}
+          </div>
+        </section>
+      )}
+
       {/* タイムライン */}
       <section className="sched-timeline">
         <div className={`tap-hint${sel ? " active" : ""}`}>
@@ -503,8 +632,10 @@ export default function SchedulePage() {
         </div>
         {rounds.map((r, i) => {
           const iss = issuesByRound[i];
+          const gap = gapBad[i];
+          const bad = iss.length > 0 || gap.length > 0;
           return (
-            <div className={`sched-round${iss.length ? " bad" : ""}`} key={i}>
+            <div className={`sched-round${bad ? " bad" : ""}`} key={i}>
               <div className="sched-time">
                 <span className="sched-no">{i + 1}</span>
                 {times[i]}
@@ -512,9 +643,15 @@ export default function SchedulePage() {
               </div>
               <Card m={r.a} i={i} lane="a" />
               <Card m={r.b} i={i} lane="b" />
-              {iss.length > 0 && (
+              {bad && (
                 <div className="sched-warn">
-                  ⚠ {iss.map((x) => ISSUE_LABEL[x]).join("・")}
+                  ⚠{" "}
+                  {[
+                    ...iss.map((x) => ISSUE_LABEL[x]),
+                    ...gap.map(
+                      (g) => `${g.code}は種付間隔${opts.gapMin / 60}h未満`
+                    ),
+                  ].join("・")}
                 </div>
               )}
             </div>

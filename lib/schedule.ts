@@ -33,6 +33,7 @@ export type Options = {
   noConsecGrooms: string[]; // 連続コマで入れない担当者
   durations: Record<string, number>; // 種牡馬コード→平均所要（分）
   defaultDur: number; // 既定の所要（分）
+  gapMin: number; // 同じ種牡馬の種付間隔（分）＝既定4時間
 };
 export function defaultOptions(): Options {
   return {
@@ -41,6 +42,7 @@ export function defaultOptions(): Options {
     noConsecGrooms: [],
     durations: {},
     defaultDur: 15,
+    gapMin: 240,
   };
 }
 
@@ -121,10 +123,15 @@ function pickPartner(
   return undefined;
 }
 
-// 自動で被らない順番を組む
-export function autoSchedule(matings: Mating[], o: Options): Round[] {
+// 自動で被らない順番を組む。earliest=種牡馬コード→この組で種付できる最早の絶対分（4h間隔用）
+export function autoSchedule(
+  matings: Mating[],
+  o: Options,
+  earliest: Record<string, number> = {}
+): Round[] {
   const fc = "LDK";
   const rk = (m: Mating) => rankOf(m.sireCode, o.priorities);
+  const em = (m: Mating) => earliest[normCode(m.sireCode)] ?? -1;
   const deg: Record<string, number> = {};
   for (const m of matings)
     deg[m.id] = matings.filter(
@@ -133,6 +140,8 @@ export function autoSchedule(matings: Mating[], o: Options): Round[] {
   const pool = [...matings].sort((x, y) => {
     const rr = rk(x) - rk(y);
     if (rr) return rr;
+    const ee = em(x) - em(y); // 4h制約で早く呼べない馬は後ろへ
+    if (ee) return ee;
     const fx = normCode(x.sireCode) === fc ? 1 : 0;
     const fy = normCode(y.sireCode) === fc ? 1 : 0;
     if (fx !== fy) return fy - fx;
@@ -171,21 +180,45 @@ export function roundMinutes(r: Round, o: Options): number {
     m ? o.durations[normCode(m.sireCode)] || o.defaultDur : 0;
   return Math.max(d(r.a), d(r.b), 1);
 }
-function fmt(total: number): string {
+export function fmtTime(total: number): string {
   const hh = Math.floor(total / 60) % 24;
   const mm = ((total % 60) + 60) % 60;
   return `${hh}:${String(mm).padStart(2, "0")}`;
 }
-// 各コマの開始時刻（所要を積み上げ）
-export function startTimes(rounds: Round[], start: string, o: Options): string[] {
-  const [h, m] = (start || "8:00").split(":").map((n) => parseInt(n, 10) || 0);
-  let t = h * 60 + m;
-  const out: string[] = [];
+function toMin(hhmm: string): number {
+  const [h, m] = (hhmm || "8:00").split(":").map((n) => parseInt(n, 10) || 0);
+  return h * 60 + m;
+}
+// 各コマの開始（絶対分）
+export function startMinutes(rounds: Round[], start: string, o: Options): number[] {
+  let t = toMin(start);
+  const out: number[] = [];
   for (const r of rounds) {
-    out.push(fmt(t));
+    out.push(t);
     t += roundMinutes(r, o);
   }
   return out;
+}
+// 各コマの開始時刻（表示用）
+export function startTimes(rounds: Round[], start: string, o: Options): string[] {
+  return startMinutes(rounds, start, o).map(fmtTime);
+}
+// この組の種牡馬別 最終種付（絶対分）
+export function matingTimes(
+  rounds: Round[],
+  start: string,
+  o: Options
+): Record<string, number> {
+  const mins = startMinutes(rounds, start, o);
+  const map: Record<string, number> = {};
+  rounds.forEach((r, i) => {
+    for (const m of [r.a, r.b]) {
+      if (!m) continue;
+      const c = normCode(m.sireCode);
+      if (map[c] == null || mins[i] > map[c]) map[c] = mins[i];
+    }
+  });
+  return map;
 }
 
 // 「この馬が早く終わったら次はこれ」＝残りコマから繰り上げ候補
