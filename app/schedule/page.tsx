@@ -152,7 +152,7 @@ export default function SchedulePage() {
   // 固定時刻（この組）の復元
   useEffect(() => {
     if (typeof window === "undefined") return;
-    const s = localStorage.getItem("sched:fixed:" + group);
+    const s = localStorage.getItem("sched:fixedCall:" + group);
     setFixedTimes(s ? safeParse(s) : {});
   }, [group]);
 
@@ -172,9 +172,10 @@ export default function SchedulePage() {
 
   const fixedMin = useMemo(() => {
     const m: Record<string, number> = {};
-    for (const id in fixedTimes) if (fixedTimes[id]) m[id] = toMin(fixedTimes[id]);
+    for (const id in fixedTimes)
+      if (fixedTimes[id]) m[id] = toMin(fixedTimes[id]) + opts.prepMin;
     return m;
-  }, [fixedTimes]);
+  }, [fixedTimes, opts.prepMin]);
 
   const baseStart = toMin(START_BY_GROUP[group]);
   function buildRounds(o: Options, fx = fixedMin) {
@@ -211,13 +212,13 @@ export default function SchedulePage() {
     else delete next[id];
     setFixedTimes(next);
     if (typeof window !== "undefined")
-      localStorage.setItem("sched:fixed:" + group, JSON.stringify(next));
+      localStorage.setItem("sched:fixedCall:" + group, JSON.stringify(next));
   }
   function fixedCallTime(id: string): string {
-    return fixedTimes[id] ? fmtTime(toMin(fixedTimes[id]) - opts.prepMin) : "";
+    return fixedTimes[id] || "";
   }
   function setFixedCallTime(id: string, hhmm: string) {
-    setFixed(id, hhmm ? fmtTime(toMin(hhmm) + opts.prepMin) : "");
+    setFixed(id, hhmm);
   }
   function setPriority(code: string, p: Priority | "") {
     const pr = { ...opts.priorities };
@@ -336,7 +337,8 @@ export default function SchedulePage() {
     groupCodes.filter((c) => opts.priorities[c]).length +
     opts.solo.length +
     Object.keys(opts.durations).length +
-    opts.noConsecGrooms.length;
+    opts.noConsecGrooms.length +
+    Object.keys(fixedTimes).length;
 
   function Card({ m, i, lane }: { m?: Mating; i: number; lane: "a" | "b" }) {
     const isSel = sel?.i === i && sel?.lane === lane;
@@ -636,6 +638,55 @@ export default function SchedulePage() {
               </label>
             ))}
             {groupGrooms.length === 0 && <span className="rules-sub">—</span>}
+          </div>
+          <div className="prefixed-call-panel">
+            <div className="prefixed-call-head">
+              <span>事前に呼ぶ時間が決まっている馬</span>
+              <span className="prefixed-call-note">
+                呼ぶ時刻を入れてから生成すると、その時刻を基準に固定します。
+              </span>
+            </div>
+            <div className="prefixed-call-rows">
+              {matings.map((m) => {
+                const callFixed = fixedCallTime(m.id);
+                return (
+                  <div
+                    className={`prefixed-call-row${callFixed ? " fixed" : ""}`}
+                    key={m.id}
+                  >
+                    <span className="prefixed-call-mare">
+                      {m.mareName || "（牝馬未定）"}
+                    </span>
+                    <Badge code={m.sireCode} />
+                    <span className="prefixed-call-sire">
+                      {stallionName(m.sireCode)}
+                    </span>
+                    {groomOf(m.sireCode) && (
+                      <span className="prefixed-call-groom">
+                        {groomOf(m.sireCode)}
+                      </span>
+                    )}
+                    <span className="prefixed-call-input">
+                      <input
+                        type="time"
+                        value={callFixed}
+                        onChange={(e) => setFixedCallTime(m.id, e.target.value)}
+                      />
+                      {callFixed && (
+                        <button
+                          type="button"
+                          className="call-fix-clear"
+                          onClick={() => setFixedCallTime(m.id, "")}
+                          title="固定解除"
+                        >
+                          ✕
+                        </button>
+                      )}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         </section>
       )}
