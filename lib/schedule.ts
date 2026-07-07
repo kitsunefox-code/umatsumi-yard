@@ -177,11 +177,12 @@ export function autoSchedule(
     const solo = isSolo(m, o);
     const groom = optionGroomOf(m.sireCode, o);
 
-    if (!solo && !pinned) {
+    if (!solo) {
       const starts = actualStarts();
       for (let i = 0; i < rounds.length; i++) {
         const r = rounds[i];
         if (starts[i] < rel) continue;
+        if (pinned && starts[i] !== rel) continue;
         if (r.a && r.b) continue;
         const other = r.a || r.b;
         if (other && isSolo(other, o)) continue;
@@ -306,6 +307,9 @@ export function autoSchedule(
         const aa = toMin(x.apptTime) - toMin(y.apptTime);
         if (aa) return aa;
       }
+      const xn = nf(x) ? 1 : 0;
+      const yn = nf(y) ? 1 : 0;
+      if (xn !== yn) return yn - xn;
       const ee = releaseOf(x) - releaseOf(y); // 早く呼べない馬は後ろへ
       if (ee) return ee;
       const fx = normCode(x.sireCode) === "LDK" ? 1 : 0;

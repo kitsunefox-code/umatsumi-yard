@@ -3304,6 +3304,11 @@ button {
   color: #7a8891;
   margin-left: 8px;
 }
+.call-actions {
+  display: flex;
+  justify-content: flex-end;
+  padding: 0 10px 8px;
+}
 .call-legend {
   display: grid;
   grid-template-columns: 66px 78px 1fr 128px;

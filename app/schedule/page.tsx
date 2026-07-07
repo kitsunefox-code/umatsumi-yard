@@ -823,6 +823,15 @@ export default function SchedulePage() {
               入力した呼ぶ時刻を基に、種付時刻を固定して「この内容で組み直す」
             </span>
           </div>
+          <div className="call-actions">
+            <button
+              type="button"
+              className="btn btn-primary btn-sm"
+              onClick={generate}
+            >
+              この内容で組み直す
+            </button>
+          </div>
           <div className="call-legend">
             <span>呼ぶ</span>
             <span>種付</span>
