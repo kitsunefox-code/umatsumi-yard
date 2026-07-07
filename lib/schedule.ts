@@ -1,6 +1,6 @@
 // 種付順番の自動組み立て・検証（この日のルール／オプション対応）
 import { normCode, noteKind } from "./board";
-import { concurrentConflict, groomOf } from "./barns";
+import { adjacentStalls, groomOf } from "./barns";
 
 export type Mating = {
   id: string;
@@ -31,6 +31,7 @@ export type Options = {
   priorities: Priorities;
   solo: string[]; // 単独（同時に第二を使わない）種牡馬コード
   noConsecGrooms: string[]; // 連続コマで入れない担当者
+  groomOverrides: Record<string, string>; // 種牡馬コードごとの当日担当上書き
   durations: Record<string, number>; // 種牡馬コード→平均所要（分）
   defaultDur: number; // 既定の所要（分）
   gapMin: number; // 同じ種牡馬の種付間隔（分）＝既定4時間
@@ -41,6 +42,7 @@ export function defaultOptions(): Options {
     priorities: { LDK: "first" },
     solo: ["LDK"],
     noConsecGrooms: [],
+    groomOverrides: {},
     durations: {},
     defaultDur: 15,
     gapMin: 240,
@@ -73,6 +75,24 @@ function rankOf(code: string, pri: Priorities): number {
 
 const isSolo = (m: Mating, o: Options) => o.solo.includes(normCode(m.sireCode));
 const nf = (m: Mating) => !!firstOnly(m);
+export function optionGroomOf(code: string, o: Options): string {
+  const c = normCode(code);
+  return o.groomOverrides?.[c] ?? groomOf(c);
+}
+function concurrentIssue(
+  codeA: string,
+  codeB: string,
+  o: Options
+): "same" | "groom" | "stall" | null {
+  const a = normCode(codeA);
+  const b = normCode(codeB);
+  if (a === b) return "same";
+  const ga = optionGroomOf(a, o);
+  const gb = optionGroomOf(b, o);
+  if (ga && gb && ga === gb) return "groom";
+  if (adjacentStalls(a, b)) return "stall";
+  return null;
+}
 
 // 1コマの問題点（prevGrooms=直前コマの担当者一覧）
 export function roundIssues(
@@ -83,13 +103,15 @@ export function roundIssues(
   const out: Issue[] = [];
   const { a, b } = r;
   if (a && b) {
-    const c = concurrentConflict(a.sireCode, b.sireCode);
+    const c = concurrentIssue(a.sireCode, b.sireCode, o);
     if (c) out.push(c);
     if (nf(a) && nf(b)) out.push("first2");
     else if (nf(b)) out.push("lane"); // 第一必須が第二に入っている
     if (isSolo(a, o) || isSolo(b, o)) out.push("solo");
   }
-  const grooms = [a, b].filter(Boolean).map((m) => groomOf((m as Mating).sireCode));
+  const grooms = [a, b]
+    .filter(Boolean)
+    .map((m) => optionGroomOf((m as Mating).sireCode, o));
   for (const g of grooms)
     if (g && o.noConsecGrooms.includes(g) && prevGrooms.includes(g)) {
       out.push("consec");
@@ -136,7 +158,11 @@ export function autoSchedule(
     return out;
   }
   const groomsOf = (r?: Round) =>
-    r ? [r.a, r.b].filter(Boolean).map((m) => groomOf((m as Mating).sireCode)) : [];
+    r
+      ? [r.a, r.b]
+          .filter(Boolean)
+          .map((m) => optionGroomOf((m as Mating).sireCode, o))
+      : [];
   // 連続禁止の担当者が、隣接ラウンド（前後どちらか）に既にいるか
   function hasConsec(groom: string, prev?: Round, next?: Round): boolean {
     if (!groom || !o.noConsecGrooms.includes(groom)) return false;
@@ -148,7 +174,7 @@ export function autoSchedule(
     const rel = releaseOf(m);
     const pinned = fixed[m.id] != null;
     const solo = isSolo(m, o);
-    const groom = groomOf(m.sireCode);
+    const groom = optionGroomOf(m.sireCode, o);
 
     if (!solo && !pinned) {
       const starts = actualStarts();
@@ -158,7 +184,7 @@ export function autoSchedule(
         if (r.a && r.b) continue;
         const other = r.a || r.b;
         if (other && isSolo(other, o)) continue;
-        if (other && concurrentConflict(m.sireCode, other.sireCode) !== null) continue;
+        if (other && concurrentIssue(m.sireCode, other.sireCode, o) !== null) continue;
         if (other && nf(m) && nf(other)) continue;
         if (hasConsec(groom, rounds[i - 1], rounds[i + 1])) continue;
         if (!r.a) r.a = m;
@@ -263,7 +289,7 @@ export function autoSchedule(
   const deg: Record<string, number> = {};
   for (const m of matings)
     deg[m.id] = matings.filter(
-      (x) => x.id !== m.id && concurrentConflict(m.sireCode, x.sireCode) !== null
+      (x) => x.id !== m.id && concurrentIssue(m.sireCode, x.sireCode, o) !== null
     ).length;
   const fixedM = matings
     .filter((m) => fixed[m.id] != null)
@@ -352,7 +378,7 @@ export function earlyFinishPick(
       const cand = rounds[j][ln];
       if (!cand) continue;
       if (other) {
-        if (concurrentConflict(cand.sireCode, other.sireCode) !== null) continue;
+        if (concurrentIssue(cand.sireCode, other.sireCode, o) !== null) continue;
         if (nf(cand) && nf(other)) continue;
         if (isSolo(cand, o) || isSolo(other, o)) continue;
       } else if (isSolo(cand, o)) continue;

@@ -2897,11 +2897,12 @@ button {
 }
 .rules-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
   gap: 8px;
 }
 .rule-row {
-  display: flex;
+  display: grid;
+  grid-template-columns: auto minmax(76px, 1fr) 74px 46px auto;
   align-items: center;
   gap: 8px;
   border: 1px solid #e2e8ec;
@@ -2914,12 +2915,16 @@ button {
   background: #eef5fb;
 }
 .rule-row select {
+  min-width: 0;
   padding: 4px 6px;
   border: 1.5px solid var(--line-strong, #c7d0d6);
   border-radius: 6px;
   font-size: 13px;
   font-weight: 700;
-  flex: 0 0 auto;
+  width: 100%;
+}
+.rule-groom {
+  color: #2c6e49;
 }
 .rules-tags {
   display: flex;

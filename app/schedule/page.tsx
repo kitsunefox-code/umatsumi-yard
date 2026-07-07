@@ -32,6 +32,7 @@ import {
   roundMinutes,
   earlyFinishPick,
   firstOnly,
+  optionGroomOf,
   swapSlots,
   trimEmpty,
 } from "@/lib/schedule";
@@ -57,6 +58,10 @@ function safeParse(s: string): Record<string, string> {
   } catch {
     return {};
   }
+}
+function quarterTime(hhmm: string): string {
+  if (!hhmm) return "";
+  return fmtTime(Math.round(toMin(hhmm) / 15) * 15);
 }
 
 // 先行する組（朝→昼→夕）の種付時刻＋間隔、および所在ボードの実際の種付終了から、
@@ -215,10 +220,17 @@ export default function SchedulePage() {
       localStorage.setItem("sched:fixedCall:" + group, JSON.stringify(next));
   }
   function fixedCallTime(id: string): string {
-    return fixedTimes[id] || "";
+    return fixedTimes[id] ? fixedTimes[id].padStart(5, "0") : "";
   }
   function setFixedCallTime(id: string, hhmm: string) {
-    setFixed(id, hhmm);
+    setFixed(id, quarterTime(hhmm));
+  }
+  function setGroom(code: string, groom: string) {
+    const c = normCode(code);
+    const next = { ...(opts.groomOverrides || {}) };
+    if (groom === "__default") delete next[c];
+    else next[c] = groom;
+    applyOpts({ ...opts, groomOverrides: next });
   }
   function setPriority(code: string, p: Priority | "") {
     const pr = { ...opts.priorities };
@@ -289,7 +301,7 @@ export default function SchedulePage() {
       const iss = roundIssues(r, prev, opts);
       prev = [r.a, r.b]
         .filter(Boolean)
-        .map((m) => groomOf((m as Mating).sireCode));
+        .map((m) => optionGroomOf((m as Mating).sireCode, opts));
       return iss;
     });
   }, [rounds, opts]);
@@ -325,19 +337,28 @@ export default function SchedulePage() {
     }
     return seen;
   }, [matings]);
-  const groupGrooms = useMemo(() => {
+  const allGrooms = useMemo(() => {
     const seen: string[] = [];
-    for (const c of groupCodes) {
-      const g = groomOf(c);
+    for (const s of STALLIONS) {
+      const g = groomOf(s.code);
       if (g && !seen.includes(g)) seen.push(g);
     }
     return seen.sort();
-  }, [groupCodes]);
+  }, []);
+  const groupGrooms = useMemo(() => {
+    const seen: string[] = [];
+    for (const c of groupCodes) {
+      const g = optionGroomOf(c, opts);
+      if (g && !seen.includes(g)) seen.push(g);
+    }
+    return seen.sort();
+  }, [groupCodes, opts]);
   const ruleCount =
     groupCodes.filter((c) => opts.priorities[c]).length +
     opts.solo.length +
     Object.keys(opts.durations).length +
     opts.noConsecGrooms.length +
+    Object.keys(opts.groomOverrides || {}).length +
     Object.keys(fixedTimes).length;
 
   function Card({ m, i, lane }: { m?: Mating; i: number; lane: "a" | "b" }) {
@@ -390,8 +411,10 @@ export default function SchedulePage() {
               </div>
             )}
             <div className="sched-sire">
-              {groomOf(m.sireCode) && (
-                <span className="sched-groom">👤{groomOf(m.sireCode)}</span>
+              {optionGroomOf(m.sireCode, opts) && (
+                <span className="sched-groom">
+                  👤{optionGroomOf(m.sireCode, opts)}
+                </span>
               )}
               {barnOf(m.sireCode) && (
                 <span className="sched-barn">{barnOf(m.sireCode)}</span>
@@ -503,8 +526,9 @@ export default function SchedulePage() {
             開始
             <input
               type="time"
+              step={900}
               value={start.padStart(5, "0")}
-              onChange={(e) => setStart(e.target.value)}
+              onChange={(e) => setStart(quarterTime(e.target.value))}
             />
           </label>
           <label>
@@ -589,11 +613,38 @@ export default function SchedulePage() {
             {groupCodes.map((c) => (
               <div
                 className={`rule-row${
-                  opts.priorities[c] || opts.durations[c] ? " set" : ""
+                  opts.priorities[c] ||
+                  opts.durations[c] ||
+                  opts.groomOverrides?.[c] != null
+                    ? " set"
+                    : ""
                 }`}
                 key={c}
               >
                 <Badge code={c} />
+                <select
+                  className="rule-groom"
+                  value={
+                    Object.prototype.hasOwnProperty.call(
+                      opts.groomOverrides || {},
+                      c
+                    )
+                      ? opts.groomOverrides[c]
+                      : "__default"
+                  }
+                  onChange={(e) => setGroom(c, e.target.value)}
+                  title="担当を変更"
+                >
+                  <option value="__default">
+                    既定{groomOf(c) ? `:${groomOf(c)}` : ""}
+                  </option>
+                  <option value="">担当なし</option>
+                  {allGrooms.map((g) => (
+                    <option value={g} key={g}>
+                      {g}
+                    </option>
+                  ))}
+                </select>
                 <select
                   value={opts.priorities[c] || ""}
                   onChange={(e) => setPriority(c, e.target.value as Priority | "")}
@@ -655,14 +706,15 @@ export default function SchedulePage() {
                     key={m.id}
                   >
                     <Badge code={m.sireCode} />
-                    {groomOf(m.sireCode) && (
+                    {optionGroomOf(m.sireCode, opts) && (
                       <span className="prefixed-call-groom">
-                        {groomOf(m.sireCode)}
+                        {optionGroomOf(m.sireCode, opts)}
                       </span>
                     )}
                     <span className="prefixed-call-input">
                       <input
                         type="time"
+                        step={900}
                         value={callFixed}
                         onChange={(e) => setFixedCallTime(m.id, e.target.value)}
                       />
@@ -769,9 +821,9 @@ export default function SchedulePage() {
                       <span className="call-mate">種付 {times[i]}</span>
                       <span className="call-mid">
                         <Badge code={m.sireCode} />
-                        {groomOf(m.sireCode) && (
+                        {optionGroomOf(m.sireCode, opts) && (
                           <span className="call-groom">
-                            👤{groomOf(m.sireCode)}
+                            👤{optionGroomOf(m.sireCode, opts)}
                           </span>
                         )}
                         {fo && <span className="first-tag">{fo}</span>}
@@ -779,6 +831,7 @@ export default function SchedulePage() {
                       <span className="call-fix">
                         <input
                           type="time"
+                          step={900}
                           value={callFixed}
                           onChange={(e) => setFixedCallTime(m.id, e.target.value)}
                         />
