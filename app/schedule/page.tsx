@@ -183,12 +183,25 @@ export default function SchedulePage() {
     return map;
   }, [boardMares, opts.durations, opts.defaultDur]);
 
+  const rosterFixedTimes = useMemo(() => {
+    const out: Record<string, string> = {};
+    for (const m of matings) {
+      if (m.apptTime) out[m.id] = quarterTime(m.apptTime);
+    }
+    return out;
+  }, [matings]);
+
+  const effectiveFixedTimes = useMemo(
+    () => ({ ...rosterFixedTimes, ...fixedTimes }),
+    [rosterFixedTimes, fixedTimes]
+  );
+
   const fixedMin = useMemo(() => {
     const m: Record<string, number> = {};
-    for (const id in fixedTimes)
-      if (fixedTimes[id]) m[id] = toMin(fixedTimes[id]) + opts.prepMin;
+    for (const id in effectiveFixedTimes)
+      if (effectiveFixedTimes[id]) m[id] = toMin(effectiveFixedTimes[id]) + opts.prepMin;
     return m;
-  }, [fixedTimes, opts.prepMin]);
+  }, [effectiveFixedTimes, opts.prepMin]);
 
   const baseStart = toMin(START_BY_GROUP[group]);
   function buildRounds(o: Options, fx = fixedMin) {
@@ -221,14 +234,16 @@ export default function SchedulePage() {
   // 固定時刻の設定（これも保存のみ。反映には「生成」を押す）
   function setFixed(id: string, hhmm: string) {
     const next = { ...fixedTimes };
-    if (hhmm) next[id] = hhmm;
-    else delete next[id];
+    next[id] = hhmm;
     setFixedTimes(next);
     if (typeof window !== "undefined")
       localStorage.setItem("sched:fixedCall:" + group, JSON.stringify(next));
   }
   function fixedCallTime(id: string): string {
-    return fixedTimes[id] ? fixedTimes[id].padStart(5, "0") : "";
+    if (Object.prototype.hasOwnProperty.call(fixedTimes, id)) {
+      return fixedTimes[id] ? fixedTimes[id].padStart(5, "0") : "";
+    }
+    return rosterFixedTimes[id] ? rosterFixedTimes[id].padStart(5, "0") : "";
   }
   function setFixedCallTime(id: string, hhmm: string) {
     setFixed(id, quarterTime(hhmm));
@@ -370,7 +385,7 @@ export default function SchedulePage() {
     Object.keys(opts.durations).length +
     opts.noConsecGrooms.length +
     Object.keys(opts.groomOverrides || {}).length +
-    Object.keys(fixedTimes).length;
+    Object.keys(effectiveFixedTimes).filter((id) => effectiveFixedTimes[id]).length;
 
   function Card({ m, i, lane }: { m?: Mating; i: number; lane: "a" | "b" }) {
     const isSel = sel?.i === i && sel?.lane === lane;
@@ -410,10 +425,10 @@ export default function SchedulePage() {
         <div className="sched-card-main">
           <Badge code={m.sireCode} />
           <div className="sched-card-txt">
-            {(fixedTimes[m.id] || fo || k === "agari-re") && (
+            {(fixedCallTime(m.id) || fo || k === "agari-re") && (
               <div className="sched-mare">
-                {fixedTimes[m.id] && (
-                  <span className="fixed-tag">📌{fixedTimes[m.id]}</span>
+                {fixedCallTime(m.id) && (
+                  <span className="fixed-tag">📌{fixedCallTime(m.id)}</span>
                 )}
                 {fo && <span className="first-tag">{fo}</span>}
                 {k === "agari-re" && (
@@ -819,8 +834,8 @@ export default function SchedulePage() {
                 .filter((m): m is Mating => !!m)
                 .map((m) => {
                   const fo = firstOnly(m);
-                  const isFixed = fixedTimes[m.id];
                   const callFixed = fixedCallTime(m.id);
+                  const isFixed = !!callFixed;
                   return (
                     <div
                       className={`call-row${isFixed ? " fixed" : ""}`}
