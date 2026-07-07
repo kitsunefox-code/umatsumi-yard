@@ -213,6 +213,12 @@ export default function SchedulePage() {
     if (typeof window !== "undefined")
       localStorage.setItem("sched:fixed:" + group, JSON.stringify(next));
   }
+  function fixedCallTime(id: string): string {
+    return fixedTimes[id] ? fmtTime(toMin(fixedTimes[id]) - opts.prepMin) : "";
+  }
+  function setFixedCallTime(id: string, hhmm: string) {
+    setFixed(id, hhmm ? fmtTime(toMin(hhmm) + opts.prepMin) : "");
+  }
   function setPriority(code: string, p: Priority | "") {
     const pr = { ...opts.priorities };
     if (p) pr[code] = p;
@@ -246,6 +252,7 @@ export default function SchedulePage() {
   function generate() {
     setSel(null);
     setRounds(buildRounds(opts, fixedMin));
+    setShowCall(true);
   }
 
   // この組で各種牡馬を呼べる最早時刻（4h間隔）＋各コマの絶対分
@@ -688,14 +695,14 @@ export default function SchedulePage() {
           <div className="call-head">
             📞 呼び出し表（時刻順）
             <span className="call-note">
-              呼ぶ時刻＝種付{opts.prepMin}分前（待機＋洗い場）／📌で時刻固定（設定後「生成」で反映）
+              入力した呼ぶ時刻を基に、種付時刻を固定して「この内容で組み直す」
             </span>
           </div>
           <div className="call-legend">
             <span>呼ぶ</span>
             <span>種付</span>
             <span>牝馬・種牡馬</span>
-            <span>固定</span>
+            <span>固定呼出</span>
           </div>
           <div className="call-rows">
             {rounds.flatMap((r, i) =>
@@ -705,6 +712,7 @@ export default function SchedulePage() {
                 .map((m) => {
                   const fo = firstOnly(m);
                   const isFixed = fixedTimes[m.id];
+                  const callFixed = fixedCallTime(m.id);
                   return (
                     <div
                       className={`call-row${isFixed ? " fixed" : ""}`}
@@ -732,13 +740,13 @@ export default function SchedulePage() {
                       <span className="call-fix">
                         <input
                           type="time"
-                          value={isFixed || ""}
-                          onChange={(e) => setFixed(m.id, e.target.value)}
+                          value={callFixed}
+                          onChange={(e) => setFixedCallTime(m.id, e.target.value)}
                         />
                         {isFixed && (
                           <button
                             className="call-fix-clear"
-                            onClick={() => setFixed(m.id, "")}
+                            onClick={() => setFixedCallTime(m.id, "")}
                             title="固定解除"
                           >
                             ✕
