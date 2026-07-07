@@ -658,9 +658,6 @@ export default function SchedulePage() {
                       {m.mareName || "（牝馬未定）"}
                     </span>
                     <Badge code={m.sireCode} />
-                    <span className="prefixed-call-sire">
-                      {stallionName(m.sireCode)}
-                    </span>
                     {groomOf(m.sireCode) && (
                       <span className="prefixed-call-groom">
                         {groomOf(m.sireCode)}
