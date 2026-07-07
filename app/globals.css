@@ -3293,11 +3293,6 @@ button {
   color: #22303a;
   min-width: 120px;
 }
-.call-sire {
-  color: #55636c;
-  font-weight: 600;
-  font-size: 13px;
-}
 .call-groom {
   color: #2c6e49;
   font-weight: 800;
@@ -3306,9 +3301,6 @@ button {
 @media (max-width: 720px) {
   .call-mare {
     min-width: 0;
-  }
-  .call-sire {
-    display: none;
   }
 }
 
@@ -3398,9 +3390,6 @@ button {
   .call-row {
     grid-template-columns: 54px 66px 1fr 108px;
     gap: 5px;
-  }
-  .call-sire {
-    display: none;
   }
   .call-fix input[type="time"] {
     width: 84px;

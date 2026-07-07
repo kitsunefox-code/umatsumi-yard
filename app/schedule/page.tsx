@@ -387,7 +387,6 @@ export default function SchedulePage() {
               {k === "agari-re" && <span className="first-tag re">上り再発</span>}
             </div>
             <div className="sched-sire">
-              {stallionName(m.sireCode)}
               {groomOf(m.sireCode) && (
                 <span className="sched-groom">👤{groomOf(m.sireCode)}</span>
               )}
@@ -775,9 +774,6 @@ export default function SchedulePage() {
                           {m.mareName || "（牝馬未定）"}
                         </span>
                         <Badge code={m.sireCode} />
-                        <span className="call-sire">
-                          {stallionName(m.sireCode)}
-                        </span>
                         {groomOf(m.sireCode) && (
                           <span className="call-groom">
                             👤{groomOf(m.sireCode)}
