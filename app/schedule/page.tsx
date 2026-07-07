@@ -49,8 +49,15 @@ const toMating = (r: {
   id: string;
   mareName: string;
   sireCode: string;
+  apptTime?: string;
   note?: string;
-}): M2 => ({ id: r.id, mareName: r.mareName, sireCode: r.sireCode, note: r.note });
+}): M2 => ({
+  id: r.id,
+  mareName: r.mareName,
+  sireCode: r.sireCode,
+  apptTime: r.apptTime,
+  note: r.note,
+});
 
 function safeParse(s: string): Record<string, string> {
   try {
@@ -125,6 +132,7 @@ export default function SchedulePage() {
         id: r.id,
         mareName: r.mareName,
         sireCode: r.sireCode,
+        apptTime: r.apptTime,
         note: r.note,
       })),
     [group]

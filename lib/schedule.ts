@@ -7,6 +7,7 @@ export type Mating = {
   mareName: string;
   sireCode: string;
   note?: string;
+  apptTime?: string;
 };
 // 第一種付所が必須か（上り初回・鎮静はマストで第一）
 export function firstOnly(m: Mating): "" | "上り" | "鎮静" {
@@ -298,6 +299,13 @@ export function autoSchedule(
       const xf = fixed[x.id] != null ? 1 : 0;
       const yf = fixed[y.id] != null ? 1 : 0;
       if (xf !== yf) return yf - xf;
+      const xa = x.apptTime ? 1 : 0;
+      const ya = y.apptTime ? 1 : 0;
+      if (xa !== ya) return ya - xa;
+      if (x.apptTime && y.apptTime) {
+        const aa = toMin(x.apptTime) - toMin(y.apptTime);
+        if (aa) return aa;
+      }
       const ee = releaseOf(x) - releaseOf(y); // 早く呼べない馬は後ろへ
       if (ee) return ee;
       const fx = normCode(x.sireCode) === "LDK" ? 1 : 0;
