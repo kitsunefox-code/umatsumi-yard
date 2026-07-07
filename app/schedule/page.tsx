@@ -647,7 +647,7 @@ export default function SchedulePage() {
                   title="担当を変更"
                 >
                   <option value="__default">
-                    既定{groomOf(c) ? `:${groomOf(c)}` : ""}
+                    {groomOf(c) || "担当なし"}
                   </option>
                   <option value="">担当なし</option>
                   {allGrooms.map((g) => (
