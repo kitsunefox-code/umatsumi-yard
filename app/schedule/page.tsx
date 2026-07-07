@@ -234,6 +234,9 @@ export default function SchedulePage() {
   }
   function setPriority(code: string, p: Priority | "") {
     const pr = { ...opts.priorities };
+    if (p === "first") {
+      for (const c in pr) if (pr[c] === "first" && c !== code) delete pr[c];
+    }
     if (p) pr[code] = p;
     else delete pr[code];
     applyOpts({ ...opts, priorities: pr });

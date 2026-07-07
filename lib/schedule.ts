@@ -291,23 +291,21 @@ export function autoSchedule(
     deg[m.id] = matings.filter(
       (x) => x.id !== m.id && concurrentIssue(m.sireCode, x.sireCode, o) !== null
     ).length;
-  const fixedM = matings
-    .filter((m) => fixed[m.id] != null)
-    .sort((a, b) => fixed[a.id] - fixed[b.id]);
-  const rest = matings
-    .filter((m) => fixed[m.id] == null)
+  const ordered = [...matings]
     .sort((x, y) => {
       const rr = rk(x) - rk(y);
       if (rr) return rr;
+      const xf = fixed[x.id] != null ? 1 : 0;
+      const yf = fixed[y.id] != null ? 1 : 0;
+      if (xf !== yf) return yf - xf;
       const ee = releaseOf(x) - releaseOf(y); // 早く呼べない馬は後ろへ
       if (ee) return ee;
       const fx = normCode(x.sireCode) === "LDK" ? 1 : 0;
       const fy = normCode(y.sireCode) === "LDK" ? 1 : 0;
-      if (fx !== fy) return fy - fx;
+      if (fx !== fy) return rk(x) === 0 ? fx - fy : fy - fx;
       return deg[y.id] - deg[x.id];
     });
-  for (const m of fixedM) place(m);
-  for (const m of rest) place(m);
+  for (const m of ordered) place(m);
   resort();
   enforceFixedAnchors();
   enforceNoConsecGaps();
