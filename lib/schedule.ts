@@ -211,6 +211,21 @@ export function earlyFinishPick(
   return null;
 }
 
+// 任意の2枠を入れ替え（タップ→タップ操作用）
+export function swapSlots(
+  rounds: Round[],
+  i: number,
+  la: "a" | "b",
+  j: number,
+  lb: "a" | "b"
+): Round[] {
+  const next = rounds.map((r) => ({ ...r }));
+  const t = next[i][la];
+  next[i][la] = next[j][lb];
+  next[j][lb] = t;
+  return next;
+}
+
 // 手動操作
 export function swapLane(rounds: Round[], i: number): Round[] {
   const next = rounds.map((r) => ({ ...r }));

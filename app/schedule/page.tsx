@@ -25,8 +25,7 @@ import {
   roundMinutes,
   earlyFinishPick,
   firstOnly,
-  swapLane,
-  moveCard,
+  swapSlots,
   trimEmpty,
 } from "@/lib/schedule";
 
@@ -56,6 +55,7 @@ export default function SchedulePage() {
   const [showRules, setShowRules] = useState(false);
   const [showEarly, setShowEarly] = useState(false);
   const [opts, setOpts] = useState<Options>(defaultOptions());
+  const [sel, setSel] = useState<{ i: number; lane: "a" | "b" } | null>(null);
 
   const matings: Mating[] = useMemo(
     () =>
@@ -104,6 +104,7 @@ export default function SchedulePage() {
 
   // オプション変更→保存＆即組み直し
   function applyOpts(next: Options) {
+    setSel(null);
     setOpts(next);
     if (typeof window !== "undefined")
       localStorage.setItem("sched:opts", JSON.stringify(next));
@@ -139,7 +140,24 @@ export default function SchedulePage() {
   }
 
   function rebuild() {
+    setSel(null);
     setRounds(autoSchedule(matings, opts));
+  }
+
+  // タップで入れ替え：1枚目タップ→選択、2枚目タップ→入れ替え
+  function tapSlot(i: number, lane: "a" | "b", blocked: boolean) {
+    if (blocked) return;
+    const cur = rounds[i][lane];
+    if (!sel) {
+      if (cur) setSel({ i, lane });
+      return;
+    }
+    if (sel.i === i && sel.lane === lane) {
+      setSel(null);
+      return;
+    }
+    setRounds(swapSlots(rounds, sel.i, sel.lane, i, lane));
+    setSel(null);
   }
 
   const times = useMemo(() => startTimes(rounds, start, opts), [rounds, start, opts]);
@@ -184,6 +202,8 @@ export default function SchedulePage() {
     opts.noConsecGrooms.length;
 
   function Card({ m, i, lane }: { m?: Mating; i: number; lane: "a" | "b" }) {
+    const isSel = sel?.i === i && sel?.lane === lane;
+    const targeting = sel !== null && !isSel;
     // 単独コマの第二レーンは使用不可表示
     if (!m) {
       const solo =
@@ -191,15 +211,27 @@ export default function SchedulePage() {
         rounds[i].a &&
         opts.solo.includes(normCode(rounds[i].a!.sireCode));
       return (
-        <div className={`sched-card empty${solo ? " blocked" : ""}`}>
-          {solo ? "第二 使用不可" : "空き"}
-        </div>
+        <button
+          type="button"
+          className={`sched-card empty${solo ? " blocked" : ""}${
+            targeting && !solo ? " target" : ""
+          }`}
+          onClick={() => tapSlot(i, lane, !!solo)}
+        >
+          {solo ? "第二 使用不可" : targeting ? "ここへ" : "空き"}
+        </button>
       );
     }
     const fo = firstOnly(m);
     const early = showEarly ? earlyFinishPick(rounds, i, lane, opts) : null;
     return (
-      <div className="sched-card">
+      <button
+        type="button"
+        className={`sched-card tappable${isSel ? " sel" : ""}${
+          targeting ? " target" : ""
+        }`}
+        onClick={() => tapSlot(i, lane, false)}
+      >
         <div className="sched-card-main">
           <Badge code={m.sireCode} />
           <div className="sched-card-txt">
@@ -228,18 +260,12 @@ export default function SchedulePage() {
             )}
           </div>
         </div>
-        <div className="sched-ops">
-          <button title="1つ上へ" onClick={() => setRounds(moveCard(rounds, i, lane, -1))}>
-            ▲
-          </button>
-          <button title="1つ下へ" onClick={() => setRounds(moveCard(rounds, i, lane, 1))}>
-            ▼
-          </button>
-          <button title="左右入替" onClick={() => setRounds(swapLane(rounds, i))}>
-            ⇄
-          </button>
-        </div>
-      </div>
+        {isSel ? (
+          <span className="sched-selmark">選択中</span>
+        ) : (
+          targeting && <span className="sched-selmark ghost">入替</span>
+        )}
+      </button>
     );
   }
 
@@ -465,6 +491,11 @@ export default function SchedulePage() {
 
       {/* タイムライン */}
       <section className="sched-timeline">
+        <div className={`tap-hint${sel ? " active" : ""}`}>
+          {sel
+            ? "入れ替え先のカード（または空き枠）をタップ。もう一度同じカードで取消。"
+            : "👆 カードをタップ→もう1枚タップで入れ替えできます。"}
+        </div>
         <div className="sched-legend">
           <span>時刻</span>
           <span>第一種付所</span>

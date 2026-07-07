@@ -3055,3 +3055,82 @@ button {
   border-color: #e0a3a3;
   color: #c0392b;
 }
+
+/* タップで入れ替え（タブレット向け） */
+.tap-hint {
+  font-size: 13px;
+  font-weight: 700;
+  color: #55636c;
+  background: #eef2f4;
+  border-radius: 8px;
+  padding: 8px 12px;
+  margin: 2px 4px 8px;
+}
+.tap-hint.active {
+  color: #1f6feb;
+  background: #e6f0fd;
+  border: 1.5px solid #a9c8f5;
+}
+.sched-card.tappable {
+  cursor: pointer;
+  text-align: left;
+  width: 100%;
+  font: inherit;
+  -webkit-tap-highlight-color: transparent;
+  transition: box-shadow 0.1s, transform 0.05s;
+}
+.sched-card.tappable:active {
+  transform: scale(0.99);
+}
+.sched-card.sel {
+  border-color: #1f6feb;
+  border-width: 2.5px;
+  box-shadow: 0 0 0 3px rgba(31, 111, 235, 0.18);
+  background: #f2f7ff;
+}
+.sched-card.target {
+  border-style: dashed;
+  border-color: #7facf0;
+}
+.sched-card.empty.target {
+  color: #1f6feb;
+  background: #eaf2fe;
+  border-color: #7facf0;
+}
+.sched-selmark {
+  position: absolute;
+  top: -9px;
+  right: 10px;
+  font-size: 11px;
+  font-weight: 800;
+  color: #fff;
+  background: #1f6feb;
+  border-radius: 999px;
+  padding: 1px 9px;
+}
+.sched-selmark.ghost {
+  background: #9db6c6;
+}
+.sched-round {
+  position: relative;
+}
+/* タッチしやすい高さ */
+@media (max-width: 900px) {
+  .sched-card {
+    min-height: 60px;
+    padding: 9px 11px;
+  }
+  .sched-mare {
+    font-size: 15px;
+  }
+  .group-tab,
+  .btn-sm {
+    min-height: 40px;
+  }
+  .rule-row select,
+  .rule-dur,
+  .groom-chip,
+  .sched-config input {
+    min-height: 38px;
+  }
+}
