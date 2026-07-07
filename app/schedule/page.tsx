@@ -11,7 +11,7 @@ import {
   noteKind,
 } from "@/lib/board";
 import type { Mare } from "@/lib/board";
-import { STALLIONS, BARNS, stallionName, groomOf, barnOf } from "@/lib/barns";
+import { STALLIONS, BARNS, groomOf, barnOf } from "@/lib/barns";
 import { cloudEnabled, subscribeBoard } from "@/lib/cloud";
 import {
   Mating,
@@ -378,14 +378,17 @@ export default function SchedulePage() {
         <div className="sched-card-main">
           <Badge code={m.sireCode} />
           <div className="sched-card-txt">
-            <div className="sched-mare">
-              {m.mareName || "（牝馬未定）"}
-              {fixedTimes[m.id] && (
-                <span className="fixed-tag">📌{fixedTimes[m.id]}</span>
-              )}
-              {fo && <span className="first-tag">{fo}</span>}
-              {k === "agari-re" && <span className="first-tag re">上り再発</span>}
-            </div>
+            {(fixedTimes[m.id] || fo || k === "agari-re") && (
+              <div className="sched-mare">
+                {fixedTimes[m.id] && (
+                  <span className="fixed-tag">📌{fixedTimes[m.id]}</span>
+                )}
+                {fo && <span className="first-tag">{fo}</span>}
+                {k === "agari-re" && (
+                  <span className="first-tag re">上り再発</span>
+                )}
+              </div>
+            )}
             <div className="sched-sire">
               {groomOf(m.sireCode) && (
                 <span className="sched-groom">👤{groomOf(m.sireCode)}</span>
@@ -408,8 +411,7 @@ export default function SchedulePage() {
             )}
             {early && (
               <div className="early-pick">
-                💡早く終わったら→{early.mareName || stallionName(early.sireCode)}
-                （{normCode(early.sireCode)}）
+                💡早く終わったら→{normCode(early.sireCode)}
               </div>
             )}
           </div>
@@ -592,7 +594,6 @@ export default function SchedulePage() {
                 key={c}
               >
                 <Badge code={c} />
-                <span className="rule-name">{stallionName(c)}</span>
                 <select
                   value={opts.priorities[c] || ""}
                   onChange={(e) => setPriority(c, e.target.value as Priority | "")}
@@ -653,9 +654,6 @@ export default function SchedulePage() {
                     className={`prefixed-call-row${callFixed ? " fixed" : ""}`}
                     key={m.id}
                   >
-                    <span className="prefixed-call-mare">
-                      {m.mareName || "（牝馬未定）"}
-                    </span>
                     <Badge code={m.sireCode} />
                     {groomOf(m.sireCode) && (
                       <span className="prefixed-call-groom">
@@ -770,9 +768,6 @@ export default function SchedulePage() {
                       </span>
                       <span className="call-mate">種付 {times[i]}</span>
                       <span className="call-mid">
-                        <span className="call-mare">
-                          {m.mareName || "（牝馬未定）"}
-                        </span>
                         <Badge code={m.sireCode} />
                         {groomOf(m.sireCode) && (
                           <span className="call-groom">

@@ -2913,15 +2913,6 @@ button {
   border-color: #9db6c6;
   background: #eef5fb;
 }
-.rule-name {
-  flex: 1;
-  font-size: 13px;
-  font-weight: 700;
-  color: #2c353b;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
 .rule-row select {
   padding: 4px 6px;
   border: 1.5px solid var(--line-strong, #c7d0d6);
@@ -3086,7 +3077,7 @@ button {
 }
 .prefixed-call-row {
   display: grid;
-  grid-template-columns: minmax(110px, 1fr) auto auto 108px;
+  grid-template-columns: auto minmax(0, 1fr) 108px;
   align-items: center;
   gap: 6px;
   min-height: 40px;
@@ -3102,18 +3093,13 @@ button {
   background: #f5f0fd;
   border-color: #cbb9ee;
 }
-.prefixed-call-mare {
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
 .prefixed-call-groom {
   color: #687780;
   white-space: nowrap;
 }
 .prefixed-call-input {
   display: flex;
+  grid-column: 3;
   align-items: center;
   justify-content: flex-end;
   gap: 4px;
@@ -3142,7 +3128,7 @@ button {
     grid-template-columns: 1fr;
   }
   .prefixed-call-row {
-    grid-template-columns: minmax(96px, 1fr) auto 108px;
+    grid-template-columns: auto minmax(0, 1fr) 108px;
   }
   .prefixed-call-groom {
     display: none;
@@ -3289,20 +3275,10 @@ button {
   color: #1f6feb;
   min-width: 58px;
 }
-.call-mare {
-  font-weight: 800;
-  color: #22303a;
-  min-width: 120px;
-}
 .call-groom {
   color: #2c6e49;
   font-weight: 800;
   font-size: 13px;
-}
-@media (max-width: 720px) {
-  .call-mare {
-    min-width: 0;
-  }
 }
 
 /* 固定時刻・呼び出しリード */
