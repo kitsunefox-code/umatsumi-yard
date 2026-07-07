@@ -73,23 +73,13 @@ function computeEarliest(
   };
   for (let k = 0; k < idx; k++) {
     const gk = DAY_ORDER[k];
-    let rs: Round[] | null = null;
-    if (typeof window !== "undefined") {
-      const s = localStorage.getItem("sched:" + gk);
-      if (s) {
-        try {
-          rs = JSON.parse(s);
-        } catch {}
-      }
-    }
-    if (!rs)
-      rs = autoSchedule(
-        groupRoster(gk).map(toMating),
-        o,
-        {},
-        {},
-        toMin(START_BY_GROUP[gk])
-      );
+    const rs = autoSchedule(
+      groupRoster(gk).map(toMating),
+      o,
+      {},
+      {},
+      toMin(START_BY_GROUP[gk])
+    );
     const t = matingTimes(rs, START_BY_GROUP[gk], o);
     for (const c in t) bump(c, t[c] + o.gapMin);
   }
@@ -197,29 +187,16 @@ export default function SchedulePage() {
     );
   }
 
-  // 組の切替：開始時刻を既定にし、保存があれば復元。無ければ「未生成」のまま（生成ボタンを押すまで組まない）
+  // 組の切替：開始時刻を既定にし、必ず「未生成」から始める（生成ボタンを押すまで組まない）
   useEffect(() => {
     setStart(START_BY_GROUP[group]);
     setSel(null);
-    let restored = false;
     if (typeof window !== "undefined") {
-      const saved = localStorage.getItem("sched:" + group);
-      if (saved) {
-        try {
-          setRounds(JSON.parse(saved));
-          restored = true;
-        } catch {}
-      }
+      localStorage.removeItem("sched:" + group);
     }
-    if (!restored) setRounds([]);
+    setRounds([]);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [group]);
-
-  // コマ保存（生成・手動調整の結果のみ保存。未生成＝空のままなら保存しない）
-  useEffect(() => {
-    if (typeof window !== "undefined" && rounds.length)
-      localStorage.setItem("sched:" + group, JSON.stringify(rounds));
-  }, [rounds, group]);
 
   // ルール変更は保存のみ（即座には組み直さない）。反映するには「生成」を押す。
   function applyOpts(next: Options) {
