@@ -251,7 +251,10 @@ export default function BoardPage() {
   // 場所変更に伴う付随情報（種付所の記録・帰宅時刻）
   function zoneExtra(m: Mare, zone: Zone): Partial<Mare> {
     const p: Partial<Mare> = {};
-    if (zone === "第一種付所" || zone === "第二種付所") p.matedAt = zone;
+    if (zone === "第一種付所" || zone === "第二種付所") {
+      p.matedAt = zone;
+      p.matedTs = Date.now(); // 種付時刻（4h間隔の起点）
+    }
     if (zone === "帰宅") p.departedTs = m.departedTs ?? Date.now();
     return p;
   }

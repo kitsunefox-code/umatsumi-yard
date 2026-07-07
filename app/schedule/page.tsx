@@ -10,7 +10,9 @@ import {
   normCode,
   noteKind,
 } from "@/lib/board";
+import type { Mare } from "@/lib/board";
 import { STALLIONS, BARNS, stallionName, groomOf, barnOf } from "@/lib/barns";
+import { cloudEnabled, subscribeBoard } from "@/lib/cloud";
 import {
   Mating,
   Round,
@@ -26,6 +28,7 @@ import {
   startMinutes,
   matingTimes,
   fmtTime,
+  toMin,
   roundMinutes,
   earlyFinishPick,
   firstOnly,
@@ -48,10 +51,26 @@ const toMating = (r: {
   note?: string;
 }): M2 => ({ id: r.id, mareName: r.mareName, sireCode: r.sireCode, note: r.note });
 
-// 先行する組（朝→昼→夕）の種付時刻＋間隔から、この組で呼べる最早時刻を求める
-function computeEarliest(g: GroupKey, o: Options): Record<string, number> {
+function safeParse(s: string): Record<string, string> {
+  try {
+    return JSON.parse(s);
+  } catch {
+    return {};
+  }
+}
+
+// 先行する組（朝→昼→夕）の種付時刻＋間隔、および所在ボードの実際の種付終了から、
+// この組で各種牡馬を呼べる最早時刻（絶対分）を求める。realEnd=種牡馬コード→実種付終了(絶対分)
+function computeEarliest(
+  g: GroupKey,
+  o: Options,
+  realEnd: Record<string, number> = {}
+): Record<string, number> {
   const idx = DAY_ORDER.indexOf(g);
   const out: Record<string, number> = {};
+  const bump = (c: string, e: number) => {
+    if (out[c] == null || e > out[c]) out[c] = e;
+  };
   for (let k = 0; k < idx; k++) {
     const gk = DAY_ORDER[k];
     let rs: Round[] | null = null;
@@ -63,13 +82,19 @@ function computeEarliest(g: GroupKey, o: Options): Record<string, number> {
         } catch {}
       }
     }
-    if (!rs) rs = autoSchedule(groupRoster(gk).map(toMating), o);
+    if (!rs)
+      rs = autoSchedule(
+        groupRoster(gk).map(toMating),
+        o,
+        {},
+        {},
+        toMin(START_BY_GROUP[gk])
+      );
     const t = matingTimes(rs, START_BY_GROUP[gk], o);
-    for (const c in t) {
-      const e = t[c] + o.gapMin;
-      if (out[c] == null || e > out[c]) out[c] = e;
-    }
+    for (const c in t) bump(c, t[c] + o.gapMin);
   }
+  // 所在ボードの実績（実際の種付終了）を優先的に反映
+  for (const c in realEnd) bump(c, realEnd[c] + o.gapMin);
   return out;
 }
 
@@ -95,6 +120,9 @@ export default function SchedulePage() {
   const [showCall, setShowCall] = useState(false);
   const [opts, setOpts] = useState<Options>(defaultOptions());
   const [sel, setSel] = useState<{ i: number; lane: "a" | "b" } | null>(null);
+  const [fixedTimes, setFixedTimes] = useState<Record<string, string>>({});
+  const [accessKey, setAccessKey] = useState<string | null>(null);
+  const [boardMares, setBoardMares] = useState<Mare[]>([]);
 
   const matings: Mating[] = useMemo(
     () =>
@@ -107,7 +135,7 @@ export default function SchedulePage() {
     [group]
   );
 
-  // オプション復元
+  // オプション復元＋所在ボードの合言葉
   useEffect(() => {
     if (typeof window === "undefined") return;
     const saved = localStorage.getItem("sched:opts");
@@ -116,7 +144,58 @@ export default function SchedulePage() {
         setOpts({ ...defaultOptions(), ...JSON.parse(saved) });
       } catch {}
     }
+    setAccessKey(localStorage.getItem("mare-transport-access-key"));
   }, []);
+
+  // 所在ボードを購読（実際の種付時刻を4h間隔の基準に使う）
+  useEffect(() => {
+    if (!cloudEnabled || !accessKey) return;
+    let unsub = () => {};
+    subscribeBoard(accessKey, (data) => setBoardMares(data?.mares ?? []))
+      .then((u) => {
+        if (u) unsub = u;
+      })
+      .catch(() => {});
+    return () => unsub();
+  }, [accessKey]);
+
+  // 固定時刻（この組）の復元
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const s = localStorage.getItem("sched:fixed:" + group);
+    setFixedTimes(s ? safeParse(s) : {});
+  }, [group]);
+
+  // 所在ボードの matedTs から、種牡馬別の実・種付終了（絶対分）
+  const realEnd = useMemo(() => {
+    const map: Record<string, number> = {};
+    for (const mare of boardMares) {
+      if (!mare.matedTs) continue;
+      const c = normCode(mare.sireCode);
+      const d = new Date(mare.matedTs);
+      const end =
+        d.getHours() * 60 + d.getMinutes() + (opts.durations[c] || opts.defaultDur);
+      if (map[c] == null || end > map[c]) map[c] = end;
+    }
+    return map;
+  }, [boardMares, opts.durations, opts.defaultDur]);
+
+  const fixedMin = useMemo(() => {
+    const m: Record<string, number> = {};
+    for (const id in fixedTimes) if (fixedTimes[id]) m[id] = toMin(fixedTimes[id]);
+    return m;
+  }, [fixedTimes]);
+
+  const baseStart = toMin(START_BY_GROUP[group]);
+  function buildRounds(o: Options, fx = fixedMin) {
+    return autoSchedule(
+      matings,
+      o,
+      computeEarliest(group, o, realEnd),
+      fx,
+      baseStart
+    );
+  }
 
   // 組の切替：開始時刻を既定にし、保存があれば復元・無ければ自動生成
   useEffect(() => {
@@ -131,8 +210,7 @@ export default function SchedulePage() {
         } catch {}
       }
     }
-    if (!restored)
-      setRounds(autoSchedule(matings, opts, computeEarliest(group, opts)));
+    if (!restored) setRounds(buildRounds(opts));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [group]);
 
@@ -148,7 +226,20 @@ export default function SchedulePage() {
     setOpts(next);
     if (typeof window !== "undefined")
       localStorage.setItem("sched:opts", JSON.stringify(next));
-    setRounds(autoSchedule(matings, next, computeEarliest(group, next)));
+    setRounds(buildRounds(next));
+  }
+  // 固定時刻の設定
+  function setFixed(id: string, hhmm: string) {
+    const next = { ...fixedTimes };
+    if (hhmm) next[id] = hhmm;
+    else delete next[id];
+    setFixedTimes(next);
+    setSel(null);
+    if (typeof window !== "undefined")
+      localStorage.setItem("sched:fixed:" + group, JSON.stringify(next));
+    const fx: Record<string, number> = {};
+    for (const k in next) if (next[k]) fx[k] = toMin(next[k]);
+    setRounds(buildRounds(opts, fx));
   }
   function setPriority(code: string, p: Priority | "") {
     const pr = { ...opts.priorities };
@@ -181,13 +272,13 @@ export default function SchedulePage() {
 
   function rebuild() {
     setSel(null);
-    setRounds(autoSchedule(matings, opts, computeEarliest(group, opts)));
+    setRounds(buildRounds(opts));
   }
 
   // この組で各種牡馬を呼べる最早時刻（4h間隔）＋各コマの絶対分
   const earliest = useMemo(
-    () => computeEarliest(group, opts),
-    [group, opts]
+    () => computeEarliest(group, opts, realEnd),
+    [group, opts, realEnd]
   );
   const startMins = useMemo(
     () => startMinutes(rounds, start, opts),
@@ -307,6 +398,9 @@ export default function SchedulePage() {
           <div className="sched-card-txt">
             <div className="sched-mare">
               {m.mareName || "（牝馬未定）"}
+              {fixedTimes[m.id] && (
+                <span className="fixed-tag">📌{fixedTimes[m.id]}</span>
+              )}
               {fo && <span className="first-tag">{fo}</span>}
               {k === "agari-re" && <span className="first-tag re">上り再発</span>}
             </div>
@@ -459,6 +553,23 @@ export default function SchedulePage() {
             />
             時間
           </label>
+          <label title="呼び出しから種付までの準備（待機＋洗い場）">
+            呼出リード
+            <input
+              type="number"
+              min={0}
+              max={120}
+              step={5}
+              value={opts.prepMin}
+              onChange={(e) =>
+                applyOpts({
+                  ...opts,
+                  prepMin: Math.max(0, Number(e.target.value) || 0),
+                })
+              }
+            />
+            分前
+          </label>
           <span className="sched-stat">
             種付 {scheduled}頭 ／ {rounds.length}コマ
           </span>
@@ -590,7 +701,18 @@ export default function SchedulePage() {
       {/* 呼び出し表（時刻順・誰を何時に呼ぶか） */}
       {showCall && (
         <section className="call-sheet">
-          <div className="call-head">📞 呼び出し表（時刻順）</div>
+          <div className="call-head">
+            📞 呼び出し表（時刻順）
+            <span className="call-note">
+              呼ぶ時刻＝種付{opts.prepMin}分前（待機＋洗い場）／📌で時刻固定
+            </span>
+          </div>
+          <div className="call-legend">
+            <span>呼ぶ</span>
+            <span>種付</span>
+            <span>牝馬・種牡馬</span>
+            <span>固定</span>
+          </div>
           <div className="call-rows">
             {rounds.flatMap((r, i) =>
               (["a", "b"] as const)
@@ -598,18 +720,47 @@ export default function SchedulePage() {
                 .filter((m): m is Mating => !!m)
                 .map((m) => {
                   const fo = firstOnly(m);
+                  const isFixed = fixedTimes[m.id];
                   return (
-                    <div className="call-row" key={m.id}>
-                      <span className="call-time">{times[i]}</span>
-                      <span className="call-mare">
-                        {m.mareName || "（牝馬未定）"}
+                    <div
+                      className={`call-row${isFixed ? " fixed" : ""}`}
+                      key={m.id}
+                    >
+                      <span className="call-time">
+                        {fmtTime(startMins[i] - opts.prepMin)}
                       </span>
-                      <Badge code={m.sireCode} />
-                      <span className="call-sire">{stallionName(m.sireCode)}</span>
-                      {groomOf(m.sireCode) && (
-                        <span className="call-groom">👤{groomOf(m.sireCode)}</span>
-                      )}
-                      {fo && <span className="first-tag">{fo}</span>}
+                      <span className="call-mate">種付 {times[i]}</span>
+                      <span className="call-mid">
+                        <span className="call-mare">
+                          {m.mareName || "（牝馬未定）"}
+                        </span>
+                        <Badge code={m.sireCode} />
+                        <span className="call-sire">
+                          {stallionName(m.sireCode)}
+                        </span>
+                        {groomOf(m.sireCode) && (
+                          <span className="call-groom">
+                            👤{groomOf(m.sireCode)}
+                          </span>
+                        )}
+                        {fo && <span className="first-tag">{fo}</span>}
+                      </span>
+                      <span className="call-fix">
+                        <input
+                          type="time"
+                          value={isFixed || ""}
+                          onChange={(e) => setFixed(m.id, e.target.value)}
+                        />
+                        {isFixed && (
+                          <button
+                            className="call-fix-clear"
+                            onClick={() => setFixed(m.id, "")}
+                            title="固定解除"
+                          >
+                            ✕
+                          </button>
+                        )}
+                      </span>
                     </div>
                   );
                 })

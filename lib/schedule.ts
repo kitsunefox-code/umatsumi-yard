@@ -34,6 +34,7 @@ export type Options = {
   durations: Record<string, number>; // 種牡馬コード→平均所要（分）
   defaultDur: number; // 既定の所要（分）
   gapMin: number; // 同じ種牡馬の種付間隔（分）＝既定4時間
+  prepMin: number; // 呼び出しから種付までの準備（待機＋洗い場）分
 };
 export function defaultOptions(): Options {
   return {
@@ -43,11 +44,12 @@ export function defaultOptions(): Options {
     durations: {},
     defaultDur: 15,
     gapMin: 240,
+    prepMin: 30,
   };
 }
 
-// 1コマ（第一・第二種付所で最大2頭。a=第一 / b=第二）
-export type Round = { a?: Mating; b?: Mating };
+// 1コマ（第一・第二種付所で最大2頭。a=第一 / b=第二）。startMin=このコマの開始絶対分（固定/間隔待ちのギャップ）
+export type Round = { a?: Mating; b?: Mating; startMin?: number };
 
 export type Issue = "same" | "groom" | "stall" | "first2" | "lane" | "solo" | "consec";
 export const ISSUE_LABEL: Record<Issue, string> = {
@@ -96,82 +98,79 @@ export function roundIssues(
   return out;
 }
 
-function pickPartner(
-  pool: Mating[],
-  used: Set<string>,
-  i: number,
-  a: Mating,
-  o: Options,
-  prevGrooms: string[],
-  avoidConsec: boolean
-): Mating | undefined {
-  const rankA = rankOf(a.sireCode, o.priorities);
-  for (let j = i + 1; j < pool.length; j++) {
-    const c = pool[j];
-    if (used.has(c.id)) continue;
-    if (rankOf(c.sireCode, o.priorities) > rankA + 1) break; // 優先度が離れすぎ
-    if (concurrentConflict(a.sireCode, c.sireCode) !== null) continue;
-    if (nf(a) && nf(c)) continue; // 第一は1頭まで
-    if (isSolo(a, o) || isSolo(c, o)) continue;
-    if (avoidConsec) {
-      const gs = [groomOf(a.sireCode), groomOf(c.sireCode)];
-      if (gs.some((g) => g && o.noConsecGrooms.includes(g) && prevGrooms.includes(g)))
-        continue;
-    }
-    return c;
-  }
-  return undefined;
-}
-
-// 自動で被らない順番を組む。earliest=種牡馬コード→この組で種付できる最早の絶対分（4h間隔用）
+// 時刻ベースで自動編成（4h間隔・固定時刻を守り、赤＝被り/間隔違反を出さない）
+// earliest=種牡馬コード→この組で種付できる最早の絶対分、fixed=牝馬id→固定開始分、baseStart=組開始の絶対分
 export function autoSchedule(
   matings: Mating[],
   o: Options,
-  earliest: Record<string, number> = {}
+  earliest: Record<string, number> = {},
+  fixed: Record<string, number> = {},
+  baseStart = 480
 ): Round[] {
-  const fc = "LDK";
   const rk = (m: Mating) => rankOf(m.sireCode, o.priorities);
-  const em = (m: Mating) => earliest[normCode(m.sireCode)] ?? -1;
-  const deg: Record<string, number> = {};
-  for (const m of matings)
-    deg[m.id] = matings.filter(
-      (x) => x.id !== m.id && concurrentConflict(m.sireCode, x.sireCode) !== null
-    ).length;
-  const pool = [...matings].sort((x, y) => {
-    const rr = rk(x) - rk(y);
-    if (rr) return rr;
-    const ee = em(x) - em(y); // 4h制約で早く呼べない馬は後ろへ
-    if (ee) return ee;
-    const fx = normCode(x.sireCode) === fc ? 1 : 0;
-    const fy = normCode(y.sireCode) === fc ? 1 : 0;
-    if (fx !== fy) return fy - fx;
-    return deg[y.id] - deg[x.id];
-  });
+  const earliestOf = (m: Mating) =>
+    fixed[m.id] ?? earliest[normCode(m.sireCode)] ?? baseStart;
   const rounds: Round[] = [];
-  const used = new Set<string>();
-  let prevGrooms: string[] = [];
-  for (let i = 0; i < pool.length; i++) {
-    const a = pool[i];
-    if (used.has(a.id)) continue;
-    used.add(a.id);
-    if (isSolo(a, o)) {
-      rounds.push({ a });
-      prevGrooms = [groomOf(a.sireCode)];
-      continue;
+  const times = () => startMinutesBase(rounds, baseStart, o);
+  const lastEnd = () => {
+    if (!rounds.length) return baseStart;
+    const ts = times();
+    return ts[rounds.length - 1] + roundMinutes(rounds[rounds.length - 1], o);
+  };
+
+  function place(m: Mating) {
+    const et = earliestOf(m);
+    const pinned = fixed[m.id] != null;
+    const solo = isSolo(m, o);
+    if (!solo && !pinned) {
+      // 既存コマ（時刻順）で、et以降かつ相方に組める空きレーンを探す
+      const ts = times();
+      const order = rounds.map((_, i) => i).sort((x, y) => ts[x] - ts[y]);
+      for (const i of order) {
+        const r = rounds[i];
+        if (ts[i] < et) continue;
+        const other = r.a || r.b;
+        if (r.a && r.b) continue;
+        if (other && isSolo(other, o)) continue;
+        if (other) {
+          if (concurrentConflict(m.sireCode, other.sireCode) !== null) continue;
+          if (nf(m) && nf(other)) continue;
+        }
+        if (!r.a) r.a = m;
+        else if (nf(m) && !nf(r.a)) {
+          r.b = r.a;
+          r.a = m;
+        } else r.b = m;
+        return;
+      }
     }
-    let b = pickPartner(pool, used, i, a, o, prevGrooms, true);
-    if (!b) b = pickPartner(pool, used, i, a, o, prevGrooms, false);
-    if (b) used.add(b.id);
-    let ra = a;
-    let rb = b;
-    if (b && nf(b) && !nf(a)) {
-      ra = b;
-      rb = a;
-    } // 上り/鎮静を第一（a）へ
-    rounds.push({ a: ra, b: rb });
-    prevGrooms = [ra, rb].filter(Boolean).map((m) => groomOf((m as Mating).sireCode));
+    // 新規コマ（必要なら間隔待ちのギャップ／固定でピン）
+    const startMin = pinned || et > lastEnd() ? et : undefined;
+    rounds.push({ a: m, startMin });
   }
-  return rounds;
+
+  const fixedM = matings
+    .filter((m) => fixed[m.id] != null)
+    .sort((a, b) => fixed[a.id] - fixed[b.id]);
+  const rest = matings
+    .filter((m) => fixed[m.id] == null)
+    .sort((x, y) => {
+      const rr = rk(x) - rk(y);
+      if (rr) return rr;
+      const ee = earliestOf(x) - earliestOf(y); // 早く呼べない馬は後ろへ
+      if (ee) return ee;
+      const fx = normCode(x.sireCode) === "LDK" ? 1 : 0;
+      const fy = normCode(y.sireCode) === "LDK" ? 1 : 0;
+      return fy - fx;
+    });
+  for (const m of fixedM) place(m);
+  for (const m of rest) place(m);
+  // 時刻順に並べ替えて返す
+  const ts = times();
+  return rounds
+    .map((_, i) => i)
+    .sort((a, b) => ts[a] - ts[b])
+    .map((i) => rounds[i]);
 }
 
 // 1コマの所要（分）＝2頭の長い方
@@ -185,19 +184,23 @@ export function fmtTime(total: number): string {
   const mm = ((total % 60) + 60) % 60;
   return `${hh}:${String(mm).padStart(2, "0")}`;
 }
-function toMin(hhmm: string): number {
+export function toMin(hhmm: string): number {
   const [h, m] = (hhmm || "8:00").split(":").map((n) => parseInt(n, 10) || 0);
   return h * 60 + m;
 }
-// 各コマの開始（絶対分）
-export function startMinutes(rounds: Round[], start: string, o: Options): number[] {
-  let t = toMin(start);
+// 各コマの開始（絶対分）。startMin（固定/間隔待ち）があればその時刻以降にずらす
+function startMinutesBase(rounds: Round[], baseMin: number, o: Options): number[] {
+  let t = baseMin;
   const out: number[] = [];
   for (const r of rounds) {
-    out.push(t);
-    t += roundMinutes(r, o);
+    const s = r.startMin != null ? Math.max(r.startMin, t) : t;
+    out.push(s);
+    t = s + roundMinutes(r, o);
   }
   return out;
+}
+export function startMinutes(rounds: Round[], start: string, o: Options): number[] {
+  return startMinutesBase(rounds, toMin(start), o);
 }
 // 各コマの開始時刻（表示用）
 export function startTimes(rounds: Round[], start: string, o: Options): string[] {

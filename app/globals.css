@@ -3221,3 +3221,98 @@ button {
     display: none;
   }
 }
+
+/* 固定時刻・呼び出しリード */
+.fixed-tag {
+  display: inline-block;
+  margin-left: 6px;
+  font-size: 10px;
+  font-weight: 800;
+  color: #fff;
+  background: #7a4fd0;
+  border-radius: 5px;
+  padding: 1px 5px;
+  vertical-align: middle;
+}
+.call-note {
+  font-size: 11px;
+  font-weight: 600;
+  color: #7a8891;
+  margin-left: 8px;
+}
+.call-legend {
+  display: grid;
+  grid-template-columns: 66px 78px 1fr 128px;
+  gap: 8px;
+  padding: 2px 12px 6px;
+  font-size: 11px;
+  font-weight: 800;
+  color: #9aa6ad;
+}
+.call-row {
+  display: grid;
+  grid-template-columns: 66px 78px 1fr 128px;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-top: 1px solid #eef2f4;
+}
+.call-row.fixed {
+  background: #f5f0fd;
+}
+.call-time {
+  font-weight: 800;
+  font-size: 18px;
+  color: #1f6feb;
+}
+.call-mate {
+  font-size: 12px;
+  font-weight: 700;
+  color: #6b7780;
+}
+.call-mid {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  min-width: 0;
+}
+.call-fix {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.call-fix input[type="time"] {
+  padding: 4px 5px;
+  border: 1.5px solid var(--line-strong, #c7d0d6);
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 700;
+  width: 96px;
+}
+.call-fix-clear {
+  border: none;
+  background: #e0d3f5;
+  color: #6a3fb0;
+  border-radius: 999px;
+  width: 20px;
+  height: 20px;
+  font-size: 11px;
+  font-weight: 800;
+  cursor: pointer;
+}
+@media (max-width: 720px) {
+  .call-legend {
+    grid-template-columns: 54px 66px 1fr 108px;
+  }
+  .call-row {
+    grid-template-columns: 54px 66px 1fr 108px;
+    gap: 5px;
+  }
+  .call-sire {
+    display: none;
+  }
+  .call-fix input[type="time"] {
+    width: 84px;
+  }
+}

@@ -38,6 +38,7 @@ export type Mare = {
   note?: string; // 順番表の注記（上り・鎮静※・指定 昼ＫＺＮ など）
   enteredTs?: number; // 馬積場到着（滞在時間の起点。ms）
   matedAt?: string; // 入った種付所（第一種付所 / 第二種付所）
+  matedTs?: number; // 種付所に入った時刻（種付間隔4hの起点。ms）
   departedTs?: number; // 帰宅時刻（ms）
   treats?: string[]; // 処置タグ（促進剤 / ピン止め / 陰部チェック）
 };
