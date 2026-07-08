@@ -183,21 +183,9 @@ export default function SchedulePage() {
     return map;
   }, [boardMares, opts.durations, opts.defaultDur]);
 
-  const rosterFixedTimes = useMemo(() => {
-    const out: Record<string, string> = {};
-    for (const m of matings) {
-      if (m.apptTime) out[m.id] = quarterTime(m.apptTime);
-    }
-    return out;
-  }, [matings]);
-
-  const effectiveFixedTimes = useMemo(() => {
-    const out = { ...rosterFixedTimes };
-    for (const id in fixedTimes) {
-      if (fixedTimes[id]) out[id] = fixedTimes[id];
-    }
-    return out;
-  }, [rosterFixedTimes, fixedTimes]);
+  // 固定（呼出時刻決定）はユーザーが「事前に呼ぶ時間が決まっている馬」欄に入力したものだけ。
+  // 順番表の予約時間は参考表示のみで、自動では固定しない（そうしないと自動編成の意味がなくなるため）。
+  const effectiveFixedTimes = fixedTimes;
 
   const fixedMin = useMemo(() => {
     const m: Record<string, number> = {};
@@ -217,16 +205,29 @@ export default function SchedulePage() {
     );
   }
 
-  // 組の切替：開始時刻を既定にし、必ず「未生成」から始める（生成ボタンを押すまで組まない）
+  // 組の切替：開始時刻を既定にし、保存済みがあれば復元。無ければ「未生成」のまま（生成ボタンを押すまで組まない）
   useEffect(() => {
     setStart(START_BY_GROUP[group]);
     setSel(null);
+    let restored = false;
     if (typeof window !== "undefined") {
-      localStorage.removeItem("sched:" + group);
+      const saved = localStorage.getItem("sched:" + group);
+      if (saved) {
+        try {
+          setRounds(JSON.parse(saved));
+          restored = true;
+        } catch {}
+      }
     }
-    setRounds([]);
+    if (!restored) setRounds([]);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [group]);
+
+  // コマ保存（生成・手動調整の結果を保存。未生成＝空のままなら保存しない）
+  useEffect(() => {
+    if (typeof window !== "undefined" && rounds.length)
+      localStorage.setItem("sched:" + group, JSON.stringify(rounds));
+  }, [rounds, group]);
 
   // ルール変更は保存のみ（即座には組み直さない）。反映するには「生成」を押す。
   function applyOpts(next: Options) {
