@@ -162,11 +162,22 @@ export default function SchedulePage() {
     return () => unsub();
   }, [accessKey]);
 
-  // 固定時刻（この組）の復元
+  // 固定時刻（この組）の復元。保存が無ければ、順番表の予約時間が決まっている馬だけ
+  // 自動で下書きとして入力しておく（テスト順番表.xlsx「4-13」由来のapptTime）。
   useEffect(() => {
     if (typeof window === "undefined") return;
-    const s = localStorage.getItem("sched:fixedCall:" + group);
-    setFixedTimes(s ? safeParse(s) : {});
+    const key = "sched:fixedCall:" + group;
+    const s = localStorage.getItem(key);
+    if (s) {
+      setFixedTimes(safeParse(s));
+      return;
+    }
+    const draft: Record<string, string> = {};
+    for (const r of groupRoster(group)) {
+      if (r.apptTime) draft[r.id] = quarterTime(r.apptTime);
+    }
+    setFixedTimes(draft);
+    localStorage.setItem(key, JSON.stringify(draft));
   }, [group]);
 
   // 所在ボードの matedTs から、種牡馬別の実・種付終了（絶対分）
@@ -183,8 +194,8 @@ export default function SchedulePage() {
     return map;
   }, [boardMares, opts.durations, opts.defaultDur]);
 
-  // 固定（呼出時刻決定）はユーザーが「事前に呼ぶ時間が決まっている馬」欄に入力したものだけ。
-  // 順番表の予約時間は参考表示のみで、自動では固定しない（そうしないと自動編成の意味がなくなるため）。
+  // 固定（呼出時刻決定）＝「事前に呼ぶ時間が決まっている馬」欄の値。
+  // 初期値は順番表の予約時間から自動入力されるが、その後はここでの編集がそのまま反映される。
   const effectiveFixedTimes = fixedTimes;
 
   const fixedMin = useMemo(() => {
@@ -194,7 +205,20 @@ export default function SchedulePage() {
     return m;
   }, [effectiveFixedTimes, opts.prepMin]);
 
-  const baseStart = toMin(START_BY_GROUP[group]);
+  const baseStart = toMin(start);
+
+  // 開始時刻タブ（15分刻み）。組の既定を中心に前後の範囲を並べ、現在値が範囲外なら追加する
+  const startOptions = useMemo(() => {
+    const base = toMin(START_BY_GROUP[group]);
+    const from = base - 60;
+    const to = base + 180;
+    const list: number[] = [];
+    for (let m = from; m <= to; m += 15) list.push(m);
+    const cur = toMin(start);
+    if (cur < from || cur > to) list.push(cur);
+    return Array.from(new Set(list)).sort((a, b) => a - b);
+  }, [group, start]);
+
   function buildRounds(o: Options, fx = fixedMin) {
     return autoSchedule(
       matings,
@@ -205,10 +229,15 @@ export default function SchedulePage() {
     );
   }
 
-  // 組の切替：開始時刻を既定にし、保存済みがあれば復元。無ければ「未生成」のまま（生成ボタンを押すまで組まない）
+  // 組の切替：開始時刻・生成結果とも保存済みがあれば復元。無ければ既定の開始時刻＋「未生成」のまま
   useEffect(() => {
-    setStart(START_BY_GROUP[group]);
     setSel(null);
+    if (typeof window !== "undefined") {
+      const savedStart = localStorage.getItem("sched:start:" + group);
+      setStart(savedStart || START_BY_GROUP[group]);
+    } else {
+      setStart(START_BY_GROUP[group]);
+    }
     let restored = false;
     if (typeof window !== "undefined") {
       const saved = localStorage.getItem("sched:" + group);
@@ -228,6 +257,13 @@ export default function SchedulePage() {
     if (typeof window !== "undefined" && rounds.length)
       localStorage.setItem("sched:" + group, JSON.stringify(rounds));
   }, [rounds, group]);
+
+  // 開始時刻タブをタップした時だけ保存（復元時のsetStartと競合しないよう、保存はユーザー操作時のみ行う）
+  function changeStart(hhmm: string) {
+    setStart(hhmm);
+    if (typeof window !== "undefined")
+      localStorage.setItem("sched:start:" + group, hhmm);
+  }
 
   // ルール変更は保存のみ（即座には組み直さない）。反映するには「生成」を押す。
   function applyOpts(next: Options) {
@@ -550,16 +586,22 @@ export default function SchedulePage() {
             </button>
           </div>
         </div>
+        <div className="start-row">
+          <span className="start-label">開始</span>
+          <div className="start-tabs">
+            {startOptions.map((m) => (
+              <button
+                type="button"
+                key={m}
+                className={`start-tab${toMin(start) === m ? " on" : ""}`}
+                onClick={() => changeStart(fmtTime(m))}
+              >
+                {fmtTime(m)}
+              </button>
+            ))}
+          </div>
+        </div>
         <div className="sched-config">
-          <label>
-            開始
-            <input
-              type="time"
-              step={900}
-              value={start.padStart(5, "0")}
-              onChange={(e) => setStart(quarterTime(e.target.value))}
-            />
-          </label>
           <label>
             既定の所要
             <input
