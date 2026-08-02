@@ -10,9 +10,15 @@ import {
   normCode,
   noteKind,
 } from "@/lib/board";
-import type { Mare } from "@/lib/board";
+import type { Mare, RosterEntry } from "@/lib/board";
 import { STALLIONS, BARNS, groomOf, barnOf } from "@/lib/barns";
 import { cloudEnabled, subscribeBoard } from "@/lib/cloud";
+import {
+  DayRosters,
+  fetchSeasonDay,
+  fetchSeasonDays,
+  todaySheetName,
+} from "@/lib/season";
 import {
   Mating,
   Round,
@@ -73,10 +79,12 @@ function quarterTime(hhmm: string): string {
 
 // 先行する組（朝→昼→夕）の種付時刻＋間隔、および所在ボードの実際の種付終了から、
 // この組で各種牡馬を呼べる最早時刻（絶対分）を求める。realEnd=種牡馬コード→実種付終了(絶対分)
+// rosterOf=組ごとの順番表の取得元（クラウドの日別データ or サンプル）
 function computeEarliest(
   g: GroupKey,
   o: Options,
-  realEnd: Record<string, number> = {}
+  realEnd: Record<string, number>,
+  rosterOf: (gk: GroupKey) => RosterEntry[]
 ): Record<string, number> {
   const idx = DAY_ORDER.indexOf(g);
   const out: Record<string, number> = {};
@@ -86,7 +94,7 @@ function computeEarliest(
   for (let k = 0; k < idx; k++) {
     const gk = DAY_ORDER[k];
     const rs = autoSchedule(
-      groupRoster(gk).map(toMating),
+      rosterOf(gk).map(toMating),
       o,
       {},
       {},
@@ -125,17 +133,39 @@ export default function SchedulePage() {
   const [fixedTimes, setFixedTimes] = useState<Record<string, string>>({});
   const [accessKey, setAccessKey] = useState<string | null>(null);
   const [boardMares, setBoardMares] = useState<Mare[]>([]);
+  // シーズン順番表（クラウド）。day=""はサンプル表示
+  const [seasonDays, setSeasonDays] = useState<string[] | null>(null);
+  const [day, setDay] = useState<string>("");
+  // どの日のデータかタグ付きで持つ（日付切替直後に古い日のデータを使わないため）
+  const [dayData, setDayData] = useState<{
+    day: string;
+    rosters: DayRosters;
+  } | null>(null);
+  const loadedRosters =
+    dayData && dayData.day === day ? dayData.rosters : null;
+
+  // 組ごとの順番表: クラウドの日別データ→無ければサンプル（日を選択中でロード前は空）
+  const rosterOf = useMemo(() => {
+    return (g: GroupKey): RosterEntry[] => {
+      if (loadedRosters) return loadedRosters[g];
+      if (day) return [];
+      return groupRoster(g);
+    };
+  }, [loadedRosters, day]);
+
+  // 保存キーの日付部分（サンプル時は"sample"）
+  const dayKey = day || "sample";
 
   const matings: Mating[] = useMemo(
     () =>
-      groupRoster(group).map((r) => ({
+      rosterOf(group).map((r) => ({
         id: r.id,
         mareName: r.mareName,
         sireCode: r.sireCode,
         apptTime: r.apptTime,
         note: r.note,
       })),
-    [group]
+    [group, rosterOf]
   );
 
   // オプション復元＋所在ボードの合言葉
@@ -162,23 +192,71 @@ export default function SchedulePage() {
     return () => unsub();
   }, [accessKey]);
 
-  // 固定時刻（この組）の復元。保存が無ければ、順番表の予約時間が決まっている馬だけ
-  // 自動で下書きとして入力しておく（テスト順番表.xlsx「4-13」由来のapptTime）。
+  // シーズン順番表の日付一覧を取得し、既定の日（今日→前回選択→4-13→最終日）を選ぶ
+  useEffect(() => {
+    if (!cloudEnabled || !accessKey) return;
+    let alive = true;
+    fetchSeasonDays(accessKey)
+      .then((days) => {
+        if (!alive || !days || days.length === 0) return;
+        setSeasonDays(days);
+        const last =
+          typeof window !== "undefined"
+            ? localStorage.getItem("sched:day")
+            : null;
+        const today = todaySheetName();
+        const pick =
+          (last && days.includes(last) && last) ||
+          (days.includes(today) && today) ||
+          (days.includes("4-13") && "4-13") ||
+          days[days.length - 1];
+        setDay(pick);
+      })
+      .catch(() => {});
+    return () => {
+      alive = false;
+    };
+  }, [accessKey]);
+
+  // 選択した日の順番表を読み込む
+  useEffect(() => {
+    if (!cloudEnabled || !accessKey || !day) return;
+    let alive = true;
+    fetchSeasonDay(accessKey, day)
+      .then((d) => {
+        if (alive) setDayData(d ? { day, rosters: d } : null);
+      })
+      .catch(() => {});
+    return () => {
+      alive = false;
+    };
+  }, [accessKey, day]);
+
+  // 日付の切替（選択を記憶）
+  function changeDay(d: string) {
+    setSel(null);
+    setDay(d);
+    if (typeof window !== "undefined") localStorage.setItem("sched:day", d);
+  }
+
+  // 固定時刻（この日・この組）の復元。保存が無ければ、順番表の予約時間が
+  // 決まっている馬だけ自動で下書きとして入力しておく。
   useEffect(() => {
     if (typeof window === "undefined") return;
-    const key = "sched:fixedCall:" + group;
+    if (day && !loadedRosters) return; // 選択日のデータのロード待ち
+    const key = `sched:fixedCall:${dayKey}:${group}`;
     const s = localStorage.getItem(key);
     if (s) {
       setFixedTimes(safeParse(s));
       return;
     }
     const draft: Record<string, string> = {};
-    for (const r of groupRoster(group)) {
+    for (const r of rosterOf(group)) {
       if (r.apptTime) draft[r.id] = quarterTime(r.apptTime);
     }
     setFixedTimes(draft);
     localStorage.setItem(key, JSON.stringify(draft));
-  }, [group]);
+  }, [group, dayKey, day, loadedRosters, rosterOf]);
 
   // 所在ボードの matedTs から、種牡馬別の実・種付終了（絶対分）
   const realEnd = useMemo(() => {
@@ -223,13 +301,13 @@ export default function SchedulePage() {
     return autoSchedule(
       matings,
       o,
-      computeEarliest(group, o, realEnd),
+      computeEarliest(group, o, realEnd, rosterOf),
       fx,
       baseStart
     );
   }
 
-  // 組の切替：開始時刻・生成結果とも保存済みがあれば復元。無ければ既定の開始時刻＋「未生成」のまま
+  // 組・日の切替：開始時刻・生成結果とも保存済みがあれば復元。無ければ既定の開始時刻＋「未生成」のまま
   useEffect(() => {
     setSel(null);
     if (typeof window !== "undefined") {
@@ -240,7 +318,7 @@ export default function SchedulePage() {
     }
     let restored = false;
     if (typeof window !== "undefined") {
-      const saved = localStorage.getItem("sched:" + group);
+      const saved = localStorage.getItem(`sched:rounds:${dayKey}:${group}`);
       if (saved) {
         try {
           setRounds(JSON.parse(saved));
@@ -250,13 +328,16 @@ export default function SchedulePage() {
     }
     if (!restored) setRounds([]);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [group]);
+  }, [group, dayKey]);
 
   // コマ保存（生成・手動調整の結果を保存。未生成＝空のままなら保存しない）
   useEffect(() => {
     if (typeof window !== "undefined" && rounds.length)
-      localStorage.setItem("sched:" + group, JSON.stringify(rounds));
-  }, [rounds, group]);
+      localStorage.setItem(
+        `sched:rounds:${dayKey}:${group}`,
+        JSON.stringify(rounds)
+      );
+  }, [rounds, group, dayKey]);
 
   // 開始時刻タブをタップした時だけ保存（復元時のsetStartと競合しないよう、保存はユーザー操作時のみ行う）
   function changeStart(hhmm: string) {
@@ -278,7 +359,10 @@ export default function SchedulePage() {
     else delete next[id];
     setFixedTimes(next);
     if (typeof window !== "undefined")
-      localStorage.setItem("sched:fixedCall:" + group, JSON.stringify(next));
+      localStorage.setItem(
+        `sched:fixedCall:${dayKey}:${group}`,
+        JSON.stringify(next)
+      );
   }
   function fixedCallTime(id: string): string {
     const t = effectiveFixedTimes[id];
@@ -335,8 +419,8 @@ export default function SchedulePage() {
 
   // この組で各種牡馬を呼べる最早時刻（4h間隔）＋各コマの絶対分
   const earliest = useMemo(
-    () => computeEarliest(group, opts, realEnd),
-    [group, opts, realEnd]
+    () => computeEarliest(group, opts, realEnd, rosterOf),
+    [group, opts, realEnd, rosterOf]
   );
   const startMins = useMemo(
     () => startMinutes(rounds, start, opts),
@@ -530,6 +614,52 @@ export default function SchedulePage() {
 
       {/* 操作パネル */}
       <section className="roster-panel">
+        {seasonDays && seasonDays.length > 0 && (
+          <div className="day-row">
+            <span className="day-label">📅 日付</span>
+            <button
+              type="button"
+              className="day-nav"
+              onClick={() => {
+                const i = seasonDays.indexOf(day);
+                if (i > 0) changeDay(seasonDays[i - 1]);
+              }}
+              disabled={seasonDays.indexOf(day) <= 0}
+            >
+              ◀
+            </button>
+            <select
+              className="day-select"
+              value={day}
+              onChange={(e) => changeDay(e.target.value)}
+            >
+              {seasonDays.map((d) => (
+                <option key={d} value={d}>
+                  {d.replace("-", "/")}
+                </option>
+              ))}
+            </select>
+            <button
+              type="button"
+              className="day-nav"
+              onClick={() => {
+                const i = seasonDays.indexOf(day);
+                if (i >= 0 && i < seasonDays.length - 1)
+                  changeDay(seasonDays[i + 1]);
+              }}
+              disabled={seasonDays.indexOf(day) >= seasonDays.length - 1}
+            >
+              ▶
+            </button>
+            <span className={`day-chip${loadedRosters ? " on" : ""}`}>
+              {day && !loadedRosters
+                ? "読み込み中…"
+                : loadedRosters
+                  ? `📡 順番表 ${matings.length}頭`
+                  : "サンプル"}
+            </span>
+          </div>
+        )}
         <div className="roster-head">
           <span className="roster-title">
             📋 対象の組

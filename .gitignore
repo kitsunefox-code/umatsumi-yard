@@ -6,3 +6,6 @@
 *.tsbuildinfo
 next-env.d.ts.bak
 .DS_Store
+
+# 順番表の実データ(外部譲渡禁止)はリポジトリに入れない
+tools/season*.json

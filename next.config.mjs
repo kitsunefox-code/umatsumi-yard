@@ -7,6 +7,9 @@ const repo = "umatsumi-yard";
 
 const nextConfig = {
   output: "export", // 静的書き出し（out/）
+  // dev サーバーは launch.json が NEXT_DIST_DIR=.next-dev を渡して .next-dev を使う。
+  // ビルド(.next)と同時に走ってもディレクトリが衝突しないようにするため。
+  distDir: process.env.NEXT_DIST_DIR || ".next",
   images: { unoptimized: true },
   trailingSlash: true,
   basePath: isPages ? `/${repo}` : undefined,
