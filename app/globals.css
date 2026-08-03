@@ -3508,3 +3508,84 @@ button {
   background: #e6f6ec;
   color: #1c7a42;
 }
+
+/* ===== カードサイズ統一 ===== */
+/* 種付順番のカード（第一・第二・空き・使用不可すべて同じ高さ） */
+.sched-card,
+.sched-card.empty {
+  min-height: 96px;
+}
+/* 付帯情報は1行に収めて高さを揃える */
+.sched-note,
+.gap-info,
+.early-pick {
+  display: block;
+  max-width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.sched-badge {
+  min-width: 46px;
+  height: 26px;
+}
+
+/* 厩舎マップ（実配置グリッド・全馬房カード同サイズ） */
+.barn-blocks {
+  display: flex;
+  gap: 18px;
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+.barn-grid {
+  display: grid;
+  gap: 6px;
+}
+.barn-grid .stall {
+  width: 104px;
+  height: 66px;
+  min-height: 66px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 2px;
+  padding: 5px 7px;
+  opacity: 1;
+  overflow: hidden;
+}
+.barn-grid .stall .stall-txt {
+  line-height: 1.15;
+  min-width: 0;
+}
+.barn-grid .stall .stall-name {
+  font-size: 11px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 92px;
+}
+.barn-grid .stall.on {
+  border-color: #1f6feb;
+  background: #f2f7ff;
+  box-shadow: 0 1px 3px rgba(31, 111, 235, 0.25);
+}
+.barn-grid .stall:not(.on):not(.empty) {
+  opacity: 0.6;
+}
+.barn-grid .stall.empty {
+  border-style: dashed;
+  background: #fbfcfd;
+  color: #aeb8bf;
+  font-size: 12px;
+  font-weight: 700;
+  align-items: center;
+  justify-content: center;
+}
+
+/* 呼び出し表・ルール行も高さを統一 */
+.call-row,
+.prefixed-call-row,
+.rule-row {
+  min-height: 46px;
+}

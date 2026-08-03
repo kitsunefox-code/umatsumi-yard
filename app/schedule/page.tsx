@@ -11,7 +11,13 @@ import {
   noteKind,
 } from "@/lib/board";
 import type { Mare, RosterEntry } from "@/lib/board";
-import { STALLIONS, BARNS, groomOf, barnOf } from "@/lib/barns";
+import {
+  STALLIONS,
+  BARN_LAYOUT,
+  stallion,
+  groomOf,
+  barnOf,
+} from "@/lib/barns";
 import { cloudEnabled, subscribeBoard } from "@/lib/cloud";
 import {
   DayRosters,
@@ -938,45 +944,60 @@ export default function SchedulePage() {
         </section>
       )}
 
-      {/* 厩舎マップ */}
+      {/* 厩舎マップ（馬房一覧の実配置どおり。空馬房も表示） */}
       {showMap && (
         <section className="barn-map">
-          {BARNS.map((bn) => {
-            const list = STALLIONS.filter((s) => s.barn === bn).sort(
-              (a, b) => a.row - b.row || a.col - b.col
-            );
-            const rowsY = Array.from(new Set(list.map((s) => s.row))).sort(
-              (a, b) => a - b
-            );
+          {BARN_LAYOUT.map(({ barn, blocks }) => {
             const active = new Set(matings.map((m) => normCode(m.sireCode)));
             return (
-              <div className="barn-box" key={bn}>
-                <div className="barn-name">{bn}</div>
-                {rowsY.map((y) => (
-                  <div className="barn-row" key={y}>
-                    {list
-                      .filter((s) => s.row === y)
-                      .map((s) => (
-                        <div
-                          className={`stall${active.has(s.code) ? " on" : ""}`}
-                          key={s.code}
-                        >
-                          <Badge code={s.code} />
-                          <div className="stall-txt">
-                            <div className="stall-name">{s.name}</div>
-                            {s.groom && (
-                              <div className="stall-groom">👤{s.groom}</div>
-                            )}
-                          </div>
-                        </div>
-                      ))}
-                  </div>
-                ))}
+              <div className="barn-box" key={barn}>
+                <div className="barn-name">{barn}</div>
+                <div className="barn-blocks">
+                  {blocks.map((grid, bi) => (
+                    <div
+                      className="barn-grid"
+                      key={bi}
+                      style={{
+                        gridTemplateColumns: `repeat(${grid[0].length}, 1fr)`,
+                      }}
+                    >
+                      {grid.flatMap((row, ri) =>
+                        row.map((code, ci) => {
+                          if (!code)
+                            return (
+                              <div className="stall empty" key={`${ri}-${ci}`}>
+                                空
+                              </div>
+                            );
+                          const s = stallion(code);
+                          return (
+                            <div
+                              className={`stall${
+                                active.has(code) ? " on" : ""
+                              }`}
+                              key={code}
+                            >
+                              <Badge code={code} />
+                              <div className="stall-txt">
+                                <div className="stall-name">
+                                  {s?.name ?? code}
+                                </div>
+                                <div className="stall-groom">
+                                  {s?.groom ? `👤${s.groom}` : " "}
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })
+                      )}
+                    </div>
+                  ))}
+                </div>
               </div>
             );
           })}
           <p className="barn-hint">
-            ※ 同じ厩舎で隣・正面・斜めの馬房は同時に種付しない前提で組んでいます。
+            ※ 同じ厩舎で隣・正面・斜めの馬房は同時に種付しません。第一・第二種付所には同じ担当の種馬を同時に入れません。
           </p>
         </section>
       )}
