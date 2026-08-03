@@ -33,12 +33,13 @@ import {
   PRIORITY_ORDER,
   PRIORITY_LABEL,
   ISSUE_LABEL,
+  GAP_MIN,
+  isSoloCode,
   defaultOptions,
   autoSchedule,
   roundIssues,
   startTimes,
   startMinutes,
-  matingTimes,
   fmtTime,
   toMin,
   roundMinutes,
@@ -48,28 +49,18 @@ import {
   swapSlots,
   trimEmpty,
 } from "@/lib/schedule";
-import type { Mating as M2 } from "@/lib/schedule";
 
-const START_BY_GROUP: Record<GroupKey, string> = {
-  朝: "8:00",
-  昼: "13:00",
-  夕: "17:00",
+// 組ごとの開始時刻プリセット（その他は自由入力）
+const START_PRESETS: Record<GroupKey, string[]> = {
+  朝: ["7:30", "7:45"],
+  昼: ["12:45", "13:00"],
+  夕: ["16:30", "16:45"],
 };
-const DAY_ORDER: GroupKey[] = ["朝", "昼", "夕"];
-
-const toMating = (r: {
-  id: string;
-  mareName: string;
-  sireCode: string;
-  apptTime?: string;
-  note?: string;
-}): M2 => ({
-  id: r.id,
-  mareName: r.mareName,
-  sireCode: r.sireCode,
-  apptTime: r.apptTime,
-  note: r.note,
-});
+const START_BY_GROUP: Record<GroupKey, string> = {
+  朝: START_PRESETS["朝"][0],
+  昼: START_PRESETS["昼"][0],
+  夕: START_PRESETS["夕"][0],
+};
 
 function safeParse(s: string): Record<string, string> {
   try {
@@ -83,34 +74,12 @@ function quarterTime(hhmm: string): string {
   return fmtTime(Math.round(toMin(hhmm) / 15) * 15);
 }
 
-// 先行する組（朝→昼→夕）の種付時刻＋間隔、および所在ボードの実際の種付終了から、
-// この組で各種牡馬を呼べる最早時刻（絶対分）を求める。realEnd=種牡馬コード→実種付終了(絶対分)
-// rosterOf=組ごとの順番表の取得元（クラウドの日別データ or サンプル）
+// 所在ボードの実際の種付終了（帰宅時刻）＋4時間＝この組で各種牡馬を呼べる最早時刻（絶対分）
 function computeEarliest(
-  g: GroupKey,
-  o: Options,
-  realEnd: Record<string, number>,
-  rosterOf: (gk: GroupKey) => RosterEntry[]
+  realEnd: Record<string, number>
 ): Record<string, number> {
-  const idx = DAY_ORDER.indexOf(g);
   const out: Record<string, number> = {};
-  const bump = (c: string, e: number) => {
-    if (out[c] == null || e > out[c]) out[c] = e;
-  };
-  for (let k = 0; k < idx; k++) {
-    const gk = DAY_ORDER[k];
-    const rs = autoSchedule(
-      rosterOf(gk).map(toMating),
-      o,
-      {},
-      {},
-      toMin(START_BY_GROUP[gk])
-    );
-    const t = matingTimes(rs, START_BY_GROUP[gk], o);
-    for (const c in t) bump(c, t[c] + o.gapMin);
-  }
-  // 所在ボードの実績（実際の種付終了）を優先的に反映
-  for (const c in realEnd) bump(c, realEnd[c] + o.gapMin);
+  for (const c in realEnd) out[c] = realEnd[c] + GAP_MIN;
   return out;
 }
 
@@ -264,15 +233,25 @@ export default function SchedulePage() {
     localStorage.setItem(key, JSON.stringify(draft));
   }, [group, dayKey, day, loadedRosters, rosterOf]);
 
-  // 所在ボードの matedTs から、種牡馬別の実・種付終了（絶対分）
+  // 所在ボードから種牡馬別の実・種付終了（絶対分）。
+  // 帰宅時刻(departedTs)を優先し、まだ帰宅していない馬は種付所入り＋所要で推定。
   const realEnd = useMemo(() => {
     const map: Record<string, number> = {};
     for (const mare of boardMares) {
-      if (!mare.matedTs) continue;
+      if (!mare.matedTs && !mare.matedAt) continue; // 種付していない馬の帰宅は対象外
       const c = normCode(mare.sireCode);
-      const d = new Date(mare.matedTs);
-      const end =
-        d.getHours() * 60 + d.getMinutes() + (opts.durations[c] || opts.defaultDur);
+      let end: number | null = null;
+      if (mare.departedTs) {
+        const d = new Date(mare.departedTs);
+        end = d.getHours() * 60 + d.getMinutes();
+      } else if (mare.matedTs) {
+        const d = new Date(mare.matedTs);
+        end =
+          d.getHours() * 60 +
+          d.getMinutes() +
+          (opts.durations[c] || opts.defaultDur);
+      }
+      if (end == null) continue;
       if (map[c] == null || end > map[c]) map[c] = end;
     }
     return map;
@@ -291,26 +270,12 @@ export default function SchedulePage() {
 
   const baseStart = toMin(start);
 
-  // 開始時刻タブ（15分刻み）。組の既定を中心に前後の範囲を並べ、現在値が範囲外なら追加する
-  const startOptions = useMemo(() => {
-    const base = toMin(START_BY_GROUP[group]);
-    const from = base - 60;
-    const to = base + 180;
-    const list: number[] = [];
-    for (let m = from; m <= to; m += 15) list.push(m);
-    const cur = toMin(start);
-    if (cur < from || cur > to) list.push(cur);
-    return Array.from(new Set(list)).sort((a, b) => a - b);
-  }, [group, start]);
+  // 開始時刻＝組ごとのプリセット2択（それ以外は自由入力）
+  const startPresets = START_PRESETS[group];
+  const startIsCustom = !startPresets.includes(start);
 
   function buildRounds(o: Options, fx = fixedMin) {
-    return autoSchedule(
-      matings,
-      o,
-      computeEarliest(group, o, realEnd, rosterOf),
-      fx,
-      baseStart
-    );
+    return autoSchedule(matings, o, computeEarliest(realEnd), fx, baseStart);
   }
 
   // 組・日の切替：開始時刻・生成結果とも保存済みがあれば復元。無ければ既定の開始時刻＋「未生成」のまま
@@ -393,13 +358,6 @@ export default function SchedulePage() {
     else delete pr[code];
     applyOpts({ ...opts, priorities: pr });
   }
-  function toggleSolo(code: string) {
-    const has = opts.solo.includes(code);
-    applyOpts({
-      ...opts,
-      solo: has ? opts.solo.filter((c) => c !== code) : [...opts.solo, code],
-    });
-  }
   function setDuration(code: string, min: number | null) {
     const d = { ...opts.durations };
     if (min && min > 0) d[code] = min;
@@ -423,11 +381,8 @@ export default function SchedulePage() {
     setShowCall(true);
   }
 
-  // この組で各種牡馬を呼べる最早時刻（4h間隔）＋各コマの絶対分
-  const earliest = useMemo(
-    () => computeEarliest(group, opts, realEnd, rosterOf),
-    [group, opts, realEnd, rosterOf]
-  );
+  // この組で各種牡馬を呼べる最早時刻（帰宅＋4時間）＋各コマの絶対分
+  const earliest = useMemo(() => computeEarliest(realEnd), [realEnd]);
   const startMins = useMemo(
     () => startMinutes(rounds, start, opts),
     [rounds, start, opts]
@@ -460,7 +415,7 @@ export default function SchedulePage() {
       return iss;
     });
   }, [rounds, opts]);
-  // 4時間ルール：この組で早すぎる種付（前の組から間隔不足）
+  // 4時間ルール：種付終了(帰宅)から4時間空いていない馬に⚠
   const gapBad = useMemo(
     () =>
       rounds.map((r, i) => {
@@ -469,11 +424,11 @@ export default function SchedulePage() {
           if (!m) continue;
           const c = normCode(m.sireCode);
           if (earliest[c] != null && startMins[i] < earliest[c])
-            bad.push({ code: c, prev: earliest[c] - opts.gapMin });
+            bad.push({ code: c, prev: earliest[c] - GAP_MIN });
         }
         return bad;
       }),
-    [rounds, startMins, earliest, opts.gapMin]
+    [rounds, startMins, earliest]
   );
   const badRounds = issuesByRound.filter((x, i) => x.length || gapBad[i].length)
     .length;
@@ -510,7 +465,6 @@ export default function SchedulePage() {
   }, [groupCodes, opts]);
   const ruleCount =
     groupCodes.filter((c) => opts.priorities[c]).length +
-    opts.solo.length +
     Object.keys(opts.durations).length +
     opts.noConsecGrooms.length +
     Object.keys(opts.groomOverrides || {}).length +
@@ -522,9 +476,7 @@ export default function SchedulePage() {
     // 単独コマの第二レーンは使用不可表示
     if (!m) {
       const solo =
-        lane === "b" &&
-        rounds[i].a &&
-        opts.solo.includes(normCode(rounds[i].a!.sireCode));
+        lane === "b" && rounds[i].a && isSoloCode(rounds[i].a!.sireCode);
       return (
         <button
           type="button"
@@ -583,8 +535,8 @@ export default function SchedulePage() {
             )}
             {e != null && (
               <div className={`gap-info${bad4h ? " bad" : ""}`}>
-                {bad4h ? "⚠ " : "🕒 "}
-                {fmtTime(e)}以降OK（前回{fmtTime(e - opts.gapMin)}）
+                {bad4h ? "⚠ 4時間空いていません　" : "🕒 "}
+                {fmtTime(e)}以降OK（終了{fmtTime(e - GAP_MIN)}）
               </div>
             )}
             {early && (
@@ -725,16 +677,27 @@ export default function SchedulePage() {
         <div className="start-row">
           <span className="start-label">開始</span>
           <div className="start-tabs">
-            {startOptions.map((m) => (
+            {startPresets.map((t) => (
               <button
                 type="button"
-                key={m}
-                className={`start-tab${toMin(start) === m ? " on" : ""}`}
-                onClick={() => changeStart(fmtTime(m))}
+                key={t}
+                className={`start-tab${start === t ? " on" : ""}`}
+                onClick={() => changeStart(t)}
               >
-                {fmtTime(m)}
+                {t}
               </button>
             ))}
+            <label className={`start-custom${startIsCustom ? " on" : ""}`}>
+              その他
+              <input
+                type="time"
+                step={900}
+                value={startIsCustom ? start.padStart(5, "0") : ""}
+                onChange={(e) => {
+                  if (e.target.value) changeStart(e.target.value);
+                }}
+              />
+            </label>
           </div>
         </div>
         <div className="sched-config">
@@ -753,23 +716,6 @@ export default function SchedulePage() {
               }
             />
             分
-          </label>
-          <label title="同じ種牡馬の種付と種付の間にあける時間">
-            種付間隔
-            <input
-              type="number"
-              min={0}
-              max={12}
-              step={0.5}
-              value={opts.gapMin / 60}
-              onChange={(e) =>
-                applyOpts({
-                  ...opts,
-                  gapMin: Math.max(0, Math.round((Number(e.target.value) || 0) * 60)),
-                })
-              }
-            />
-            時間
           </label>
           <label title="呼び出しから種付までの準備（待機＋洗い場）">
             呼出リード
@@ -807,15 +753,8 @@ export default function SchedulePage() {
             種牡馬ごとに <b>順番</b>・<b>所要（分）</b> を設定できます。設定したら下の
             <b>🚀 生成する</b>を押してください（ここでの変更はまだ反映されません）。
             ※上り初回・鎮静は自動で第一に固定、連続禁止の担当者は必ず避けて組みます。
+            ロードカナロアの種付中は第二種付所を使いません（固定ルール）。
           </div>
-          <label className="ldk-solo">
-            <input
-              type="checkbox"
-              checked={opts.solo.includes("LDK")}
-              onChange={() => toggleSolo("LDK")}
-            />
-            ロードカナロアの種付中は第二種付所を使わない（単独）
-          </label>
           <div className="rules-grid">
             {groupCodes.map((c) => (
               <div
@@ -1133,7 +1072,7 @@ export default function SchedulePage() {
                   {[
                     ...iss.map((x) => ISSUE_LABEL[x]),
                     ...gap.map(
-                      (g) => `${g.code}は種付間隔${opts.gapMin / 60}h未満`
+                      (g) => `${g.code}は種付終了から4時間空いていません`
                     ),
                   ].join("・")}
                 </div>

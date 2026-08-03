@@ -3589,3 +3589,30 @@ button {
 .rule-row {
   min-height: 46px;
 }
+
+/* 開始時刻「その他」自由入力 */
+.start-custom {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1.5px solid var(--line-strong, #c7d0d6);
+  border-radius: 8px;
+  background: #fff;
+  color: #3f4b53;
+  font-weight: 800;
+  font-size: 13px;
+  padding: 4px 8px 4px 12px;
+  min-height: 38px;
+}
+.start-custom.on {
+  border-color: #1f6feb;
+  box-shadow: 0 0 0 2px rgba(31, 111, 235, 0.15);
+}
+.start-custom input[type="time"] {
+  border: 1px solid var(--line-strong, #c7d0d6);
+  border-radius: 6px;
+  padding: 4px 6px;
+  font-size: 14px;
+  font-weight: 700;
+  width: 96px;
+}

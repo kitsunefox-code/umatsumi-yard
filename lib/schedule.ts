@@ -27,26 +27,29 @@ export const PRIORITY_LABEL: Record<Priority, string> = {
   last: "最後",
 };
 
+// 種付間隔（同じ種牡馬の種付終了(帰宅)から次の種付まで）＝4時間で固定
+export const GAP_MIN = 240;
+// ロードカナロアの種付中は第二種付所を使わない（絶対条件・固定）
+export function isSoloCode(code: string): boolean {
+  return normCode(code) === "LDK";
+}
+
 // この日のオプション一式
 export type Options = {
   priorities: Priorities;
-  solo: string[]; // 単独（同時に第二を使わない）種牡馬コード
   noConsecGrooms: string[]; // 連続コマで入れない担当者
   groomOverrides: Record<string, string>; // 種牡馬コードごとの当日担当上書き
   durations: Record<string, number>; // 種牡馬コード→平均所要（分）
   defaultDur: number; // 既定の所要（分）
-  gapMin: number; // 同じ種牡馬の種付間隔（分）＝既定4時間
   prepMin: number; // 呼び出しから種付までの準備（待機＋洗い場）分
 };
 export function defaultOptions(): Options {
   return {
     priorities: { LDK: "first" },
-    solo: ["LDK"],
     noConsecGrooms: [],
     groomOverrides: {},
     durations: {},
     defaultDur: 15,
-    gapMin: 240,
     prepMin: 30,
   };
 }
@@ -74,7 +77,7 @@ function rankOf(code: string, pri: Priorities): number {
   return 2;
 }
 
-const isSolo = (m: Mating, o: Options) => o.solo.includes(normCode(m.sireCode));
+const isSolo = (m: Mating) => isSoloCode(m.sireCode);
 const nf = (m: Mating) => !!firstOnly(m);
 export function optionGroomOf(code: string, o: Options): string {
   const c = normCode(code);
@@ -108,7 +111,7 @@ export function roundIssues(
     if (c) out.push(c);
     if (nf(a) && nf(b)) out.push("first2");
     else if (nf(b)) out.push("lane"); // 第一必須が第二に入っている
-    if (isSolo(a, o) || isSolo(b, o)) out.push("solo");
+    if (isSolo(a) || isSolo(b)) out.push("solo");
   }
   const grooms = [a, b]
     .filter(Boolean)
@@ -175,7 +178,7 @@ export function autoSchedule(
     resort();
     const rel = releaseOf(m);
     const pinned = fixed[m.id] != null;
-    const solo = isSolo(m, o);
+    const solo = isSolo(m);
     const groom = optionGroomOf(m.sireCode, o);
 
     if (!solo) {
@@ -187,7 +190,7 @@ export function autoSchedule(
         if (pinned ? starts[i] !== rel : starts[i] < rel) continue;
         if (r.a && r.b) continue;
         const other = r.a || r.b;
-        if (other && isSolo(other, o)) continue;
+        if (other && isSolo(other)) continue;
         if (other && concurrentIssue(m.sireCode, other.sireCode, o) !== null) continue;
         if (other && nf(m) && nf(other)) continue;
         if (hasConsec(groom, rounds[i - 1], rounds[i + 1])) continue;
@@ -320,8 +323,8 @@ export function earlyFinishPick(
       if (other) {
         if (concurrentIssue(cand.sireCode, other.sireCode, o) !== null) continue;
         if (nf(cand) && nf(other)) continue;
-        if (isSolo(cand, o) || isSolo(other, o)) continue;
-      } else if (isSolo(cand, o)) continue;
+        if (isSolo(cand) || isSolo(other)) continue;
+      } else if (isSolo(cand)) continue;
       return cand;
     }
   }
