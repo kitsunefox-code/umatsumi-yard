@@ -492,6 +492,7 @@ export default function SchedulePage() {
     const fo = firstOnly(m);
     const k = noteKind(m.note);
     const code = normCode(m.sireCode);
+    const pri = opts.priorities[code];
     const e = earliest[code];
     const bad4h = e != null && startMins[i] < e;
     const early = showEarly ? earlyFinishPick(rounds, i, lane, opts) : null;
@@ -506,10 +507,15 @@ export default function SchedulePage() {
         <div className="sched-card-main">
           <Badge code={m.sireCode} />
           <div className="sched-card-txt">
-            {(fixedCallTime(m.id) || fo || k === "agari-re") && (
+            {(pri || fixedCallTime(m.id) || fo || k === "agari-re") && (
               <div className="sched-mare">
-                {fixedCallTime(m.id) && (
-                  <span className="fixed-tag">📌{fixedCallTime(m.id)}</span>
+                {/* 順番を指定した馬は予約時間の固定より指定を優先するので📌は出さない */}
+                {pri ? (
+                  <span className="pri-tag">{PRIORITY_LABEL[pri]}</span>
+                ) : (
+                  fixedCallTime(m.id) && (
+                    <span className="fixed-tag">📌{fixedCallTime(m.id)}</span>
+                  )
                 )}
                 {fo && <span className="first-tag">{fo}</span>}
                 {k === "agari-re" && (
@@ -754,6 +760,7 @@ export default function SchedulePage() {
             <b>🚀 生成する</b>を押してください（ここでの変更はまだ反映されません）。
             ※上り初回・鎮静は自動で第一に固定、連続禁止の担当者は必ず避けて組みます。
             ロードカナロアの種付中は第二種付所を使いません（固定ルール）。
+            <b>順番を指定した馬は、順番表の予約時間より指定を優先します。</b>
           </div>
           <div className="rules-grid">
             {groupCodes.map((c) => (

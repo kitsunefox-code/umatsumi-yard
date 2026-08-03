@@ -135,8 +135,12 @@ export function autoSchedule(
   baseStart = 480
 ): Round[] {
   const rk = (m: Mating) => rankOf(m.sireCode, o.priorities);
+  // 順番（最初/早め/遅め/最後）を指定した馬は、その指定を優先する。
+  // 順番表の予約時間による時刻固定は無視する（そうしないと指定しても動かせないため）。
+  const fixedOf = (m: Mating) =>
+    o.priorities[normCode(m.sireCode)] != null ? undefined : fixed[m.id];
   const releaseOf = (m: Mating) =>
-    fixed[m.id] ?? earliest[normCode(m.sireCode)] ?? baseStart;
+    fixedOf(m) ?? earliest[normCode(m.sireCode)] ?? baseStart;
 
   const rounds: Round[] = [];
 
@@ -177,7 +181,7 @@ export function autoSchedule(
   function place(m: Mating) {
     resort();
     const rel = releaseOf(m);
-    const pinned = fixed[m.id] != null;
+    const pinned = fixedOf(m) != null;
     const solo = isSolo(m);
     const groom = optionGroomOf(m.sireCode, o);
 
@@ -191,6 +195,9 @@ export function autoSchedule(
         if (r.a && r.b) continue;
         const other = r.a || r.b;
         if (other && isSolo(other)) continue;
+        // 順番の指定が離れている馬同士は同じコマに入れない
+        // （遅め/最後の馬が早い馬のコマに相乗りして前に出てしまうのを防ぐ）
+        if (other && Math.abs(rk(m) - rk(other)) > 1) continue;
         if (other && concurrentIssue(m.sireCode, other.sireCode, o) !== null) continue;
         if (other && nf(m) && nf(other)) continue;
         if (hasConsec(groom, rounds[i - 1], rounds[i + 1])) continue;
@@ -221,13 +228,10 @@ export function autoSchedule(
           return s2[li] + roundMinutes(rounds[li], o);
         })()
       : baseStart;
-    // スペーサーを挟んだ直後のコマは、次回以降のresort()で元の位置へ
-    // 戻ってしまわないよう必ずstartMinを明示して固定する
-    const startMin = spacerInserted
-      ? Math.max(rel, afterEnd)
-      : rel > afterEnd || pinned
-        ? rel
-        : undefined;
+    // 新規コマは必ずstartMinを明示して置いた位置を確定させる。
+    // （省略するとresort()がリリース時刻だけで並べ替え、遅め/最後に指定した馬が
+    //   先頭へ戻ってしまうため）
+    const startMin = pinned ? rel : Math.max(rel, afterEnd);
     rounds.push({ a: m, startMin });
   }
 
@@ -240,10 +244,10 @@ export function autoSchedule(
   const ordered = [...matings].sort((x, y) => {
     const rr = rk(x) - rk(y);
     if (rr) return rr;
-    const xf = fixed[x.id] != null ? 1 : 0;
-    const yf = fixed[y.id] != null ? 1 : 0;
+    const xf = fixedOf(x) != null ? 1 : 0;
+    const yf = fixedOf(y) != null ? 1 : 0;
     if (xf !== yf) return yf - xf;
-    if (xf && yf) return fixed[x.id] - fixed[y.id]; // 固定同士は時刻順
+    if (xf && yf) return fixedOf(x)! - fixedOf(y)!; // 固定同士は時刻順
     const ee = releaseOf(x) - releaseOf(y); // 早く呼べない馬は後ろへ
     if (ee) return ee;
     const fx = normCode(x.sireCode) === "LDK" ? 1 : 0;

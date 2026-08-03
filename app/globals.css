@@ -3616,3 +3616,15 @@ button {
   font-weight: 700;
   width: 96px;
 }
+
+/* 順番指定タグ（早め・最初など。予約時間より優先される目印） */
+.pri-tag {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 800;
+  color: #fff;
+  background: #1f6feb;
+  border-radius: 5px;
+  padding: 1px 6px;
+  vertical-align: middle;
+}
