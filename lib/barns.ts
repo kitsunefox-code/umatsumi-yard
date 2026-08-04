@@ -19,11 +19,14 @@ export const CODE2NAME: Record<string, string> = {
   AMS: "アドマイヤマーズ", BOP: "ベラジオオペラ", GDG: "グレナディアガーズ", HRC: "ホットロッドチャーリー",
   SMR: "シュネルマイスター", CRS: "クリソベリル", POE: "ポエティックフレア", EQX: "イクイノックス",
   SCW: "サトノクラウン", DKG: "ダノンキングリー", RSP: "ルーラーシップ", LVL: "ルヴァンスレーヴ",
-  SHY: "シャフリヤール", ORF: "オルフェーヴル", MYB: "マインドユアビスケッツ",
-  DJY: "ドリームジャーニー", HBG: "ハービンジャー", JTM: "ジャンタルマンタル",
+  SHY: "シャフリヤール", ORF: "オルフェーヴル",
+  JTM: "ジャンタルマンタル",
+  // 退厩・引退（過去データの表示用に名前だけ残す）
+  MYB: "マインドユアビスケッツ", DJY: "ドリームジャーニー", HBG: "ハービンジャー",
 };
 
-// 26/7/24現在の繋養馬。マインドユアビスケッツは退厩（旧H59は空馬房）。
+// 26/7/24現在の繋養馬（29頭）。
+// マインドユアビスケッツは退厩、ドリームジャーニー・ハービンジャーは引退のため除外。
 // ジャンタルマンタル新入り(順番表未登場のためコードは仮でJTM)。
 export const STALLIONS: Stallion[] = [
   // 第4厩舎（1列）
@@ -46,21 +49,20 @@ export const STALLIONS: Stallion[] = [
   { code: "DDC", groom: "一幸", col: 18, row: 30, barn: "第1厩舎" },
   { code: "EPN", groom: "東家", col: 22, row: 30, barn: "第1厩舎" },
   { code: "LDK", groom: "祐輔", col: 30, row: 30, barn: "第1厩舎" },
-  // 第2厩舎（2×2）
+  // 第2厩舎（左列 C/H の縦6段。馬房一覧の「第2厩舎」ラベルはC38＝この列の頭）
   { code: "AMS", groom: "山崎", col: 3, row: 39, barn: "第2厩舎" },
   { code: "BOP", groom: "瑞音", col: 8, row: 39, barn: "第2厩舎" },
   { code: "GDG", groom: "遠藤", col: 3, row: 43, barn: "第2厩舎" },
   { code: "HRC", groom: "瑞音", col: 8, row: 43, barn: "第2厩舎" },
-  // 第5厩舎（西ブロック4段×2列＋東ブロック2段×3列）
-  { code: "SMR", groom: "一幸", col: 3, row: 47, barn: "第5厩舎" },
-  { code: "CRS", groom: "赤星", col: 8, row: 47, barn: "第5厩舎" },
-  { code: "EQX", groom: "永宮", col: 3, row: 51, barn: "第5厩舎" },
-  { code: "LVL", groom: "謙至", col: 3, row: 55, barn: "第5厩舎" },
-  { code: "SHY", groom: "原", col: 8, row: 55, barn: "第5厩舎" },
-  { code: "ORF", groom: "謙至", col: 3, row: 59, barn: "第5厩舎" },
-  { code: "DJY", groom: "", col: 22, row: 47, barn: "第5厩舎" },
+  { code: "SMR", groom: "一幸", col: 3, row: 47, barn: "第2厩舎" },
+  { code: "CRS", groom: "赤星", col: 8, row: 47, barn: "第2厩舎" },
+  { code: "EQX", groom: "永宮", col: 3, row: 51, barn: "第2厩舎" },
+  { code: "LVL", groom: "謙至", col: 3, row: 55, barn: "第2厩舎" },
+  { code: "SHY", groom: "原", col: 8, row: 55, barn: "第2厩舎" },
+  { code: "ORF", groom: "謙至", col: 3, row: 59, barn: "第2厩舎" },
+  // 第5厩舎（右列 V/Z/AD の2段×3列。ラベルはV46＝この区画の頭）
+  // ドリームジャーニー・ハービンジャーは引退のため空馬房
   { code: "POE", groom: "原", col: 26, row: 47, barn: "第5厩舎" },
-  { code: "HBG", groom: "", col: 30, row: 47, barn: "第5厩舎" },
   { code: "SCW", groom: "瑞音", col: 22, row: 53, barn: "第5厩舎" },
   { code: "DKG", groom: "赤星", col: 26, row: 53, barn: "第5厩舎" },
   { code: "RSP", groom: "東家", col: 30, row: 53, barn: "第5厩舎" },
@@ -135,6 +137,10 @@ export const BARN_LAYOUT: {
       [
         ["AMS", "BOP"],
         ["GDG", "HRC"],
+        ["SMR", "CRS"],
+        ["EQX", null],
+        ["LVL", "SHY"],
+        ["ORF", null],
       ],
     ],
   },
@@ -155,13 +161,8 @@ export const BARN_LAYOUT: {
     barn: "第5厩舎",
     blocks: [
       [
-        ["SMR", "CRS"],
-        ["EQX", null],
-        ["LVL", "SHY"],
-        ["ORF", null],
-      ],
-      [
-        ["DJY", "POE", "HBG"],
+        // ドリームジャーニー・ハービンジャーは引退のため空馬房
+        [null, "POE", null],
         ["SCW", "DKG", "RSP"],
       ],
     ],
