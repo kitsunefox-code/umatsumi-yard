@@ -3679,3 +3679,293 @@ button {
     grid-template-columns: 1fr;
   }
 }
+
+/* ============================================================
+   デザイン刷新レイヤー 2026/08
+   方針: ニュートラル基調＋アクセント1色 / タッチ44px以上 /
+         時刻は等幅数字(tnum) / 余白・角丸・影をトークンで統一
+   ============================================================ */
+:root {
+  --ink: #18222f;
+  --ink-2: #5a6a7a;
+  --ink-3: #8795a5;
+  --bg: #eef1f5;
+  --surface: #ffffff;
+  --line: #e2e8ee;
+  --line-strong: #c9d3dd;
+  --accent: #2563eb;
+  --accent-soft: #e8effd;
+  --ok: #15803d;
+  --ok-soft: #e8f6ee;
+  --warn: #dc2626;
+  --warn-soft: #fdecec;
+  --radius: 12px;
+  --radius-sm: 9px;
+  --shadow: 0 1px 2px rgba(16, 24, 40, 0.05), 0 2px 6px rgba(16, 24, 40, 0.06);
+}
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-feature-settings: "palt";
+}
+.app {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 12px 14px 60px;
+}
+
+/* ---- ヘッダー: ダークバーで引き締める ---- */
+.topbar {
+  background: linear-gradient(135deg, #17263c, #0f1a2b);
+  border-radius: var(--radius);
+  padding: 12px 16px;
+  box-shadow: var(--shadow);
+  margin-bottom: 12px;
+  gap: 10px;
+}
+.topbar h1 {
+  color: #fff;
+  font-size: 19px;
+  letter-spacing: 0.02em;
+}
+.topbar h1 .sub {
+  color: #9fb2c8;
+  font-weight: 600;
+}
+.topbar .btn-ghost {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  color: #e8eef6;
+}
+.topbar .btn-ghost:hover {
+  background: rgba(255, 255, 255, 0.16);
+}
+.sync-chip {
+  background: rgba(255, 255, 255, 0.1);
+  color: #9fb2c8;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+}
+.sync-chip.on {
+  background: rgba(34, 197, 94, 0.18);
+  color: #7ee2a8;
+  border-color: rgba(34, 197, 94, 0.35);
+}
+
+/* ---- ボタン: 高さ44px統一・主従を明確に ---- */
+.btn {
+  min-height: 44px;
+  border-radius: 10px;
+  font-weight: 800;
+  letter-spacing: 0.01em;
+  transition: filter 0.12s, transform 0.05s;
+}
+.btn:active {
+  transform: scale(0.98);
+}
+.btn-primary,
+.btn-generate {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.35);
+}
+.btn-primary:hover,
+.btn-generate:hover {
+  filter: brightness(1.08);
+}
+.btn-sm {
+  min-height: 44px;
+}
+
+/* ---- パネル: 白サーフェス＋淡い影で階層を出す ---- */
+.roster-panel,
+.rules-panel,
+.call-sheet,
+.barn-box,
+.generate-cta {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+.roster-panel {
+  padding: 10px 12px;
+  margin-bottom: 12px;
+}
+
+/* ---- タブ類: セグメント風・選択はアクセント ---- */
+.group-tab,
+.start-tab,
+.day-nav,
+.day-select {
+  border-radius: 10px;
+  border: 1.5px solid var(--line-strong);
+  background: var(--surface);
+  color: var(--ink);
+  min-height: 44px;
+}
+.group-tab.on,
+.start-tab.on {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+  box-shadow: 0 2px 6px rgba(37, 99, 235, 0.3);
+}
+.group-tab.on .group-time {
+  color: #cfe0ff;
+}
+.day-chip.on {
+  background: var(--ok-soft);
+  color: var(--ok);
+}
+
+/* ---- タイムライン: 時刻を主役に（等幅数字） ---- */
+.sched-time,
+.call-time,
+.call-mate,
+.group-time,
+.mare-time,
+.start-tab,
+.day-select {
+  font-variant-numeric: tabular-nums;
+}
+.sched-round {
+  border-top: none;
+  margin-bottom: 8px;
+  padding: 0 0 0 2px;
+}
+.sched-time {
+  font-size: 20px;
+  font-weight: 900;
+  color: var(--ink);
+}
+.sched-no {
+  background: var(--ink-3);
+}
+.sched-round.bad {
+  background: var(--warn-soft);
+  outline: 1.5px solid #f3b9b9;
+  border-radius: var(--radius-sm);
+  padding: 6px 6px 14px;
+}
+.sched-card {
+  border-radius: var(--radius-sm);
+  border-color: var(--line-strong);
+  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.05);
+}
+.sched-card.sel {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2);
+  background: var(--accent-soft);
+}
+.sched-card.empty {
+  box-shadow: none;
+  background: #fafbfc;
+}
+.sched-mare {
+  color: var(--ink);
+}
+.sched-groom {
+  color: var(--ok);
+}
+.gap-info {
+  background: #f1f4f8;
+  color: var(--ink-2);
+}
+.gap-info.bad {
+  background: var(--warn);
+  color: #fff;
+}
+.pri-tag {
+  background: var(--accent);
+}
+.first-tag {
+  background: var(--warn);
+}
+.first-tag.re {
+  background: #2850c8;
+}
+
+/* ---- 呼び出し表: 行の視線誘導を強化 ---- */
+.call-head {
+  font-size: 15px;
+}
+.call-row {
+  border-top: 1px solid var(--line);
+}
+.call-row:nth-child(even) {
+  background: #f8fafc;
+}
+.call-row.fixed {
+  background: #f3eefc;
+}
+.call-time {
+  color: var(--accent);
+  font-size: 19px;
+  font-weight: 900;
+}
+
+/* ---- 本日の予定(所在ボード): 種付順番と同じカード規格 ---- */
+.roster-chips {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(225px, 1fr));
+  gap: 8px;
+}
+.roster-chip {
+  min-height: 96px;
+  border-radius: var(--radius-sm);
+  border: 1.5px solid var(--line-strong);
+  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.05);
+  padding: 8px 10px;
+  align-items: center;
+}
+.roster-chip .chip-name {
+  font-size: 15px;
+  font-weight: 800;
+}
+
+/* ---- 厩舎マップ ---- */
+.barn-box {
+  padding: 10px 12px 12px;
+}
+.barn-grid .stall {
+  border-radius: 8px;
+}
+.barn-grid .stall.on {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+/* ---- 入力類: 高さ44px・フォーカスリング ---- */
+input[type="time"],
+input[type="number"],
+input[type="text"],
+select {
+  border-radius: 8px;
+  min-height: 40px;
+}
+input:focus-visible,
+select:focus-visible,
+button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+/* 固定解除✕もタッチしやすく */
+.call-fix-clear {
+  width: 36px;
+  height: 36px;
+  font-size: 14px;
+}
+
+/* OVタグ（種付順番カード用） */
+.ov-tag {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 800;
+  color: #fff;
+  background: #7850a0;
+  border-radius: 5px;
+  padding: 1px 6px;
+  vertical-align: middle;
+}

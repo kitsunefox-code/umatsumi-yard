@@ -530,7 +530,12 @@ export default function SchedulePage() {
         <div className="sched-card-main">
           <Badge code={m.sireCode} />
           <div className="sched-card-txt">
-            {(pri || fixedCallTime(m.id) || fo || k === "agari-re" || limit) && (
+            {(pri ||
+              fixedCallTime(m.id) ||
+              fo ||
+              k === "agari-re" ||
+              m.note?.toUpperCase().includes("OV") ||
+              limit) && (
               <div className="sched-mare">
                 {/* 順番を指定した馬は予約時間の固定より指定を優先するので📌は出さない */}
                 {pri ? (
@@ -543,6 +548,9 @@ export default function SchedulePage() {
                 {fo && <span className="first-tag">{fo}</span>}
                 {k === "agari-re" && (
                   <span className="first-tag re">上り再発</span>
+                )}
+                {m.note?.toUpperCase().includes("OV") && (
+                  <span className="ov-tag">OV</span>
                 )}
                 {/* 上り/鎮静のタグと重複しない時だけ種付所の限定を出す */}
                 {!fo && limit && (
@@ -566,9 +574,6 @@ export default function SchedulePage() {
                 {opts.durations[code] || opts.defaultDur}分
               </span>
             </div>
-            {m.note && !["agari", "sedate", "agari-re"].includes(k) && (
-              <div className="sched-note">{m.note}</div>
-            )}
             {e != null && (
               <div className={`gap-info${bad4h ? " bad" : ""}`}>
                 {bad4h ? "⚠ 4時間空いていません　" : "🕒 "}

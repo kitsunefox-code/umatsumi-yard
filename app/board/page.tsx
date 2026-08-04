@@ -801,14 +801,28 @@ function SireMark({ code, frame }: { code: string; frame?: boolean }) {
   );
 }
 
+// 注記をタグに分解して表示。指定欄（昼ＫＺＮ等）は表示しない。
 function NoteBadge({ note, frame }: { note?: string; frame?: boolean }) {
   if (!note) return null;
-  const k = noteKind(note);
+  const tags: { t: string; k: string }[] = [];
+  if (note.includes("鎮静")) tags.push({ t: "鎮静", k: "sedate" });
+  if (note.includes("上り再発") || note.includes("再発"))
+    tags.push({ t: "上り再発", k: "agari-re" });
+  else if (note.includes("上り")) tags.push({ t: "上り", k: "agari" });
+  if (note.toUpperCase().includes("OV")) tags.push({ t: "OV", k: "ov" });
+  if (!tags.length) return null;
   return (
-    <span className={`${frame ? "frame-note" : "mare-note"} note-${k}`}>
-      {k === "sedate" && frame && <WarnIcon />}
-      {note}
-    </span>
+    <>
+      {tags.map((tag) => (
+        <span
+          key={tag.k}
+          className={`${frame ? "frame-note" : "mare-note"} note-${tag.k}`}
+        >
+          {tag.k === "sedate" && frame && <WarnIcon />}
+          {tag.t}
+        </span>
+      ))}
+    </>
   );
 }
 
