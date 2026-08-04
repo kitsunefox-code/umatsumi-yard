@@ -3969,3 +3969,52 @@ button:focus-visible {
   padding: 1px 6px;
   vertical-align: middle;
 }
+
+/* ---- 本日の予定：2列固定・注記もカード内に収める ---- */
+.roster-chips {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.roster-chip {
+  align-items: flex-start;
+  overflow: hidden;
+}
+.roster-chip .chip-body {
+  min-width: 0;
+  flex: 1;
+}
+.roster-chip .chip-name {
+  display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.roster-chip .chip-sub {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+.roster-chip .chip-farm {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+.roster-chip .mare-time,
+.roster-chip .mare-kind {
+  flex: 0 0 auto;
+}
+/* 注記タグ（上り・OV など）は横並びで1行に */
+.chip-notes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 3px;
+}
+.chip-notes:empty {
+  display: none;
+}
+.roster-chip .mare-note {
+  align-self: auto;
+  margin-top: 0;
+}
