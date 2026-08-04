@@ -531,13 +531,12 @@ export default function BoardPage() {
                 <SireMark code={r.sireCode} />
                 <span className="chip-body">
                   <span className="chip-name">{r.mareName}</span>
+                  {/* 牧場・時刻・新再・注記(上り/OV等)をすべて同じ行に置き、
+                      どの馬もカードが2行で揃うようにする */}
                   <span className="chip-sub">
                     {r.farm && <span className="chip-farm">{r.farm}</span>}
                     {r.apptTime && <span className="mare-time">🕐{r.apptTime}</span>}
                     {r.kind && <span className="mare-kind">{r.kind}</span>}
-                  </span>
-                  {/* 上り・OV などの注記はカード内の1行にまとめる */}
-                  <span className="chip-notes">
                     <NoteBadge note={r.note} />
                   </span>
                 </span>

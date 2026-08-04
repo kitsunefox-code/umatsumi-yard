@@ -4004,17 +4004,14 @@ button:focus-visible {
 .roster-chip .mare-kind {
   flex: 0 0 auto;
 }
-/* 注記タグ（上り・OV など）は横並びで1行に */
-.chip-notes {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
-  margin-top: 3px;
-}
-.chip-notes:empty {
-  display: none;
-}
+/* 注記タグ（上り・OV など）は牧場・時刻と同じ行に置き、カードを2行に揃える */
 .roster-chip .mare-note {
   align-self: auto;
   margin-top: 0;
+  flex: 0 0 auto;
+  font-size: 10px;
+  padding: 0 5px;
+}
+.roster-chip .chip-sub {
+  flex-wrap: nowrap;
 }
