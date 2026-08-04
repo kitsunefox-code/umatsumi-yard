@@ -365,32 +365,6 @@ export function matingTimes(
   return map;
 }
 
-// 「この馬が早く終わったら次はこれ」＝残りコマから繰り上げ候補
-export function earlyFinishPick(
-  rounds: Round[],
-  i: number,
-  lane: "a" | "b",
-  o: Options
-): Mating | null {
-  const other = lane === "a" ? rounds[i].b : rounds[i].a;
-  // 繰り上げ先はこの馬が抜けた側。その側を使えない馬は候補にしない
-  const needLane: LaneLimit = lane === "a" ? "first" : "second";
-  for (let j = i + 1; j < rounds.length; j++) {
-    for (const ln of ["a", "b"] as const) {
-      const cand = rounds[j][ln];
-      if (!cand) continue;
-      const cl = laneOf(cand, o);
-      if (cl && cl !== needLane) continue;
-      if (other) {
-        if (concurrentIssue(cand.sireCode, other.sireCode, o) !== null) continue;
-        if (isSolo(cand) || isSolo(other)) continue;
-      } else if (isSolo(cand)) continue;
-      return cand;
-    }
-  }
-  return null;
-}
-
 // 任意の2枠を入れ替え（タップ→タップ操作用）
 export function swapSlots(
   rounds: Round[],
@@ -427,8 +401,4 @@ export function moveCard(
   next[i][lane] = next[j][lane];
   next[j][lane] = t;
   return next;
-}
-export function trimEmpty(rounds: Round[]): Round[] {
-  const out = rounds.filter((r) => r.a || r.b);
-  return out.length ? out : [{}];
 }

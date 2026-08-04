@@ -49,11 +49,9 @@ import {
   fmtTime,
   toMin,
   roundMinutes,
-  earlyFinishPick,
   firstOnly,
   optionGroomOf,
   swapSlots,
-  trimEmpty,
 } from "@/lib/schedule";
 
 // 組ごとの開始時刻プリセット（その他は自由入力）
@@ -78,6 +76,10 @@ function safeParse(s: string): Record<string, string> {
 function quarterTime(hhmm: string): string {
   if (!hhmm) return "";
   return fmtTime(Math.round(toMin(hhmm) / 15) * 15);
+}
+// 時刻はすべて15分刻みで表示する（5分前呼びの端数も丸める）
+function quarterMin(total: number): string {
+  return fmtTime(Math.round(total / 15) * 15);
 }
 
 // 所在ボードの実際の種付終了（帰宅時刻）＋4時間＝この組で各種牡馬を呼べる最早時刻（絶対分）
@@ -107,7 +109,6 @@ export default function SchedulePage() {
   const [rounds, setRounds] = useState<Round[]>([]);
   const [showMap, setShowMap] = useState(false);
   const [showRules, setShowRules] = useState(true);
-  const [showEarly, setShowEarly] = useState(false);
   const [showCall, setShowCall] = useState(false);
   const [opts, setOpts] = useState<Options>(defaultOptions());
   const [sel, setSel] = useState<{ i: number; lane: "a" | "b" } | null>(null);
@@ -518,7 +519,6 @@ export default function SchedulePage() {
     const limit = laneOf(m, opts);
     const e = earliest[code];
     const bad4h = e != null && startMins[i] < e;
-    const early = showEarly ? earlyFinishPick(rounds, i, lane, opts) : null;
     return (
       <button
         type="button"
@@ -573,11 +573,6 @@ export default function SchedulePage() {
               <div className={`gap-info${bad4h ? " bad" : ""}`}>
                 {bad4h ? "⚠ 4時間空いていません　" : "🕒 "}
                 {fmtTime(e)}以降OK（終了{fmtTime(e - GAP_MIN)}）
-              </div>
-            )}
-            {early && (
-              <div className="early-pick">
-                💡早く終わったら→{normCode(early.sireCode)}
               </div>
             )}
           </div>
@@ -685,22 +680,10 @@ export default function SchedulePage() {
               🚀 {rounds.length ? "この内容で組み直す" : "生成する"}
             </button>
             <button
-              className="btn btn-ghost btn-sm"
-              onClick={() => setRounds(trimEmpty(rounds))}
-            >
-              ▮ 空きを詰める
-            </button>
-            <button
               className={`btn btn-sm ${showCall ? "btn-primary" : "btn-ghost"}`}
               onClick={() => setShowCall((v) => !v)}
             >
               📞 呼び出し表
-            </button>
-            <button
-              className={`btn btn-sm ${showEarly ? "btn-primary" : "btn-ghost"}`}
-              onClick={() => setShowEarly((v) => !v)}
-            >
-              💡 早終わり候補
             </button>
             <button
               className="btn btn-ghost btn-sm"
@@ -730,7 +713,7 @@ export default function SchedulePage() {
                 step={900}
                 value={startIsCustom ? start.padStart(5, "0") : ""}
                 onChange={(e) => {
-                  if (e.target.value) changeStart(e.target.value);
+                  if (e.target.value) changeStart(quarterTime(e.target.value));
                 }}
               />
             </label>
@@ -753,18 +736,21 @@ export default function SchedulePage() {
             />
             分
           </label>
-          <label title="呼び出しから種付までの準備（待機＋洗い場）">
-            呼出リード
+          <label title="呼んでから種付までの準備時間（待機→洗い場）">
+            何分前に呼ぶか
             <input
               type="number"
               min={0}
               max={120}
-              step={5}
+              step={15}
               value={opts.prepMin}
               onChange={(e) =>
                 applyOpts({
                   ...opts,
-                  prepMin: Math.max(0, Number(e.target.value) || 0),
+                  prepMin: Math.max(
+                    0,
+                    Math.round((Number(e.target.value) || 0) / 15) * 15
+                  ),
                 })
               }
             />
@@ -1042,7 +1028,7 @@ export default function SchedulePage() {
                       key={m.id}
                     >
                       <span className="call-time">
-                        {fmtTime(startMins[i] - prepFor(times[i], opts))}
+                        {quarterMin(startMins[i] - prepFor(times[i], opts))}
                       </span>
                       <span className="call-mate">種付 {times[i]}</span>
                       <span className="call-mid">
