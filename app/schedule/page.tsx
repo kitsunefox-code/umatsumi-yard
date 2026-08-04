@@ -551,11 +551,14 @@ export default function SchedulePage() {
               </div>
             )}
             <div className="sched-sire">
-              {optionGroomOf(m.sireCode, opts) && (
-                <span className="sched-groom">
-                  👤{optionGroomOf(m.sireCode, opts)}
-                </span>
-              )}
+              {/* 担当が決まっていない馬は「担当者不明」と出して気づけるようにする */}
+              <span
+                className={`sched-groom${
+                  optionGroomOf(m.sireCode, opts) ? "" : " unknown"
+                }`}
+              >
+                👤{optionGroomOf(m.sireCode, opts) || "担当者不明"}
+              </span>
               {barnOf(m.sireCode) && (
                 <span className="sched-barn">{barnOf(m.sireCode)}</span>
               )}
@@ -818,9 +821,9 @@ export default function SchedulePage() {
                   title="担当を変更"
                 >
                   <option value="__default">
-                    {groomOf(c) || "担当なし"}
+                    {groomOf(c) || "担当者不明"}
                   </option>
-                  <option value="">担当なし</option>
+                  <option value="">担当者不明</option>
                   {allGrooms.map((g) => (
                     <option value={g} key={g}>
                       {g}
@@ -850,18 +853,20 @@ export default function SchedulePage() {
                   <option value="first">第一のみ</option>
                   <option value="second">第二のみ</option>
                 </select>
-                <input
-                  className="rule-dur"
-                  type="number"
-                  min={1}
-                  max={90}
-                  placeholder={String(opts.defaultDur)}
-                  value={opts.durations[c] || ""}
-                  onChange={(e) =>
-                    setDuration(c, e.target.value ? Number(e.target.value) : null)
-                  }
-                />
-                <span className="rule-dur-u">分</span>
+                <span className="rule-dur-wrap">
+                  <input
+                    className="rule-dur"
+                    type="number"
+                    min={1}
+                    max={90}
+                    placeholder={String(opts.defaultDur)}
+                    value={opts.durations[c] || ""}
+                    onChange={(e) =>
+                      setDuration(c, e.target.value ? Number(e.target.value) : null)
+                    }
+                  />
+                  <span className="rule-dur-u">分</span>
+                </span>
               </div>
             ))}
           </div>
@@ -900,11 +905,13 @@ export default function SchedulePage() {
                     key={m.id}
                   >
                     <Badge code={m.sireCode} />
-                    {optionGroomOf(m.sireCode, opts) && (
-                      <span className="prefixed-call-groom">
-                        {optionGroomOf(m.sireCode, opts)}
-                      </span>
-                    )}
+                    <span
+                      className={`prefixed-call-groom${
+                        optionGroomOf(m.sireCode, opts) ? "" : " unknown"
+                      }`}
+                    >
+                      {optionGroomOf(m.sireCode, opts) || "担当者不明"}
+                    </span>
                     <span className="prefixed-call-input">
                       <input
                         type="time"
@@ -1040,11 +1047,13 @@ export default function SchedulePage() {
                       <span className="call-mate">種付 {times[i]}</span>
                       <span className="call-mid">
                         <Badge code={m.sireCode} />
-                        {optionGroomOf(m.sireCode, opts) && (
-                          <span className="call-groom">
-                            👤{optionGroomOf(m.sireCode, opts)}
-                          </span>
-                        )}
+                        <span
+                          className={`call-groom${
+                            optionGroomOf(m.sireCode, opts) ? "" : " unknown"
+                          }`}
+                        >
+                          👤{optionGroomOf(m.sireCode, opts) || "担当者不明"}
+                        </span>
                         {fo && <span className="first-tag">{fo}</span>}
                       </span>
                       <span className="call-fix">

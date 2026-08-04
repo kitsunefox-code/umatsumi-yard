@@ -2900,15 +2900,27 @@ button {
   grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
   gap: 8px;
 }
+/* 種牡馬コードを左に置き、右側は 担当/順番 → 種付所/所要 の2段。
+   項目が増えてもカードから溢れないようにする */
 .rule-row {
   display: grid;
-  grid-template-columns: auto minmax(76px, 1fr) 74px 46px auto;
+  grid-template-columns: auto minmax(0, 1fr) minmax(0, 1fr);
   align-items: center;
-  gap: 8px;
+  gap: 6px 8px;
   border: 1px solid #e2e8ec;
   border-radius: 8px;
-  padding: 4px 8px;
+  padding: 6px 8px;
   background: #f8fafb;
+}
+.rule-row > .sched-badge {
+  grid-row: 1 / span 2;
+  align-self: center;
+}
+.rule-dur-wrap {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
 }
 .rule-row.set {
   border-color: #9db6c6;
@@ -3641,5 +3653,29 @@ button {
   vertical-align: middle;
 }
 .rule-lane {
-  flex: 0 0 auto;
+  min-width: 0;
+}
+
+/* 担当が決まっていない馬（担当者不明） */
+.sched-groom.unknown,
+.call-groom.unknown,
+.prefixed-call-groom.unknown {
+  color: #b06a00;
+  font-weight: 800;
+}
+
+/* 狭い画面（スマホ）：カードの高さが揃うよう情報を絞る */
+@media (max-width: 560px) {
+  .sched-barn {
+    display: none;
+  }
+  .sched-sire,
+  .sched-mare {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .rules-grid {
+    grid-template-columns: 1fr;
+  }
 }
