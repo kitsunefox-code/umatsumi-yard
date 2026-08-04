@@ -34,11 +34,23 @@ export function isSoloCode(code: string): boolean {
   return normCode(code) === "LDK";
 }
 
+// 各組の一番早い開始時刻に種付する馬は、すでに待機しているので5分前呼びでよい
+export const FIRST_SLOT_TIMES = ["7:30", "12:45", "16:30"];
+export const FIRST_SLOT_PREP = 5;
+
+// 種付所の限定（特定の種付所でしか種付できない種牡馬用）
+export type LaneLimit = "first" | "second";
+export const LANE_LIMIT_LABEL: Record<LaneLimit, string> = {
+  first: "第一のみ",
+  second: "第二のみ",
+};
+
 // この日のオプション一式
 export type Options = {
   priorities: Priorities;
   noConsecGrooms: string[]; // 連続コマで入れない担当者
   groomOverrides: Record<string, string>; // 種牡馬コードごとの当日担当上書き
+  laneLimits: Record<string, LaneLimit>; // 種牡馬コード→使える種付所の限定
   durations: Record<string, number>; // 種牡馬コード→平均所要（分）
   defaultDur: number; // 既定の所要（分）
   prepMin: number; // 呼び出しから種付までの準備（待機＋洗い場）分
@@ -48,22 +60,42 @@ export function defaultOptions(): Options {
     priorities: { LDK: "first" },
     noConsecGrooms: [],
     groomOverrides: {},
+    laneLimits: {},
     durations: {},
     defaultDur: 15,
     prepMin: 30,
   };
 }
 
+// この馬が使える種付所。上り・鎮静は第一限定（マスト）。それ以外は設定に従う。
+export function laneOf(m: Mating, o: Options): LaneLimit | null {
+  if (firstOnly(m)) return "first";
+  return o.laneLimits?.[normCode(m.sireCode)] ?? null;
+}
+// 呼び出しリード（種付時刻ちょうどが各組の最初の枠なら5分前）
+export function prepFor(mateTime: string, o: Options): number {
+  return FIRST_SLOT_TIMES.includes(mateTime) ? FIRST_SLOT_PREP : o.prepMin;
+}
+
 // 1コマ（第一・第二種付所で最大2頭。a=第一 / b=第二）。startMin=このコマの開始絶対分（固定/間隔待ちのギャップ）
 export type Round = { a?: Mating; b?: Mating; startMin?: number };
 
-export type Issue = "same" | "groom" | "stall" | "first2" | "lane" | "solo" | "consec";
+export type Issue =
+  | "same"
+  | "groom"
+  | "stall"
+  | "first2"
+  | "lane"
+  | "laneLimit"
+  | "solo"
+  | "consec";
 export const ISSUE_LABEL: Record<Issue, string> = {
   same: "同じ種牡馬",
   groom: "担当者が同じ",
   stall: "馬房が隣・正面・斜め",
-  first2: "上り/鎮静が2頭（第一は1頭）",
+  first2: "第一限定の馬が2頭",
   lane: "上り/鎮静は第一に",
+  laneLimit: "使えない種付所に入っている",
   solo: "単独のはずが2頭",
   consec: "担当者が連続",
 };
@@ -109,10 +141,12 @@ export function roundIssues(
   if (a && b) {
     const c = concurrentIssue(a.sireCode, b.sireCode, o);
     if (c) out.push(c);
-    if (nf(a) && nf(b)) out.push("first2");
-    else if (nf(b)) out.push("lane"); // 第一必須が第二に入っている
+    if (laneOf(a, o) === "first" && laneOf(b, o) === "first") out.push("first2");
     if (isSolo(a) || isSolo(b)) out.push("solo");
   }
+  // 使える種付所の限定（上り・鎮静は第一限定）を守っているか
+  if (a && laneOf(a, o) === "second") out.push(nf(a) ? "lane" : "laneLimit");
+  if (b && laneOf(b, o) === "first") out.push(nf(b) ? "lane" : "laneLimit");
   const grooms = [a, b]
     .filter(Boolean)
     .map((m) => optionGroomOf((m as Mating).sireCode, o));
@@ -199,13 +233,29 @@ export function autoSchedule(
         // （遅め/最後の馬が早い馬のコマに相乗りして前に出てしまうのを防ぐ）
         if (other && Math.abs(rk(m) - rk(other)) > 1) continue;
         if (other && concurrentIssue(m.sireCode, other.sireCode, o) !== null) continue;
-        if (other && nf(m) && nf(other)) continue;
         if (hasConsec(groom, rounds[i - 1], rounds[i + 1])) continue;
-        if (!r.a) r.a = m;
-        else if (nf(m) && !nf(r.a)) {
-          r.b = r.a;
-          r.a = m;
-        } else r.b = m;
+        // 使える種付所（上り/鎮静＝第一限定、設定による限定）を守って入れる。
+        // 相方に限定が無ければ、必要に応じて反対側へ寄せて空けてもらう。
+        const myLane = laneOf(m, o);
+        let target: "a" | "b" | null = null;
+        if (myLane === "first") {
+          if (!r.a) target = "a";
+          else if (!r.b && laneOf(r.a, o) !== "first") {
+            r.b = r.a;
+            r.a = undefined;
+            target = "a";
+          }
+        } else if (myLane === "second") {
+          if (!r.b) target = "b";
+          else if (!r.a && laneOf(r.b, o) !== "second") {
+            r.a = r.b;
+            r.b = undefined;
+            target = "b";
+          }
+        } else if (!r.a) target = "a";
+        else if (!r.b) target = "b";
+        if (!target) continue;
+        r[target] = m;
         return;
       }
     }
@@ -232,7 +282,10 @@ export function autoSchedule(
     // （省略するとresort()がリリース時刻だけで並べ替え、遅め/最後に指定した馬が
     //   先頭へ戻ってしまうため）
     const startMin = pinned ? rel : Math.max(rel, afterEnd);
-    rounds.push({ a: m, startMin });
+    // 第二限定の馬は第二種付所に置く（第一は空きのまま）
+    rounds.push(
+      laneOf(m, o) === "second" ? { b: m, startMin } : { a: m, startMin }
+    );
   }
 
   // 処理順：優先度→固定（呼出時刻決定）を優先→リリース時刻→カナロア優先→難易度
@@ -320,13 +373,16 @@ export function earlyFinishPick(
   o: Options
 ): Mating | null {
   const other = lane === "a" ? rounds[i].b : rounds[i].a;
+  // 繰り上げ先はこの馬が抜けた側。その側を使えない馬は候補にしない
+  const needLane: LaneLimit = lane === "a" ? "first" : "second";
   for (let j = i + 1; j < rounds.length; j++) {
     for (const ln of ["a", "b"] as const) {
       const cand = rounds[j][ln];
       if (!cand) continue;
+      const cl = laneOf(cand, o);
+      if (cl && cl !== needLane) continue;
       if (other) {
         if (concurrentIssue(cand.sireCode, other.sireCode, o) !== null) continue;
-        if (nf(cand) && nf(other)) continue;
         if (isSolo(cand) || isSolo(other)) continue;
       } else if (isSolo(cand)) continue;
       return cand;

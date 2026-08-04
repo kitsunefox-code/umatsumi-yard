@@ -34,6 +34,12 @@ import {
   PRIORITY_LABEL,
   ISSUE_LABEL,
   GAP_MIN,
+  FIRST_SLOT_TIMES,
+  FIRST_SLOT_PREP,
+  LaneLimit,
+  LANE_LIMIT_LABEL,
+  laneOf,
+  prepFor,
   isSoloCode,
   defaultOptions,
   autoSchedule,
@@ -261,10 +267,18 @@ export default function SchedulePage() {
   // 初期値は順番表の予約時間から自動入力されるが、その後はここでの編集がそのまま反映される。
   const effectiveFixedTimes = fixedTimes;
 
+  // 呼ぶ時刻→種付時刻。5分後がその組の最初の枠なら5分前呼びとして扱う
+  const mateFromCall = (call: string) => {
+    const c = toMin(call);
+    if (FIRST_SLOT_TIMES.includes(fmtTime(c + FIRST_SLOT_PREP)))
+      return c + FIRST_SLOT_PREP;
+    return c + opts.prepMin;
+  };
+
   const fixedMin = useMemo(() => {
     const m: Record<string, number> = {};
     for (const id in effectiveFixedTimes)
-      if (effectiveFixedTimes[id]) m[id] = toMin(effectiveFixedTimes[id]) + opts.prepMin;
+      if (effectiveFixedTimes[id]) m[id] = mateFromCall(effectiveFixedTimes[id]);
     return m;
   }, [effectiveFixedTimes, opts.prepMin]);
 
@@ -341,6 +355,13 @@ export default function SchedulePage() {
   }
   function setFixedCallTime(id: string, hhmm: string) {
     setFixed(id, quarterTime(hhmm));
+  }
+  function setLaneLimit(code: string, lane: LaneLimit | "") {
+    const c = normCode(code);
+    const next = { ...(opts.laneLimits || {}) };
+    if (lane) next[c] = lane;
+    else delete next[c];
+    applyOpts({ ...opts, laneLimits: next });
   }
   function setGroom(code: string, groom: string) {
     const c = normCode(code);
@@ -468,6 +489,7 @@ export default function SchedulePage() {
     Object.keys(opts.durations).length +
     opts.noConsecGrooms.length +
     Object.keys(opts.groomOverrides || {}).length +
+    Object.keys(opts.laneLimits || {}).length +
     Object.keys(effectiveFixedTimes).filter((id) => effectiveFixedTimes[id]).length;
 
   function Card({ m, i, lane }: { m?: Mating; i: number; lane: "a" | "b" }) {
@@ -493,6 +515,7 @@ export default function SchedulePage() {
     const k = noteKind(m.note);
     const code = normCode(m.sireCode);
     const pri = opts.priorities[code];
+    const limit = laneOf(m, opts);
     const e = earliest[code];
     const bad4h = e != null && startMins[i] < e;
     const early = showEarly ? earlyFinishPick(rounds, i, lane, opts) : null;
@@ -507,7 +530,7 @@ export default function SchedulePage() {
         <div className="sched-card-main">
           <Badge code={m.sireCode} />
           <div className="sched-card-txt">
-            {(pri || fixedCallTime(m.id) || fo || k === "agari-re") && (
+            {(pri || fixedCallTime(m.id) || fo || k === "agari-re" || limit) && (
               <div className="sched-mare">
                 {/* 順番を指定した馬は予約時間の固定より指定を優先するので📌は出さない */}
                 {pri ? (
@@ -520,6 +543,10 @@ export default function SchedulePage() {
                 {fo && <span className="first-tag">{fo}</span>}
                 {k === "agari-re" && (
                   <span className="first-tag re">上り再発</span>
+                )}
+                {/* 上り/鎮静のタグと重複しない時だけ種付所の限定を出す */}
+                {!fo && limit && (
+                  <span className="lane-tag">{LANE_LIMIT_LABEL[limit]}</span>
                 )}
               </div>
             )}
@@ -758,9 +785,11 @@ export default function SchedulePage() {
           <div className="rules-hint">
             種牡馬ごとに <b>順番</b>・<b>所要（分）</b> を設定できます。設定したら下の
             <b>🚀 生成する</b>を押してください（ここでの変更はまだ反映されません）。
-            ※上り初回・鎮静は自動で第一に固定、連続禁止の担当者は必ず避けて組みます。
+            ※上り初回・鎮静は第一種付所に固定、連続禁止の担当者は必ず避けて組みます。
             ロードカナロアの種付中は第二種付所を使いません（固定ルール）。
             <b>順番を指定した馬は、順番表の予約時間より指定を優先します。</b>
+            特定の種付所でしか種付できない馬は「両方／第一のみ／第二のみ」で指定できます。
+            {FIRST_SLOT_TIMES.join("・")}に種付する馬は{FIRST_SLOT_PREP}分前呼びで計算します。
           </div>
           <div className="rules-grid">
             {groupCodes.map((c) => (
@@ -808,6 +837,18 @@ export default function SchedulePage() {
                       {PRIORITY_LABEL[p]}
                     </option>
                   ))}
+                </select>
+                <select
+                  className="rule-lane"
+                  value={opts.laneLimits?.[c] || ""}
+                  onChange={(e) =>
+                    setLaneLimit(c, e.target.value as LaneLimit | "")
+                  }
+                  title="この種牡馬が使える種付所"
+                >
+                  <option value="">両方</option>
+                  <option value="first">第一のみ</option>
+                  <option value="second">第二のみ</option>
                 </select>
                 <input
                   className="rule-dur"
@@ -960,7 +1001,8 @@ export default function SchedulePage() {
           <div className="call-head">
             📞 呼び出し表（時刻順）
             <span className="call-note">
-              入力した呼ぶ時刻を基に、種付時刻を固定して「この内容で組み直す」
+              呼ぶ時刻＝種付{opts.prepMin}分前（{FIRST_SLOT_TIMES.join("・")}
+              の種付は{FIRST_SLOT_PREP}分前）／入力すると種付時刻を固定して組み直せます
             </span>
           </div>
           <div className="call-actions">
@@ -993,7 +1035,7 @@ export default function SchedulePage() {
                       key={m.id}
                     >
                       <span className="call-time">
-                        {fmtTime(startMins[i] - opts.prepMin)}
+                        {fmtTime(startMins[i] - prepFor(times[i], opts))}
                       </span>
                       <span className="call-mate">種付 {times[i]}</span>
                       <span className="call-mid">

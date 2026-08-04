@@ -3628,3 +3628,18 @@ button {
   padding: 1px 6px;
   vertical-align: middle;
 }
+
+/* 種付所の限定タグ（第一のみ／第二のみ） */
+.lane-tag {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 800;
+  color: #fff;
+  background: #7a4fd0;
+  border-radius: 5px;
+  padding: 1px 6px;
+  vertical-align: middle;
+}
+.rule-lane {
+  flex: 0 0 auto;
+}
