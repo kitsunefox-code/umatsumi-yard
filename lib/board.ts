@@ -252,10 +252,10 @@ export function noteKind(note?: string): string {
   if (note.includes("OV")) return "ov";
   return "other";
 }
-// カード全体を色付けする注記かどうか（上り/上り再発/鎮静）
+// カード全体を色付けする注記かどうか（上り/上り再発/鎮静/OV）
 export function cardClass(note?: string): string {
   const k = noteKind(note);
-  return k === "agari" || k === "agari-re" || k === "sedate"
+  return k === "agari" || k === "agari-re" || k === "sedate" || k === "ov"
     ? `card-${k}`
     : "";
 }

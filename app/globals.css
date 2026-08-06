@@ -2160,7 +2160,16 @@ button {
   margin-right: 2px;
 }
 
-/* カード全体の色付け（上り=赤 / 上り再発=青 / 鎮静=黄） */
+/* カード全体の色付け（上り=赤 / 上り再発=青 / 鎮静=黄 / OV=紫） */
+.roster-chip.card-ov,
+.mare-chip.card-ov,
+.frame-occ.card-ov {
+  background: #f2edfa;
+  border-color: #9b7bc9;
+}
+.frame-occ.card-ov {
+  border-left: 3px solid #9b7bc9;
+}
 .roster-chip.card-agari,
 .mare-chip.card-agari,
 .frame-occ.card-agari {
@@ -2189,7 +2198,8 @@ button {
 }
 .frame-occ.card-agari,
 .frame-occ.card-agari-re,
-.frame-occ.card-sedate {
+.frame-occ.card-sedate,
+.frame-occ.card-ov {
   border-radius: 6px;
   padding: 2px 3px;
   border-bottom: none;
@@ -3912,11 +3922,12 @@ body {
   gap: 8px;
 }
 .roster-chip {
-  min-height: 96px;
+  /* 中身は2行(約38px)。余白を詰めてコンパクトに */
+  min-height: 0;
   border-radius: var(--radius-sm);
   border: 1.5px solid var(--line-strong);
   box-shadow: 0 1px 2px rgba(16, 24, 40, 0.05);
-  padding: 8px 10px;
+  padding: 6px 8px;
   align-items: center;
 }
 .roster-chip .chip-name {
@@ -3975,8 +3986,11 @@ button:focus-visible {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 .roster-chip {
-  align-items: flex-start;
+  align-items: center;
   overflow: hidden;
+  min-height: 0;
+  padding: 6px 8px;
+  gap: 7px;
 }
 .roster-chip .chip-body {
   min-width: 0;
