@@ -3981,9 +3981,9 @@ button:focus-visible {
   vertical-align: middle;
 }
 
-/* ---- 本日の予定：2列固定・注記もカード内に収める ---- */
+/* ---- 本日の予定：幅に合わせて列を増やし、余白を作らない ---- */
 .roster-chips {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(215px, 1fr));
 }
 .roster-chip {
   align-items: center;
@@ -3991,6 +3991,15 @@ button:focus-visible {
   min-height: 0;
   padding: 6px 8px;
   gap: 7px;
+}
+/* 左の種牡馬コードは全カード同じ大きさに */
+.roster-chip .chip-sire {
+  width: 42px;
+  min-width: 42px;
+  height: 34px;
+  align-self: center;
+  padding: 0;
+  font-size: 12px;
 }
 .roster-chip .chip-body {
   min-width: 0;
