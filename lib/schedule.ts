@@ -53,7 +53,8 @@ export type Options = {
   laneLimits: Record<string, LaneLimit>; // 種牡馬コード→使える種付所の限定
   durations: Record<string, number>; // 種牡馬コード→平均所要（分）
   defaultDur: number; // 既定の所要（分）
-  prepMin: number; // 呼び出しから種付までの準備（待機＋洗い場）分
+  prepMin: number; // 最初の数頭を何分前に呼ぶか（待機に並ぶ前の助走）
+  waitCount: number; // 待機に何頭そろえておくか（第一・第二の2頭＋この頭数が場内にいる）
 };
 export function defaultOptions(): Options {
   return {
@@ -64,7 +65,30 @@ export function defaultOptions(): Options {
     durations: {},
     defaultDur: 15,
     prepMin: 30,
+    waitCount: 4,
   };
+}
+
+// 呼び出し時刻＝自分より waitCount 頭前の馬が種付を始める時刻。
+// こうすると常に「第一に1頭・第二に1頭・待機に waitCount 頭」が保たれる。
+// 先頭の数頭は前に馬がいないので、開始時刻の prepMin 前に呼ぶ。
+export function callMinutes(
+  rounds: Round[],
+  startMins: number[],
+  o: Options
+): { m: Mating; roundIndex: number; mateMin: number; callMin: number }[] {
+  const seq: { m: Mating; roundIndex: number; mateMin: number }[] = [];
+  rounds.forEach((r, i) => {
+    for (const m of [r.a, r.b])
+      if (m) seq.push({ m, roundIndex: i, mateMin: startMins[i] });
+  });
+  const n = Math.max(0, Math.floor(o.waitCount));
+  return seq.map((s, idx) => {
+    if (idx >= n) return { ...s, callMin: seq[idx - n].mateMin };
+    // 先頭グループ：その組の最初の枠なら5分前、それ以外は prepMin 前
+    const base = startMins[0] ?? s.mateMin;
+    return { ...s, callMin: base - prepFor(fmtTime(s.mateMin), o) };
+  });
 }
 
 // この馬が使える種付所。上り・鎮静は第一限定（マスト）。それ以外は設定に従う。

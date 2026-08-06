@@ -36,6 +36,7 @@ import {
   GAP_MIN,
   FIRST_SLOT_TIMES,
   FIRST_SLOT_PREP,
+  callMinutes,
   LaneLimit,
   LANE_LIMIT_LABEL,
   laneOf,
@@ -427,6 +428,12 @@ export default function SchedulePage() {
   }
 
   const times = useMemo(() => startTimes(rounds, start, opts), [rounds, start, opts]);
+  // 呼び出し時刻（待機に何頭そろえるかから逆算）。牝馬id→呼び出し絶対分
+  const callMinById = useMemo(() => {
+    const map: Record<string, number> = {};
+    for (const c of callMinutes(rounds, startMins, opts)) map[c.m.id] = c.callMin;
+    return map;
+  }, [rounds, startMins, opts]);
   const issuesByRound = useMemo(() => {
     let prev: string[] = [];
     return rounds.map((r) => {
@@ -741,8 +748,27 @@ export default function SchedulePage() {
             />
             分
           </label>
-          <label title="呼んでから種付までの準備時間（待機→洗い場）">
-            何分前に呼ぶか
+          <label title="第一・第二の2頭に加えて、待機に何頭そろえておくか。この頭数から呼び出し時刻を逆算します">
+            待機
+            <input
+              type="number"
+              min={0}
+              max={10}
+              value={opts.waitCount}
+              onChange={(e) =>
+                applyOpts({
+                  ...opts,
+                  waitCount: Math.max(
+                    0,
+                    Math.min(10, Number(e.target.value) || 0)
+                  ),
+                })
+              }
+            />
+            頭
+          </label>
+          <label title="最初の数頭を何分前に呼ぶか（前に馬がいないので基準がない分）">
+            最初の呼び出し
             <input
               type="number"
               min={0}
@@ -783,7 +809,7 @@ export default function SchedulePage() {
             ロードカナロアの種付中は第二種付所を使いません（固定ルール）。
             <b>順番を指定した馬は、順番表の予約時間より指定を優先します。</b>
             特定の種付所でしか種付できない馬は「両方／第一のみ／第二のみ」で指定できます。
-            {FIRST_SLOT_TIMES.join("・")}に種付する馬は{FIRST_SLOT_PREP}分前呼びで計算します。
+            呼び出しは「第一1頭・第二1頭・待機{opts.waitCount}頭」を保つ時刻で出します。
           </div>
           <div className="rules-grid">
             {groupCodes.map((c) => (
@@ -999,8 +1025,9 @@ export default function SchedulePage() {
           <div className="call-head">
             📞 呼び出し表（時刻順）
             <span className="call-note">
-              呼ぶ時刻＝種付{opts.prepMin}分前（{FIRST_SLOT_TIMES.join("・")}
-              の種付は{FIRST_SLOT_PREP}分前）／入力すると種付時刻を固定して組み直せます
+              第一1頭・第二1頭・待機{opts.waitCount}頭を保つ呼び方（{opts.waitCount}
+              頭前の馬の種付時刻に呼ぶ）／最初の{opts.waitCount}頭は
+              {opts.prepMin}分前
             </span>
           </div>
           <div className="call-actions">
@@ -1033,7 +1060,10 @@ export default function SchedulePage() {
                       key={m.id}
                     >
                       <span className="call-time">
-                        {quarterMin(startMins[i] - prepFor(times[i], opts))}
+                        {quarterMin(
+                          callMinById[m.id] ??
+                            startMins[i] - prepFor(times[i], opts)
+                        )}
                       </span>
                       <span className="call-mate">種付 {times[i]}</span>
                       <span className="call-mid">
