@@ -387,6 +387,19 @@ export default function SchedulePage() {
     else delete d[code];
     applyOpts({ ...opts, durations: d });
   }
+  // 休みの担当者。その人の馬は組めなくなるので、担当変更で誰かに振り替える
+  function toggleOffGroom(g: string) {
+    const cur = opts.offGrooms || [];
+    const has = cur.includes(g);
+    applyOpts({
+      ...opts,
+      offGrooms: has ? cur.filter((x) => x !== g) : [...cur, g],
+      // 休みにした人は「連続で入れない」からは外す
+      noConsecGrooms: has
+        ? opts.noConsecGrooms
+        : opts.noConsecGrooms.filter((x) => x !== g),
+    });
+  }
   function toggleGroom(g: string) {
     const has = opts.noConsecGrooms.includes(g);
     applyOpts({
@@ -566,13 +579,20 @@ export default function SchedulePage() {
               </div>
             )}
             <div className="sched-sire">
-              {/* 担当が決まっていない馬は「担当者不明」と出して気づけるようにする */}
+              {/* 担当が決まっていない馬は「担当者不明」、休みの担当者は「(休)」と出す */}
               <span
                 className={`sched-groom${
                   optionGroomOf(m.sireCode, opts) ? "" : " unknown"
+                }${
+                  (opts.offGrooms || []).includes(optionGroomOf(m.sireCode, opts))
+                    ? " off"
+                    : ""
                 }`}
               >
                 👤{optionGroomOf(m.sireCode, opts) || "担当者不明"}
+                {(opts.offGrooms || []).includes(
+                  optionGroomOf(m.sireCode, opts)
+                ) && "(休)"}
               </span>
               {barnOf(m.sireCode) && (
                 <span className="sched-barn">{barnOf(m.sireCode)}</span>
@@ -808,8 +828,11 @@ export default function SchedulePage() {
             ※上り初回・鎮静は第一種付所に固定、連続禁止の担当者は必ず避けて組みます。
             ロードカナロアの種付中は第二種付所を使いません（固定ルール）。
             <b>順番を指定した馬は、順番表の予約時間より指定を優先します。</b>
-            特定の種付所でしか種付できない馬は「両方／第一のみ／第二のみ」で指定できます。
-            呼び出しは「第一1頭・第二1頭・待機{opts.waitCount}頭」を保つ時刻で出します。
+            特定の種付所でしか種付できない馬は「両方／第一のみ／第二のみ」で指定できます
+            （コントレイル・オルフェーヴルは第一、キズナは第二が既定）。
+            休みの担当者を押すと、その人は担当の選択肢から外れ、担当馬は⚠になります。
+            呼び出しは「第一1頭・第二1頭・待機{opts.waitCount}頭」を保つ時刻で出し、
+            種付の開始時刻より前には呼びません。
           </div>
           <div className="rules-grid">
             {groupCodes.map((c) => (
@@ -839,9 +862,13 @@ export default function SchedulePage() {
                 >
                   <option value="__default">
                     {groomOf(c) || "担当者不明"}
+                    {(opts.offGrooms || []).includes(groomOf(c)) ? "(休)" : ""}
                   </option>
                   <option value="">担当者不明</option>
-                  {allGrooms.map((g) => (
+                  {/* 休みの人は選べないようにする */}
+                  {allGrooms
+                    .filter((g) => !(opts.offGrooms || []).includes(g))
+                    .map((g) => (
                     <option value={g} key={g}>
                       {g}
                     </option>
@@ -905,6 +932,24 @@ export default function SchedulePage() {
               </label>
             ))}
             {groupGrooms.length === 0 && <span className="rules-sub">—</span>}
+          </div>
+          <div className="rules-grooms">
+            <span className="rules-sub">本日休みの担当者：</span>
+            {allGrooms.map((g) => (
+              <label
+                key={g}
+                className={`groom-chip off${
+                  (opts.offGrooms || []).includes(g) ? " on" : ""
+                }`}
+              >
+                <input
+                  type="checkbox"
+                  checked={(opts.offGrooms || []).includes(g)}
+                  onChange={() => toggleOffGroom(g)}
+                />
+                {g}
+              </label>
+            ))}
           </div>
           <div className="prefixed-call-panel">
             <div className="prefixed-call-head">

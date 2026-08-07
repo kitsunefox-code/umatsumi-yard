@@ -44,6 +44,12 @@ export const LANE_LIMIT_LABEL: Record<LaneLimit, string> = {
   first: "第一のみ",
   second: "第二のみ",
 };
+// 種付所が決まっている種牡馬（固定・設定で変えられる既定値）
+export const DEFAULT_LANE_LIMITS: Record<string, LaneLimit> = {
+  CON: "first", // コントレイル
+  ORF: "first", // オルフェーヴル
+  KZN: "second", // キズナ
+};
 
 // この日のオプション一式
 export type Options = {
@@ -55,17 +61,19 @@ export type Options = {
   defaultDur: number; // 既定の所要（分）
   prepMin: number; // 最初の数頭を何分前に呼ぶか（待機に並ぶ前の助走）
   waitCount: number; // 待機に何頭そろえておくか（第一・第二の2頭＋この頭数が場内にいる）
+  offGrooms: string[]; // 本日休みの担当者（この人の馬は組めない）
 };
 export function defaultOptions(): Options {
   return {
     priorities: { LDK: "first" },
     noConsecGrooms: [],
     groomOverrides: {},
-    laneLimits: {},
+    laneLimits: { ...DEFAULT_LANE_LIMITS },
     durations: {},
     defaultDur: 15,
     prepMin: 30,
     waitCount: 4,
+    offGrooms: [],
   };
 }
 
@@ -83,11 +91,15 @@ export function callMinutes(
       if (m) seq.push({ m, roundIndex: i, mateMin: startMins[i] });
   });
   const n = Math.max(0, Math.floor(o.waitCount));
+  // 種付の開始時刻より前には呼ばない
+  const floor = startMins[0] ?? 0;
   return seq.map((s, idx) => {
-    if (idx >= n) return { ...s, callMin: seq[idx - n].mateMin };
-    // 先頭グループ：その組の最初の枠なら5分前、それ以外は prepMin 前
-    const base = startMins[0] ?? s.mateMin;
-    return { ...s, callMin: base - prepFor(fmtTime(s.mateMin), o) };
+    const raw =
+      idx >= n
+        ? seq[idx - n].mateMin
+        : // 先頭グループ：前に馬がいないので prepMin 前（最初の枠は5分前）
+          (startMins[0] ?? s.mateMin) - prepFor(fmtTime(s.mateMin), o);
+    return { ...s, callMin: Math.max(floor, raw) };
   });
 }
 
@@ -112,7 +124,8 @@ export type Issue =
   | "lane"
   | "laneLimit"
   | "solo"
-  | "consec";
+  | "consec"
+  | "off";
 export const ISSUE_LABEL: Record<Issue, string> = {
   same: "同じ種牡馬",
   groom: "担当者が同じ",
@@ -122,6 +135,7 @@ export const ISSUE_LABEL: Record<Issue, string> = {
   laneLimit: "使えない種付所に入っている",
   solo: "単独のはずが2頭",
   consec: "担当者が連続",
+  off: "担当者が休み",
 };
 
 function rankOf(code: string, pri: Priorities): number {
@@ -179,6 +193,8 @@ export function roundIssues(
       out.push("consec");
       break;
     }
+  // 休みの担当者の馬が入っていないか
+  if (grooms.some((g) => g && (o.offGrooms || []).includes(g))) out.push("off");
   return out;
 }
 

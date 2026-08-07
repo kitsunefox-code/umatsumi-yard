@@ -4038,3 +4038,16 @@ button:focus-visible {
 .roster-chip .chip-sub {
   flex-wrap: nowrap;
 }
+
+/* 本日休みの担当者 */
+.groom-chip.off.on {
+  background: #efe6f7;
+  border-color: #a98ad0;
+  color: #5d3a91;
+}
+.sched-groom.off,
+.call-groom.off {
+  color: #8a4dd0;
+  font-weight: 800;
+  text-decoration: line-through;
+}
