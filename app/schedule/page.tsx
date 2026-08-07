@@ -505,6 +505,21 @@ export default function SchedulePage() {
     }
     return seen.sort();
   }, [groupCodes, opts]);
+  // 休みの担当者に馬が残っている＝生成する前に担当を変える必要がある
+  const offAssigned = useMemo(
+    () =>
+      groupCodes
+        .map((c) => optionGroomOf(c, opts))
+        .filter((g, i, a) => g && (opts.offGrooms || []).includes(g) && a.indexOf(g) === i),
+    [groupCodes, opts]
+  );
+  const offAssignedCount = useMemo(
+    () =>
+      matings.filter((m) =>
+        (opts.offGrooms || []).includes(optionGroomOf(m.sireCode, opts))
+      ).length,
+    [matings, opts]
+  );
   const ruleCount =
     groupCodes.filter((c) => opts.priorities[c]).length +
     Object.keys(opts.durations).length +
@@ -807,6 +822,13 @@ export default function SchedulePage() {
             />
             分前
           </label>
+          {/* 休みの担当者に馬が残っていないか＝生成する前に直すこと */}
+          {offAssigned.length > 0 && (
+            <span className="sched-stat bad">
+              ⚠ 休みの担当（{offAssigned.join("・")}）に
+              {offAssignedCount}頭 — 担当を変えてください
+            </span>
+          )}
           <span className="sched-stat">
             種付 {scheduled}頭 ／ {rounds.length}コマ
           </span>
@@ -822,18 +844,6 @@ export default function SchedulePage() {
       {/* この日のルール */}
       {showRules && (
         <section className="rules-panel">
-          <div className="rules-hint">
-            種牡馬ごとに <b>順番</b>・<b>所要（分）</b> を設定できます。設定したら下の
-            <b>🚀 生成する</b>を押してください（ここでの変更はまだ反映されません）。
-            ※上り初回・鎮静は第一種付所に固定、連続禁止の担当者は必ず避けて組みます。
-            ロードカナロアの種付中は第二種付所を使いません（固定ルール）。
-            <b>順番を指定した馬は、順番表の予約時間より指定を優先します。</b>
-            特定の種付所でしか種付できない馬は「両方／第一のみ／第二のみ」で指定できます
-            （コントレイル・オルフェーヴルは第一、キズナは第二が既定）。
-            休みの担当者を押すと、その人は担当の選択肢から外れ、担当馬は⚠になります。
-            呼び出しは「第一1頭・第二1頭・待機{opts.waitCount}頭」を保つ時刻で出し、
-            種付の開始時刻より前には呼びません。
-          </div>
           <div className="rules-grid">
             {groupCodes.map((c) => (
               <div

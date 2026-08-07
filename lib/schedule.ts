@@ -193,8 +193,6 @@ export function roundIssues(
       out.push("consec");
       break;
     }
-  // 休みの担当者の馬が入っていないか
-  if (grooms.some((g) => g && (o.offGrooms || []).includes(g))) out.push("off");
   return out;
 }
 

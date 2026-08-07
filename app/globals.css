@@ -3535,7 +3535,19 @@ button {
 /* 種付順番のカード（第一・第二・空き・使用不可すべて同じ高さ） */
 .sched-card,
 .sched-card.empty {
-  min-height: 96px;
+  min-height: 74px;
+  padding: 6px 8px;
+}
+.sched-card .sched-mare {
+  line-height: 1.25;
+}
+.sched-card .sched-sire {
+  font-size: 11px;
+}
+.sched-card .gap-info,
+.sched-card .sched-note {
+  font-size: 10px;
+  padding: 1px 5px;
 }
 /* 付帯情報は1行に収めて高さを揃える */
 .sched-note,
