@@ -4063,3 +4063,16 @@ button:focus-visible {
   font-weight: 800;
   text-decoration: line-through;
 }
+
+/* 担当が休みの種牡馬（ルール表の行） */
+.rule-row.groom-off {
+  border-color: #e06060;
+  background: #fdecec;
+}
+.rule-off-warn {
+  grid-column: 2 / -1;
+  font-size: 11px;
+  font-weight: 800;
+  color: #c0392b;
+  white-space: nowrap;
+}

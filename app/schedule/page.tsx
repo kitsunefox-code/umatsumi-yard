@@ -269,20 +269,15 @@ export default function SchedulePage() {
   // 初期値は順番表の予約時間から自動入力されるが、その後はここでの編集がそのまま反映される。
   const effectiveFixedTimes = fixedTimes;
 
-  // 呼ぶ時刻→種付時刻。5分後がその組の最初の枠なら5分前呼びとして扱う
-  const mateFromCall = (call: string) => {
-    const c = toMin(call);
-    if (FIRST_SLOT_TIMES.includes(fmtTime(c + FIRST_SLOT_PREP)))
-      return c + FIRST_SLOT_PREP;
-    return c + opts.prepMin;
-  };
-
+  // 入力した時刻をそのまま種付時刻として固定する。
+  // （呼び出しは待機頭数から別に計算するので、ここで足し引きすると
+  //   コマの時刻が15分刻みで詰まらず飛んでしまう）
   const fixedMin = useMemo(() => {
     const m: Record<string, number> = {};
     for (const id in effectiveFixedTimes)
-      if (effectiveFixedTimes[id]) m[id] = mateFromCall(effectiveFixedTimes[id]);
+      if (effectiveFixedTimes[id]) m[id] = toMin(effectiveFixedTimes[id]);
     return m;
-  }, [effectiveFixedTimes, opts.prepMin]);
+  }, [effectiveFixedTimes]);
 
   const baseStart = toMin(start);
 
@@ -845,7 +840,11 @@ export default function SchedulePage() {
       {showRules && (
         <section className="rules-panel">
           <div className="rules-grid">
-            {groupCodes.map((c) => (
+            {groupCodes.map((c) => {
+              const groomOff = (opts.offGrooms || []).includes(
+                optionGroomOf(c, opts)
+              );
+              return (
               <div
                 className={`rule-row${
                   opts.priorities[c] ||
@@ -853,10 +852,13 @@ export default function SchedulePage() {
                   opts.groomOverrides?.[c] != null
                     ? " set"
                     : ""
-                }`}
+                }${groomOff ? " groom-off" : ""}`}
                 key={c}
               >
                 <Badge code={c} />
+                {groomOff && (
+                  <span className="rule-off-warn">⚠ 担当が休みです</span>
+                )}
                 <select
                   className="rule-groom"
                   value={
@@ -922,7 +924,8 @@ export default function SchedulePage() {
                   <span className="rule-dur-u">分</span>
                 </span>
               </div>
-            ))}
+              );
+            })}
           </div>
           <div className="rules-grooms">
             <span className="rules-sub">連続で入れない担当者：</span>
@@ -963,9 +966,9 @@ export default function SchedulePage() {
           </div>
           <div className="prefixed-call-panel">
             <div className="prefixed-call-head">
-              <span>事前に呼ぶ時間が決まっている馬</span>
+              <span>種付の時間が決まっている馬</span>
               <span className="prefixed-call-note">
-                呼ぶ時刻を入れてから生成すると、その時刻を基準に固定します。
+                時刻を入れてから生成すると、その時刻に固定します。
               </span>
             </div>
             <div className="prefixed-call-rows">
@@ -1098,7 +1101,7 @@ export default function SchedulePage() {
             <span>呼ぶ</span>
             <span>種付</span>
             <span>牝馬・種牡馬</span>
-            <span>固定呼出</span>
+            <span>種付を固定</span>
           </div>
           <div className="call-rows">
             {rounds.flatMap((r, i) =>
