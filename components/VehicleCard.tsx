@@ -1,5 +1,6 @@
 "use client";
 
+import { IconWarn } from "@/app/components/Icon";
 import { useState } from "react";
 import {
   Vehicle,
@@ -76,7 +77,7 @@ export default function VehicleCard({
             {vehicle.parkingNo ?? "予備"}
           </span>
           <span className="wh-codes">{codesStr || "—"}</span>
-          <span className="wh-time">🏠 {vehicle.departedAt}</span>
+          <span className="wh-time">帰宅 {vehicle.departedAt}</span>
         </button>
       </div>
     );
@@ -109,7 +110,7 @@ export default function VehicleCard({
           }}
         >
           <span className="wh-ribbon">▾</span>
-          <span className="wh-time">🏠 帰宅 {vehicle.departedAt}</span>
+          <span className="wh-time">帰宅 {vehicle.departedAt}</span>
           <span className="wh-close">閉じる</span>
         </button>
       )}
@@ -125,7 +126,7 @@ export default function VehicleCard({
         <div className="vcard-code">
           {codesStr}
           {vehicle.vehicleCode && (
-            <span className="vcard-truck">🚚{vehicle.vehicleCode}</span>
+            <span className="vcard-truck">{vehicle.vehicleCode}</span>
           )}
         </div>
         {two && (
@@ -138,12 +139,12 @@ export default function VehicleCard({
       </div>
 
       {vehicle.arrivedAt && (
-        <div className="vcard-arrived">🕐 到着 {vehicle.arrivedAt}</div>
+        <div className="vcard-arrived">到着 {vehicle.arrivedAt}</div>
       )}
 
       {overdue && (
         <div className="vcard-overdue">
-          ⚠️ 到着から{elapsedMin}分・未降ろし（30分超過）
+          <IconWarn /> 到着から{elapsedMin}分・未降ろし（30分超過）
         </div>
       )}
 
@@ -233,7 +234,7 @@ export default function VehicleCard({
       {wentHome ? (
         <div className="vcard-foot">
           <span className="wenthome-badge">
-            🏠 帰宅済{vehicle.departedAt ? `（${vehicle.departedAt}）` : ""}
+            帰宅済{vehicle.departedAt ? `（${vehicle.departedAt}）` : ""}
           </span>
         </div>
       ) : allUnloaded ? (
@@ -245,7 +246,7 @@ export default function VehicleCard({
               onGoHome();
             }}
           >
-            🏠 帰宅
+            帰宅
           </button>
         </div>
       ) : two ? (
@@ -257,7 +258,7 @@ export default function VehicleCard({
               onSwapHorses();
             }}
           >
-            ⇅ 前後入替
+            前後入替
           </button>
           <button
             className={`toggle-type ${batch >= 2 ? "is-double" : "is-single"}`}
@@ -272,7 +273,7 @@ export default function VehicleCard({
         </div>
       ) : null}
 
-      {vehicle.memo && <div className="vcard-memo">📝 {vehicle.memo}</div>}
+      {vehicle.memo && <div className="vcard-memo">{vehicle.memo}</div>}
     </div>
   );
 }

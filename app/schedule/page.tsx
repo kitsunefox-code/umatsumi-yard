@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { IconWarn, IconChevL, IconChevR } from "@/app/components/Icon";
 import {
   GroupKey,
   ROSTER_GROUPS,
@@ -572,7 +573,7 @@ export default function SchedulePage() {
                   <span className="pri-tag">{PRIORITY_LABEL[pri]}</span>
                 ) : (
                   fixedCallTime(m.id) && (
-                    <span className="fixed-tag">📌{fixedCallTime(m.id)}</span>
+                    <span className="fixed-tag">固定 {fixedCallTime(m.id)}</span>
                   )
                 )}
                 {fo && <span className="first-tag">{fo}</span>}
@@ -599,7 +600,7 @@ export default function SchedulePage() {
                     : ""
                 }`}
               >
-                👤{optionGroomOf(m.sireCode, opts) || "担当者不明"}
+                {optionGroomOf(m.sireCode, opts) || "担当者不明"}
                 {(opts.offGrooms || []).includes(
                   optionGroomOf(m.sireCode, opts)
                 ) && "(休)"}
@@ -613,7 +614,7 @@ export default function SchedulePage() {
             </div>
             {e != null && (
               <div className={`gap-info${bad4h ? " bad" : ""}`}>
-                {bad4h ? "⚠ 4時間空いていません　" : "🕒 "}
+                {bad4h ? "4時間空いていません　" : ""}
                 {fmtTime(e)}以降OK（終了{fmtTime(e - GAP_MIN)}）
               </div>
             )}
@@ -632,14 +633,14 @@ export default function SchedulePage() {
     <div className="app board-app">
       <div className="topbar">
         <h1>
-          🗓️ 種付順番・呼び出し
+          種付順番・呼び出し
           <span className="sub">どの馬を何時に呼ぶか</span>
         </h1>
         <Link href="/board" className="btn btn-ghost">
-          📍 所在ボードへ
+          所在ボードへ
         </Link>
         <Link href="/" className="btn btn-ghost">
-          🚚 馬積みへ
+          馬積みへ
         </Link>
       </div>
 
@@ -647,7 +648,7 @@ export default function SchedulePage() {
       <section className="roster-panel">
         {seasonDays && seasonDays.length > 0 && (
           <div className="day-row">
-            <span className="day-label">📅 日付</span>
+            <span className="day-label">日付</span>
             <button
               type="button"
               className="day-nav"
@@ -657,7 +658,7 @@ export default function SchedulePage() {
               }}
               disabled={seasonDays.indexOf(day) <= 0}
             >
-              ◀
+              <IconChevL />
             </button>
             <select
               className="day-select"
@@ -680,20 +681,20 @@ export default function SchedulePage() {
               }}
               disabled={seasonDays.indexOf(day) >= seasonDays.length - 1}
             >
-              ▶
+              <IconChevR />
             </button>
             <span className={`day-chip${loadedRosters ? " on" : ""}`}>
               {day && !loadedRosters
                 ? "読み込み中…"
                 : loadedRosters
-                  ? `📡 順番表 ${matings.length}頭`
+                  ? `順番表 ${matings.length}頭`
                   : "サンプル"}
             </span>
           </div>
         )}
         <div className="roster-head">
           <span className="roster-title">
-            📋 対象の組
+            対象の組
             <span className="group-tabs">
               {ROSTER_GROUPS.map((g) => (
                 <button
@@ -712,26 +713,26 @@ export default function SchedulePage() {
               className={`btn btn-sm ${showRules ? "btn-primary" : "btn-ghost"}`}
               onClick={() => setShowRules((v) => !v)}
             >
-              🎌 この日のルール{ruleCount ? `（${ruleCount}）` : ""}
+              この日のルール{ruleCount ? `（${ruleCount}）` : ""}
             </button>
             <button
               className="btn btn-primary btn-generate"
               onClick={generate}
               disabled={matings.length === 0}
             >
-              🚀 {rounds.length ? "この内容で組み直す" : "生成する"}
+              {rounds.length ? "この内容で組み直す" : "生成する"}
             </button>
             <button
               className={`btn btn-sm ${showCall ? "btn-primary" : "btn-ghost"}`}
               onClick={() => setShowCall((v) => !v)}
             >
-              📞 呼び出し表
+              呼び出し表
             </button>
             <button
               className="btn btn-ghost btn-sm"
               onClick={() => setShowMap((v) => !v)}
             >
-              🗺 厩舎マップ{showMap ? "を隠す" : ""}
+              厩舎マップ{showMap ? "を隠す" : ""}
             </button>
           </div>
         </div>
@@ -820,7 +821,7 @@ export default function SchedulePage() {
           {/* 休みの担当者に馬が残っていないか＝生成する前に直すこと */}
           {offAssigned.length > 0 && (
             <span className="sched-stat bad">
-              ⚠ 休みの担当（{offAssigned.join("・")}）に
+              <IconWarn /> 休みの担当（{offAssigned.join("・")}）に
               {offAssignedCount}頭 — 担当を変えてください
             </span>
           )}
@@ -828,10 +829,10 @@ export default function SchedulePage() {
             種付 {scheduled}頭 ／ {rounds.length}コマ
           </span>
           <span className={`sched-stat ${badRounds ? "bad" : "ok"}`}>
-            {badRounds ? `⚠ 要確認 ${badRounds}コマ` : "✓ 被りなし"}
+            {badRounds ? `要確認 ${badRounds}コマ` : "被りなし"}
           </span>
           <span className={`sched-stat ${ldkFirst ? "ok" : "bad"}`}>
-            {ldkFirst ? "✓ カナロア先頭" : "⚠ カナロア先頭でない"}
+            {ldkFirst ? "カナロア先頭" : "カナロア先頭でない"}
           </span>
         </div>
       </section>
@@ -857,7 +858,7 @@ export default function SchedulePage() {
               >
                 <Badge code={c} />
                 {groomOff && (
-                  <span className="rule-off-warn">⚠ 担当が休みです</span>
+                  <span className="rule-off-warn"><IconWarn size={12} /> 担当が休みです</span>
                 )}
                 <select
                   className="rule-groom"
@@ -1001,7 +1002,7 @@ export default function SchedulePage() {
                           onClick={() => setFixedCallTime(m.id, "")}
                           title="固定解除"
                         >
-                          ✕
+                          ×
                         </button>
                       )}
                     </span>
@@ -1052,7 +1053,7 @@ export default function SchedulePage() {
                                   {s?.name ?? code}
                                 </div>
                                 <div className="stall-groom">
-                                  {s?.groom ? `👤${s.groom}` : " "}
+                                  {s?.groom ? s.groom : " "}
                                 </div>
                               </div>
                             </div>
@@ -1074,14 +1075,14 @@ export default function SchedulePage() {
       {/* 呼び出し表（時刻順・誰を何時に呼ぶか） */}
       {showCall && rounds.length === 0 && (
         <section className="call-sheet">
-          <div className="call-head">📞 呼び出し表（時刻順）</div>
-          <p className="barn-hint">まだ生成していません。上の「🚀 生成する」を押すと表示されます。</p>
+          <div className="call-head">呼び出し表（時刻順）</div>
+          <p className="barn-hint">まだ生成していません。上の「生成する」を押すと表示されます。</p>
         </section>
       )}
       {showCall && rounds.length > 0 && (
         <section className="call-sheet">
           <div className="call-head">
-            📞 呼び出し表（時刻順）
+            呼び出し表（時刻順）
             <span className="call-note">
               第一1頭・第二1頭・待機{opts.waitCount}頭を保つ呼び方（{opts.waitCount}
               頭前の馬の種付時刻に呼ぶ）／最初の{opts.waitCount}頭は
@@ -1131,7 +1132,7 @@ export default function SchedulePage() {
                             optionGroomOf(m.sireCode, opts) ? "" : " unknown"
                           }`}
                         >
-                          👤{optionGroomOf(m.sireCode, opts) || "担当者不明"}
+                          {optionGroomOf(m.sireCode, opts) || "担当者不明"}
                         </span>
                         {fo && <span className="first-tag">{fo}</span>}
                       </span>
@@ -1148,7 +1149,7 @@ export default function SchedulePage() {
                             onClick={() => setFixedCallTime(m.id, "")}
                             title="固定解除"
                           >
-                            ✕
+                            ×
                           </button>
                         )}
                       </span>
@@ -1165,11 +1166,11 @@ export default function SchedulePage() {
         <section className="generate-cta">
           <div className="generate-cta-txt">
             <b>まだ何も組んでいません。</b>
-            🎌の日のルール（順番・単独・所要・連続禁止担当者）を確認・設定してから、
-            <b>🚀 生成する</b>を押してください。被り・4時間間隔・連続禁止の担当者は必ず避けて組みます。
+            この日のルール（順番・所要・連続禁止担当者）を確認・設定してから、
+            <b>生成する</b>を押してください。被り・4時間間隔・連続禁止の担当者は必ず避けて組みます。
           </div>
           <button className="btn btn-primary btn-generate" onClick={generate}>
-            🚀 生成する（{matings.length}頭）
+            生成する（{matings.length}頭）
           </button>
         </section>
       )}
@@ -1181,7 +1182,7 @@ export default function SchedulePage() {
             <div className={`tap-hint${sel ? " active" : ""}`}>
               {sel
                 ? "入れ替え先のカード（または空き枠）をタップ。もう一度同じカードで取消。"
-                : "👆 カードをタップ→もう1枚タップで入れ替えできます。"}
+                : "カードをタップし、もう1枚タップすると入れ替えできます。"}
             </div>
             <div className="sched-legend">
               <span>時刻</span>
@@ -1205,7 +1206,7 @@ export default function SchedulePage() {
               <Card m={r.b} i={i} lane="b" />
               {bad && (
                 <div className="sched-warn">
-                  ⚠{" "}
+                  <IconWarn />{" "}
                   {[
                     ...iss.map((x) => ISSUE_LABEL[x]),
                     ...gap.map(

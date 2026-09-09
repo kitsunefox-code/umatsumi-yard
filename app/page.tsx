@@ -515,11 +515,11 @@ export default function Page() {
     <div className={`app ${staging0 ? "has-staging" : ""}`}>
       <div className="topbar">
         <h1>
-          🐴 馬積み駐車場管理アプリ
+          馬積み駐車場管理アプリ
           <span className="sub">Mare Transport Yard Manager</span>
         </h1>
         <Link href="/board" className="btn btn-ghost">
-          📍 所在ボード
+          所在ボード
         </Link>
         {cloudEnabled && (
           <button
@@ -531,8 +531,8 @@ export default function Page() {
             title="同期の合言葉を変更"
           >
             {cloudConnected
-              ? `🔄 同期中${accessKey ? `：${accessKey}` : ""}`
-              : "⚪ 未接続"}
+              ? `同期中${accessKey ? `：${accessKey}` : ""}`
+              : "未接続"}
           </button>
         )}
       </div>
@@ -545,7 +545,7 @@ export default function Page() {
         <button className="btn btn-primary" onClick={addReserveVehicle}>
           ＋予備を追加
         </button>
-        <span className="yard-note">実際の駐車場の配置（← 横スクロール →）</span>
+        <span className="yard-note">実際の駐車場の配置（横スクロール）</span>
       </div>
 
       {/* ===== 駐車場ボード（実際の形：左に1〜3、右に4〜15。1ページ内） ===== */}
@@ -609,7 +609,7 @@ export default function Page() {
       {/* ===== 帰宅済み（本日の記録・折りたたみ） ===== */}
       {departed.length > 0 && (
         <div className="departed-section">
-          <div className="yard-section-title">🏠 帰宅済み（本日）</div>
+          <div className="yard-section-title">帰宅済み（本日）</div>
           <div className="departed-grid">
             {departed.map((v) => (
               <div className="departed-slot" key={v.id}>
@@ -627,14 +627,14 @@ export default function Page() {
           {boardGroup && activeCodes.size > 0 && (
             <span className="code-group">（{boardGroup}の組）</span>
           )}
-          <span className="code-hint">👆 タップ／ドラッグで枠に配置</span>
+          <span className="code-hint">タップまたはドラッグで枠に配置</span>
           <button
             className={`nyuba-btn ${
               staging.some((h) => h.code === "乳馬") ? "on" : ""
             }`}
             onClick={() => stageCode("乳馬")}
           >
-            🍼 乳馬
+            乳馬
           </button>
         </div>
 
@@ -739,7 +739,7 @@ export default function Page() {
       {/* ===== 同期の合言葉 入力 ===== */}
       {cloudEnabled && !accessKey && (
         <Modal
-          title="🔄 リアルタイム同期"
+          title="リアルタイム同期"
           onClose={() => {}}
           footer={
             <button

@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
+import { IconWarn, IconChevL, IconChevR } from "@/app/components/Icon";
 import {
   Mare,
   Zone,
@@ -58,16 +59,16 @@ const ACCESS_KEY_STORAGE = "mare-transport-access-key";
 
 // 施設マップの各場所（配置図どおり）
 const PLACE_META: Record<Zone, { icon: string; tone: string }> = {
-  "馬積場": { icon: "🐴", tone: "yard" },
-  "予備（馬積）": { icon: "🐴", tone: "spare" },
-  "洗い場": { icon: "💧", tone: "wash" },
-  "待機馬房": { icon: "🛖", tone: "stall" },
-  "待機": { icon: "👥", tone: "wait" },
-  "第一種付所": { icon: "🏚️", tone: "mate" },
-  "第二種付所": { icon: "🏚️", tone: "mate" },
-  "P検待ち・直検待ち": { icon: "📋", tone: "check" },
-  "鎮静待ち": { icon: "🐎", tone: "sedate" },
-  "帰宅": { icon: "🏠", tone: "home" },
+  "馬積場": { icon: "", tone: "yard" },
+  "予備（馬積）": { icon: "", tone: "spare" },
+  "洗い場": { icon: "", tone: "wash" },
+  "待機馬房": { icon: "", tone: "stall" },
+  "待機": { icon: "", tone: "wait" },
+  "第一種付所": { icon: "", tone: "mate" },
+  "第二種付所": { icon: "", tone: "mate" },
+  "P検待ち・直検待ち": { icon: "", tone: "check" },
+  "鎮静待ち": { icon: "", tone: "sedate" },
+  "帰宅": { icon: "", tone: "home" },
 };
 
 function loadArr<T>(key: string, fallback: T[]): T[] {
@@ -461,14 +462,14 @@ export default function BoardPage() {
     <div className="app board-app">
       <div className="topbar">
         <h1>
-          📍 種付 所在ボード
+          種付 所在ボード
           <span className="sub">今どの馬がどこにいるか</span>
         </h1>
         <Link href="/schedule" className="btn btn-ghost">
-          🗓️ 種付順番へ
+          種付順番へ
         </Link>
         <Link href="/" className="btn btn-ghost">
-          🚚 馬積みへ
+          馬積みへ
         </Link>
         <button className="btn btn-primary" onClick={() => setAdding(true)}>
           ＋ 馬を追加
@@ -478,7 +479,7 @@ export default function BoardPage() {
         </button>
         {cloudEnabled && (
           <span className={`sync-chip ${connected ? "on" : ""}`}>
-            {connected ? `🔄 同期中${accessKey ? `：${accessKey}` : ""}` : "⚪ 未接続"}
+            {connected ? `同期中${accessKey ? `：${accessKey}` : ""}` : "未接続"}
           </span>
         )}
       </div>
@@ -487,7 +488,7 @@ export default function BoardPage() {
       <section className="roster-panel">
         <div className="roster-head">
           <span className="roster-title">
-            📋 本日の予定
+            本日の予定
             <span className="group-tabs">
               {ROSTER_GROUPS.map((g) => (
                 <button
@@ -521,7 +522,7 @@ export default function BoardPage() {
         </p>
         {pendingRoster.length === 0 ? (
           <div className="roster-empty">
-            {roster.length === 0 ? "予定がありません" : "全頭 到着しました 🎉"}
+            {roster.length === 0 ? "予定がありません" : "全頭 到着しました"}
           </div>
         ) : (
           <div className="roster-chips">
@@ -535,7 +536,7 @@ export default function BoardPage() {
                       どの馬もカードが2行で揃うようにする */}
                   <span className="chip-sub">
                     {r.farm && <span className="chip-farm">{r.farm}</span>}
-                    {r.apptTime && <span className="mare-time">🕐{r.apptTime}</span>}
+                    {r.apptTime && <span className="mare-time">{r.apptTime}</span>}
                     {r.kind && <span className="mare-kind">{r.kind}</span>}
                     <NoteBadge note={r.note} />
                   </span>
@@ -550,7 +551,7 @@ export default function BoardPage() {
         {/* 馬積場（馬積みアプリ連携。駐車枠 1〜15） */}
         <section className="fyard">
           <div className="fyard-label">
-            <span className="fplace-icon">🐴</span>
+            
             <span className="fplace-name">馬積場</span>
             <span className="fplace-count">{yardCount}</span>
             <span className="fyard-note">馬積みアプリと連携</span>
@@ -707,7 +708,7 @@ export default function BoardPage() {
       {/* ===== 合言葉 ===== */}
       {cloudEnabled && !accessKey && (
         <Modal
-          title="🔄 リアルタイム同期"
+          title="リアルタイム同期"
           onClose={() => {}}
           footer={
             <button className="btn btn-primary btn-block" onClick={submitKey}>
@@ -786,7 +787,7 @@ function HomeInfo({ m }: { m: Mare }) {
 function StayWarn({ ts, now }: { ts?: number; now: number }) {
   const m = stayMinutes(ts, now);
   if (m == null || m < STAY_WARN_MIN) return null;
-  return <span className="stay-warn">⚠ 滞在{m}分</span>;
+  return <span className="stay-warn"><IconWarn />滞在{m}分</span>;
 }
 
 // 種牡馬マーク（勝負服っぽい色の馬コードバッジ。同馬主は2色で個性）
@@ -861,7 +862,7 @@ function MareList({
                 <span className="chip-name">{m.mareName || "（名前未入力）"}</span>
                 <span className="chip-sub">
                   {m.farm && <span>{m.farm}</span>}
-                  {m.apptTime && <span className="mare-time">🕐{m.apptTime}</span>}
+                  {m.apptTime && <span className="mare-time">{m.apptTime}</span>}
                   {m.kind && <span className="mare-kind">{m.kind}</span>}
                 </span>
                 <NoteBadge note={m.note} />
@@ -869,7 +870,7 @@ function MareList({
                   <span className="treat-list">
                     {m.treats.map((t) => (
                       <span key={t} className="treat-badge">
-                        🩺{t}
+                        {t}
                       </span>
                     ))}
                   </span>
@@ -896,7 +897,7 @@ function MareList({
                     onClick={() => onAdvance(m.id, mv)}
                     title={`${mv.label}`}
                   >
-                    <span className="chip-adv-arrow">▶</span>
+                    <span className="chip-adv-arrow"><IconChevR size={14} /></span>
                     <span className="chip-adv-label">{mv.label}</span>
                   </button>
                 ))}
@@ -953,14 +954,14 @@ function FrameCell({
             onClick={() => o.onAdvanceTo("洗い場")}
             title="洗い場へ進める"
           >
-            ▶洗い場
+            <IconChevR size={14} />洗い場
           </button>
           <button
             className="frame-adv"
             onClick={() => o.onAdvanceTo("待機馬房")}
             title="待機馬房へ進める"
           >
-            ▶待機馬房
+            <IconChevR size={14} />待機馬房
           </button>
         </div>
         );

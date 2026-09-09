@@ -26,7 +26,7 @@ export default function StagingBar({
       <div className="staging-inner">
         <div className="staging-row1">
           <span className="staging-label">
-            🐴 配置する馬（{staged.length}/3）
+            配置する馬（{staged.length}/3）
           </span>
           <button className="btn btn-sm btn-danger" onClick={onClear}>
             全解除
@@ -59,7 +59,7 @@ export default function StagingBar({
         </div>
 
         <p className="staging-hint">
-          👆 コードを追加でタップ（最大3頭）→ 配置する駐車枠をタップ／空き枠にドロップ
+          コードをタップして追加（最大3頭）し、配置する駐車枠をタップするか空き枠にドロップ
         </p>
       </div>
     </div>

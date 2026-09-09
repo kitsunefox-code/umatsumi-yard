@@ -2,34 +2,41 @@
   /* 状態カラー（指示書の色分けに準拠） */
   --color-not-unloaded-bg: #ffffff;
   --color-not-unloaded-text: #1a1a1a;
-  --color-unloading-bg: #ffe066;
+  --color-unloading-bg: #fff3c4;
   --color-unloading-text: #5c4500;
   --color-unloaded-bg: #2b2b2b;
   --color-unloaded-text: #cfcfcf;
 
-  --color-double: #1e6fd9;   /* 2頭OK：青系 */
-  --color-double-bg: #e5f0fd;
-  --color-single: #e8760a;   /* 1頭ずつ：オレンジ系 */
-  --color-single-bg: #fdeede;
+  --color-double: #2f5f9e;   /* 2頭OK：青系 */
+  --color-double-bg: #e9f0f8;
+  --color-single: #b4641c;   /* 1頭ずつ：オレンジ系 */
+  --color-single-bg: #f8efe6;
   --color-reserve: #e9ecef;  /* 予備：薄いグレー */
-  --color-warning: #d92d20;  /* 注意・未入力：赤系 */
-  --color-warning-bg: #fdecec;
+  --color-warning: #b3261e;  /* 注意・未入力：赤系 */
+  --color-warning-bg: #fbeaea;
 
   --color-broodmare: #b8007a; /* 繁殖牝馬バッジ */
   --color-broodmare-bg: #fce4f3;
 
-  --bg: #eef1f4;
+  --bg: #f3f4f6;
   --panel: #ffffff;
-  --line: #c9d1d9;
-  --line-strong: #8a97a5;
-  --text: #1a1a1a;
-  --text-muted: #5b6772;
+  --line: #e1e5ea;
+  --line-strong: #c3cad2;
+  --text: #1f2933;
+  --text-muted: #6b7480;
   --slot-empty-bg: #f6f8fa;
   --slot-empty-line: #cdd6df;
 
-  --radius: 12px;
-  --shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.08);
-  --shadow-lg: 0 10px 30px rgba(0, 0, 0, 0.25);
+  --radius: 6px;
+  --radius-sm: 4px;
+  --accent: #2c4f78;
+  --accent-bg: #eaf0f7;
+  --ok: #2e7d4f;
+  --ok-bg: #e8f3ec;
+  --bad: #b3261e;
+  --bad-bg: #fbeaea;
+  --shadow: 0 1px 2px rgba(16, 24, 40, 0.06);
+  --shadow-lg: 0 8px 24px rgba(16, 24, 40, 0.16);
 }
 
 * {
@@ -86,10 +93,10 @@ button {
 .sync-chip {
   border: 1px solid var(--line-strong);
   background: #fff;
-  border-radius: 999px;
+  border-radius: 4px;
   padding: 8px 14px;
   font-size: 13px;
-  font-weight: 800;
+  font-weight: 600;
   color: var(--text-muted);
   min-height: 40px;
   white-space: nowrap;
@@ -102,7 +109,7 @@ button {
 
 .btn {
   border: none;
-  border-radius: 10px;
+  border-radius: 6px;
   padding: 10px 16px;
   font-size: 15px;
   font-weight: 700;
@@ -113,7 +120,7 @@ button {
 .btn:active { transform: translateY(1px); }
 .btn-primary { background: #1e6fd9; color: #fff; }
 .btn-stall { background: #0f7a68; color: #fff; }
-.code-group { font-size: 13px; font-weight: 800; color: #1e6fd9; margin-left: 4px; }
+.code-group { font-size: 13px; font-weight: 600; color: #1e6fd9; margin-left: 4px; }
 .btn-danger { background: var(--color-warning); color: #fff; }
 .btn-ghost { background: transparent; border: 1px solid var(--line-strong); }
 .btn-block { width: 100%; }
@@ -167,7 +174,7 @@ button {
 }
 .slot-empty .no {
   font-size: 26px;
-  font-weight: 800;
+  font-weight: 600;
   color: var(--line-strong);
 }
 .slot-empty .add {
@@ -203,7 +210,7 @@ button {
   border-radius: 8px;
   background: #33404d;
   color: #fff;
-  font-weight: 800;
+  font-weight: 600;
   font-size: 20px;
   display: flex;
   align-items: center;
@@ -215,7 +222,7 @@ button {
 .vcard-no.reserve { background: var(--line-strong); font-size: 11px; }
 .vcard-code {
   font-size: 18px;
-  font-weight: 800;
+  font-weight: 600;
   flex: 1;
   min-width: 0;
   overflow: hidden;
@@ -241,9 +248,9 @@ button {
 
 .badge {
   font-size: 11px;
-  font-weight: 800;
+  font-weight: 600;
   padding: 4px 8px;
-  border-radius: 999px;
+  border-radius: 4px;
   white-space: nowrap;
 }
 .badge-double { background: var(--color-double-bg); color: var(--color-double); }
@@ -280,7 +287,7 @@ button {
 }
 .horse-code {
   font-size: 16px;
-  font-weight: 800;
+  font-weight: 600;
 }
 .horse-foal {
   font-size: 13px;
@@ -294,7 +301,7 @@ button {
 }
 .horse-status {
   font-size: 11px;
-  font-weight: 800;
+  font-weight: 600;
   padding: 2px 8px;
   border-radius: 6px;
 }
@@ -404,7 +411,7 @@ button {
 }
 .exyard-heading {
   font-size: 12px;
-  font-weight: 800;
+  font-weight: 600;
   color: var(--text-muted);
   margin-bottom: 6px;
 }
@@ -461,7 +468,7 @@ button {
 }
 .ry-empty .ry-no {
   font-size: 20px;
-  font-weight: 800;
+  font-weight: 600;
   min-width: 42px;
   height: 42px;
   border-radius: 8px;
@@ -483,7 +490,7 @@ button {
 .ry-empty .ry-no.waku-8 { background: #ec6d9c; color: #fff; border-color: #d85585; }
 .ry-empty .ry-add {
   font-size: 13px;
-  font-weight: 800;
+  font-weight: 600;
   color: var(--text-muted);
 }
 .ry-empty .ry-add.on {
@@ -510,7 +517,7 @@ button {
   background: var(--color-warning);
   color: #fff;
   font-size: 12px;
-  font-weight: 800;
+  font-weight: 600;
   padding: 5px 10px;
   text-align: center;
 }
@@ -554,7 +561,7 @@ button {
   background: var(--color-double-bg);
   color: var(--color-double);
   font-size: 15px;
-  font-weight: 800;
+  font-weight: 600;
   min-height: 80px;
   display: flex;
   align-items: center;
@@ -618,7 +625,7 @@ button {
 }
 .dock-slot.empty .no {
   font-size: 22px;
-  font-weight: 800;
+  font-weight: 600;
   color: var(--line-strong);
 }
 
@@ -643,7 +650,7 @@ button {
 /* 空き駐車枠プレースホルダ */
 .bay.empty {
   border: 2px dashed var(--slot-empty-line);
-  border-radius: 10px;
+  border-radius: 6px;
   background: var(--slot-empty-bg);
   min-height: 120px;
   display: flex;
@@ -655,11 +662,11 @@ button {
 .bay.empty .bay-no {
   color: var(--line-strong);
   font-size: 26px;
-  font-weight: 800;
+  font-weight: 600;
 }
 .bay-drop {
   font-size: 12px;
-  font-weight: 800;
+  font-weight: 600;
   color: var(--color-double);
 }
 
@@ -705,7 +712,7 @@ button {
 }
 .code-chip .chip-x {
   margin-left: 4px;
-  font-weight: 900;
+  font-weight: 700;
   color: var(--color-warning);
 }
 
@@ -715,10 +722,10 @@ button {
   border: 2px solid var(--color-broodmare);
   background: var(--color-broodmare-bg);
   color: var(--color-broodmare);
-  border-radius: 999px;
+  border-radius: 4px;
   padding: 8px 16px;
   font-size: 14px;
-  font-weight: 800;
+  font-weight: 600;
   min-height: 40px;
 }
 .nyuba-btn.on {
@@ -732,14 +739,14 @@ button {
   background: #1f7a3d;
   color: #fff;
   font-size: 15px;
-  font-weight: 800;
+  font-weight: 600;
   min-height: 44px;
 }
 .wenthome-badge {
   flex: 1;
   text-align: center;
   font-size: 13px;
-  font-weight: 800;
+  font-weight: 600;
   color: #6b7280;
   padding: 6px;
 }
@@ -761,13 +768,13 @@ button {
   background: #eceef1;
   border: none;
   color: #5b6772;
-  font-weight: 800;
+  font-weight: 600;
   font-size: 13px;
   cursor: pointer;
-  border-radius: 9px;
+  border-radius: 6px;
 }
 .wh-strip.wh-open {
-  border-radius: 9px 9px 0 0;
+  border-radius: 6px 9px 0 0;
   background: #e4e7ea;
 }
 .wh-ribbon {
@@ -784,7 +791,7 @@ button {
   align-items: center;
   justify-content: center;
   font-size: 13px;
-  font-weight: 800;
+  font-weight: 600;
   flex-shrink: 0;
 }
 .wh-codes {
@@ -837,7 +844,7 @@ button {
   width: 100%;
   max-width: 560px;
   max-height: 92vh;
-  border-radius: 16px 16px 0 0;
+  border-radius: 8px 16px 0 0;
   overflow-y: auto;
   box-shadow: var(--shadow-lg);
   animation: slideup 0.18s ease-out;
@@ -910,7 +917,7 @@ button {
 
 .horse-editor {
   border: 1px solid var(--line);
-  border-radius: 10px;
+  border-radius: 6px;
   padding: 12px;
   margin-bottom: 10px;
   background: #fafbfc;
@@ -930,7 +937,7 @@ button {
   gap: 8px;
   padding: 10px;
   border: 1px solid var(--line);
-  border-radius: 10px;
+  border-radius: 6px;
   margin-bottom: 8px;
 }
 .modal-op-block .op-horse .info { flex: 1; min-width: 0; }
@@ -964,7 +971,7 @@ button {
 
 @media (min-width: 640px) {
   .modal-backdrop { align-items: center; padding: 16px; }
-  .modal { border-radius: 16px; }
+  .modal { border-radius: 8px; }
 }
 
 /* ===== 競馬の枠色（駐車枠番号バッジ） ===== */
@@ -1000,7 +1007,7 @@ button {
 /* 前後（2頭積みのどちらが前か） */
 .pos-badge {
   font-size: 11px;
-  font-weight: 800;
+  font-weight: 600;
   padding: 2px 7px;
   border-radius: 6px;
   flex-shrink: 0;
@@ -1058,7 +1065,7 @@ button {
 }
 .bay-drop {
   font-size: 11px;
-  font-weight: 800;
+  font-weight: 600;
   color: var(--color-double);
   text-align: center;
   padding: 4px;
@@ -1067,7 +1074,7 @@ button {
   background: var(--color-double);
   color: #fff;
   font-size: 12px;
-  font-weight: 800;
+  font-weight: 600;
   text-align: center;
   padding: 6px;
   cursor: copy;
@@ -1081,7 +1088,7 @@ button {
   border-radius: 8px;
   padding: 9px 10px;
   font-size: 13px;
-  font-weight: 800;
+  font-weight: 600;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1096,7 +1103,7 @@ button {
   opacity: 0.85;
   background: rgba(255, 255, 255, 0.25);
   padding: 2px 6px;
-  border-radius: 999px;
+  border-radius: 4px;
 }
 
 /* 積み込みバー（画面下部固定） */
@@ -1126,7 +1133,7 @@ button {
 }
 .staging-label {
   font-size: 14px;
-  font-weight: 800;
+  font-weight: 600;
   color: var(--color-double);
   white-space: nowrap;
 }
@@ -1134,7 +1141,7 @@ button {
   width: 110px;
   padding: 9px 10px;
   font-size: 16px;
-  font-weight: 800;
+  font-weight: 600;
   border: 2px solid var(--color-double);
   border-radius: 8px;
 }
@@ -1164,7 +1171,7 @@ button {
 }
 .staged-horse {
   border: 1px solid var(--line);
-  border-radius: 10px;
+  border-radius: 6px;
   padding: 8px 10px;
   background: #fafbfc;
   display: flex;
@@ -1183,7 +1190,7 @@ button {
   background: var(--color-double);
   color: #fff;
   font-size: 12px;
-  font-weight: 800;
+  font-weight: 600;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1191,7 +1198,7 @@ button {
 }
 .staged-code {
   font-size: 17px;
-  font-weight: 800;
+  font-weight: 600;
   flex: 1;
 }
 .staged-x {
@@ -1201,7 +1208,7 @@ button {
   width: 32px;
   height: 32px;
   font-size: 18px;
-  font-weight: 800;
+  font-weight: 600;
   color: var(--color-warning);
 }
 
@@ -1275,10 +1282,10 @@ button {
 .chip-toggle {
   border: 2px solid var(--line-strong);
   background: #fff;
-  border-radius: 999px;
+  border-radius: 4px;
   padding: 8px 14px;
   font-size: 13px;
-  font-weight: 800;
+  font-weight: 600;
   color: var(--text-muted);
   min-height: 40px;
 }
@@ -1295,13 +1302,13 @@ button {
   align-items: center;
   gap: 4px;
   border: 1px solid var(--line-strong);
-  border-radius: 10px;
+  border-radius: 6px;
   padding: 4px 8px;
   flex-wrap: wrap;
 }
 .bs-label {
   font-size: 12px;
-  font-weight: 800;
+  font-weight: 600;
   color: var(--text-muted);
   margin-right: 2px;
 }
@@ -1312,12 +1319,12 @@ button {
   background: #f6f8fa;
   border-radius: 8px;
   font-size: 16px;
-  font-weight: 800;
+  font-weight: 600;
   color: var(--text);
 }
 .bs-val {
   font-size: 18px;
-  font-weight: 800;
+  font-weight: 600;
   min-width: 22px;
   text-align: center;
 }
@@ -1346,7 +1353,7 @@ button {
   align-items: center;
   gap: 6px;
   font-size: 12px;
-  font-weight: 800;
+  font-weight: 600;
   color: var(--text-muted);
 }
 .code-field input {
@@ -1372,7 +1379,7 @@ button {
 }
 .foal-tag {
   font-size: 12px;
-  font-weight: 800;
+  font-weight: 600;
   padding: 1px 7px;
   border-radius: 6px;
   background: #eef1f4;
@@ -1495,7 +1502,7 @@ button {
 }
 .exmap-cell .exmap-no {
   font-size: 17px;
-  font-weight: 800;
+  font-weight: 600;
   color: var(--text);
   line-height: 1;
 }
@@ -1509,7 +1516,7 @@ button {
 }
 .exmap-cell .exmap-code {
   font-size: 10px;
-  font-weight: 800;
+  font-weight: 600;
   color: #fff;
   max-width: 100%;
   overflow: hidden;
@@ -1532,16 +1539,16 @@ button {
 }
 .map-reserve-label {
   font-size: 12px;
-  font-weight: 800;
+  font-weight: 600;
   color: var(--text-muted);
 }
 .map-reserve-chip {
   border: 2px dashed var(--line-strong);
   background: var(--color-reserve);
-  border-radius: 999px;
+  border-radius: 4px;
   padding: 6px 12px;
   font-size: 13px;
-  font-weight: 800;
+  font-weight: 600;
   color: #3a4750;
 }
 
@@ -1578,17 +1585,17 @@ button {
 }
 .board-col-name {
   font-size: 14px;
-  font-weight: 800;
+  font-weight: 600;
   flex: 1;
 }
 .board-col-count {
   min-width: 22px;
   height: 22px;
   padding: 0 6px;
-  border-radius: 999px;
+  border-radius: 4px;
   background: rgba(255, 255, 255, 0.22);
   font-size: 12px;
-  font-weight: 800;
+  font-weight: 600;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1603,7 +1610,7 @@ button {
 .board-empty {
   text-align: center;
   color: var(--line-strong);
-  font-weight: 800;
+  font-weight: 600;
   padding: 12px 0;
 }
 
@@ -1614,7 +1621,7 @@ button {
   align-items: flex-start;
   text-align: left;
   border: 1px solid var(--line-strong);
-  border-radius: 10px;
+  border-radius: 6px;
   background: #fff;
   padding: 8px;
   box-shadow: var(--shadow);
@@ -1629,7 +1636,7 @@ button {
   border-radius: 8px;
   color: #fff;
   font-size: 13px;
-  font-weight: 800;
+  font-weight: 600;
   text-align: center;
   flex-shrink: 0;
   align-self: stretch;
@@ -1646,7 +1653,7 @@ button {
 }
 .mare-name {
   font-size: 15px;
-  font-weight: 800;
+  font-weight: 600;
   line-height: 1.2;
 }
 .mare-sub {
@@ -1660,7 +1667,7 @@ button {
   font-weight: 700;
 }
 .mare-kind {
-  font-weight: 800;
+  font-weight: 600;
   color: var(--color-double);
 }
 .mare-tags {
@@ -1671,7 +1678,7 @@ button {
 }
 .mare-tag {
   font-size: 11px;
-  font-weight: 800;
+  font-weight: 600;
   padding: 1px 7px;
   border-radius: 6px;
   background: var(--color-warning-bg);
@@ -1694,7 +1701,7 @@ button {
 /* 場所ボックス（共通） */
 .fplace {
   border: 2px solid var(--line-strong);
-  border-radius: 16px;
+  border-radius: 8px;
   background: #fff;
   min-height: 128px;
   padding: 12px;
@@ -1733,7 +1740,7 @@ button {
 }
 .fplace-name {
   font-size: 17px;
-  font-weight: 800;
+  font-weight: 600;
   color: #3f4b53;
 }
 .fplace.has-mares .fplace-name {
@@ -1744,10 +1751,10 @@ button {
   min-width: 22px;
   height: 22px;
   padding: 0 6px;
-  border-radius: 999px;
+  border-radius: 4px;
   background: rgba(0, 0, 0, 0.1);
   font-size: 12px;
-  font-weight: 800;
+  font-weight: 600;
   color: #3f4b53;
   display: flex;
   align-items: center;
@@ -1772,7 +1779,7 @@ button {
 /* 馬積場（駐車枠の図） */
 .fyard {
   border: 2px solid var(--line-strong);
-  border-radius: 16px;
+  border-radius: 8px;
   background: #fff;
   padding: 14px;
   display: flex;
@@ -1785,7 +1792,7 @@ button {
   align-items: center;
   gap: 8px;
   border: 1.5px solid var(--line-strong);
-  border-radius: 12px;
+  border-radius: 6px;
   padding: 8px 16px;
   background: #fff;
 }
@@ -1814,7 +1821,7 @@ button {
   min-width: 22px;
   text-align: right;
   font-size: 15px;
-  font-weight: 800;
+  font-weight: 600;
   color: #3f4b53;
 }
 .fyard-frames {
@@ -1832,7 +1839,7 @@ button {
   min-height: 78px;
   padding: 6px 0 0 7px;
   font-size: 15px;
-  font-weight: 800;
+  font-weight: 600;
   color: #3f4b53;
 }
 .fyard-frame:first-child {
@@ -1846,7 +1853,7 @@ button {
   align-items: flex-start;
   text-align: left;
   border: 1px solid var(--line-strong);
-  border-radius: 9px;
+  border-radius: 6px;
   background: #fff;
   padding: 6px 7px;
   box-shadow: var(--shadow);
@@ -1862,7 +1869,7 @@ button {
   border-radius: 7px;
   color: #fff;
   font-size: 12px;
-  font-weight: 800;
+  font-weight: 600;
   text-align: center;
   flex-shrink: 0;
   align-self: stretch;
@@ -1894,7 +1901,7 @@ button {
 }
 .silk-code {
   font-size: 9px;
-  font-weight: 800;
+  font-weight: 600;
   line-height: 1;
 }
 .frame-sire.silk {
@@ -1925,7 +1932,7 @@ button {
 }
 .chip-name {
   font-size: 14px;
-  font-weight: 800;
+  font-weight: 600;
   line-height: 1.2;
 }
 .chip-sub {
@@ -2000,7 +2007,7 @@ button {
 }
 .fyard-frame .frame-no {
   font-size: 10px;
-  font-weight: 800;
+  font-weight: 600;
   color: #99a2a8;
   line-height: 1;
 }
@@ -2022,11 +2029,11 @@ button {
   border-radius: 6px;
   color: #fff;
   font-size: 11px;
-  font-weight: 800;
+  font-weight: 600;
 }
 .frame-name {
   font-size: 10px;
-  font-weight: 800;
+  font-weight: 600;
   color: #3f4b53;
   line-height: 1.15;
   text-align: center;
@@ -2038,7 +2045,7 @@ button {
   background: #fff;
   border-radius: 6px;
   font-size: 10px;
-  font-weight: 800;
+  font-weight: 600;
   padding: 2px 0;
   cursor: pointer;
   white-space: nowrap;
@@ -2076,7 +2083,7 @@ button {
   color: #3a7ca5;
   background: #eef4fa;
   border: 1px solid #b9cbe1;
-  border-radius: 999px;
+  border-radius: 4px;
   padding: 2px 8px;
 }
 
@@ -2091,7 +2098,7 @@ button {
   flex-shrink: 0;
   align-self: center;
   font-size: 11px;
-  font-weight: 800;
+  font-weight: 600;
   color: var(--text-muted);
   white-space: nowrap;
 }
@@ -2107,7 +2114,7 @@ button {
 .mare-note {
   align-self: flex-start;
   font-size: 11px;
-  font-weight: 800;
+  font-weight: 600;
   color: #b3541e;
   background: #fff2e8;
   border: 1px solid #f0c3a0;
@@ -2117,7 +2124,7 @@ button {
 }
 .frame-note {
   font-size: 9px;
-  font-weight: 800;
+  font-weight: 600;
   color: #b3541e;
   background: #fff2e8;
   border: 1px solid #f0c3a0;
@@ -2218,7 +2225,7 @@ button {
 .stay-warn {
   align-self: flex-start;
   font-size: 11px;
-  font-weight: 800;
+  font-weight: 600;
   color: #b00020;
   background: #ffe1e1;
   border: 1px solid #e88;
@@ -2255,7 +2262,7 @@ button {
 .treat-badge {
   align-self: flex-start;
   font-size: 11px;
-  font-weight: 800;
+  font-weight: 600;
   color: #1a6a5a;
   background: #e2f6f2;
   border: 1px solid #9fd9cf;
@@ -2297,7 +2304,7 @@ button {
 }
 .home-info span {
   font-size: 11px;
-  font-weight: 800;
+  font-weight: 600;
   padding: 1px 7px;
   border-radius: 6px;
   white-space: nowrap;
@@ -2326,7 +2333,7 @@ button {
 }
 .frame-batch {
   font-size: 9px;
-  font-weight: 800;
+  font-weight: 600;
   color: #0f7a6e;
   background: #e2f6f2;
   border: 1px solid #9fd9cf;
@@ -2362,7 +2369,7 @@ button {
   min-width: 88px;
   padding: 10px 8px;
   border-width: 2px;
-  border-radius: 10px;
+  border-radius: 6px;
 }
 .chip-advs.branch .chip-adv-arrow {
   font-size: 15px;
@@ -2415,19 +2422,19 @@ button {
 }
 .chip-adv-arrow {
   font-size: 12px;
-  font-weight: 800;
+  font-weight: 600;
   line-height: 1;
 }
 .chip-adv-label {
   font-size: 9px;
-  font-weight: 800;
+  font-weight: 600;
   line-height: 1;
 }
 
 /* ===== 本日の予定（順番表） ===== */
 .roster-panel {
   border: 2px solid var(--line-strong);
-  border-radius: 16px;
+  border-radius: 8px;
   background: var(--panel);
   padding: 12px 14px;
   margin-bottom: 14px;
@@ -2447,7 +2454,7 @@ button {
   align-items: center;
   gap: 8px;
   font-size: 16px;
-  font-weight: 800;
+  font-weight: 600;
   color: #3f4b53;
 }
 .group-tabs {
@@ -2465,7 +2472,7 @@ button {
   border-radius: 8px;
   padding: 4px 12px;
   font-size: 14px;
-  font-weight: 800;
+  font-weight: 600;
   cursor: pointer;
 }
 .group-tab.on {
@@ -2482,9 +2489,9 @@ button {
   background: #33404d;
   color: #fff;
   font-size: 12px;
-  font-weight: 800;
+  font-weight: 600;
   padding: 2px 10px;
-  border-radius: 999px;
+  border-radius: 4px;
 }
 .roster-actions {
   display: flex;
@@ -2503,12 +2510,12 @@ button {
   flex-wrap: wrap;
   background: #fff;
   border: 1px solid var(--line);
-  border-radius: 10px;
+  border-radius: 6px;
   padding: 8px 10px;
 }
 .code-entry-label {
   font-size: 13px;
-  font-weight: 800;
+  font-weight: 600;
   color: #3f4b53;
 }
 .code-entry input {
@@ -2528,7 +2535,7 @@ button {
 .roster-empty {
   text-align: center;
   color: var(--text-muted);
-  font-weight: 800;
+  font-weight: 600;
   padding: 8px;
 }
 .roster-chips {
@@ -2543,7 +2550,7 @@ button {
   align-items: flex-start;
   text-align: left;
   border: 1px solid var(--line-strong);
-  border-radius: 10px;
+  border-radius: 6px;
   background: #fff;
   padding: 8px;
   box-shadow: var(--shadow);
@@ -2565,10 +2572,10 @@ button {
   background: #e2231a;
   color: #fff;
   font-size: 10px;
-  font-weight: 800;
+  font-weight: 600;
   letter-spacing: 0.5px;
   padding: 1px 6px;
-  border-radius: 999px;
+  border-radius: 4px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
   z-index: 2;
 }
@@ -2582,7 +2589,7 @@ button {
 /* 操作シート */
 .sheet-label {
   font-size: 12px;
-  font-weight: 800;
+  font-weight: 600;
   color: var(--text-muted);
   margin: 12px 0 6px;
 }
@@ -2600,7 +2607,7 @@ button {
   border-radius: 8px;
   padding: 10px 6px;
   font-size: 13px;
-  font-weight: 800;
+  font-weight: 600;
   color: var(--text);
   min-height: 44px;
 }
@@ -2617,10 +2624,10 @@ button {
 .tag-btn {
   border: 2px solid var(--line-strong);
   background: #fff;
-  border-radius: 999px;
+  border-radius: 4px;
   padding: 8px 14px;
   font-size: 13px;
-  font-weight: 800;
+  font-weight: 600;
   color: var(--text-muted);
   min-height: 40px;
 }
@@ -2638,7 +2645,7 @@ button {
   min-width: 40px;
   padding: 3px 6px;
   border-radius: 7px;
-  font-weight: 800;
+  font-weight: 600;
   font-size: 13px;
   letter-spacing: 0.5px;
   flex: 0 0 auto;
@@ -2674,9 +2681,9 @@ button {
 }
 .sched-stat {
   font-size: 13px;
-  font-weight: 800;
+  font-weight: 600;
   padding: 3px 10px;
-  border-radius: 999px;
+  border-radius: 4px;
   background: #eef2f4;
   color: #3f4b53;
 }
@@ -2698,13 +2705,13 @@ button {
 }
 .barn-box {
   border: 1.5px solid var(--line-strong, #c7d0d6);
-  border-radius: 10px;
+  border-radius: 6px;
   padding: 8px 10px 10px;
   background: #fff;
   min-width: 220px;
 }
 .barn-name {
-  font-weight: 800;
+  font-weight: 600;
   font-size: 13px;
   color: #4a5560;
   margin-bottom: 6px;
@@ -2760,7 +2767,7 @@ button {
   gap: 10px;
   padding: 2px 6px 6px;
   font-size: 12px;
-  font-weight: 800;
+  font-weight: 600;
   color: #6b7780;
 }
 .sched-round {
@@ -2781,16 +2788,16 @@ button {
   flex-direction: column;
   align-items: flex-start;
   justify-content: center;
-  font-weight: 800;
+  font-weight: 600;
   font-size: 16px;
   color: #2c353b;
 }
 .sched-no {
   font-size: 11px;
-  font-weight: 800;
+  font-weight: 600;
   color: #fff;
   background: #7a8891;
-  border-radius: 999px;
+  border-radius: 4px;
   padding: 1px 7px;
   margin-bottom: 3px;
 }
@@ -2800,7 +2807,7 @@ button {
   justify-content: space-between;
   gap: 8px;
   border: 1.5px solid var(--line-strong, #c7d0d6);
-  border-radius: 10px;
+  border-radius: 6px;
   background: #fff;
   padding: 7px 9px;
   min-height: 52px;
@@ -2823,7 +2830,7 @@ button {
   min-width: 0;
 }
 .sched-mare {
-  font-weight: 800;
+  font-weight: 600;
   font-size: 15px;
   color: #22303a;
 }
@@ -2838,7 +2845,7 @@ button {
 }
 .sched-groom {
   color: #2c6e49;
-  font-weight: 800;
+  font-weight: 600;
 }
 .sched-barn {
   color: #7a8891;
@@ -2861,7 +2868,7 @@ button {
   border-radius: 6px;
   background: #f4f7f8;
   font-size: 12px;
-  font-weight: 800;
+  font-weight: 600;
   color: #4a5560;
   cursor: pointer;
 }
@@ -2873,7 +2880,7 @@ button {
   right: 12px;
   bottom: 3px;
   font-size: 11px;
-  font-weight: 800;
+  font-weight: 600;
   color: #c0392b;
 }
 
@@ -2895,7 +2902,7 @@ button {
 /* この日のルール */
 .rules-panel {
   border: 1.5px solid var(--line-strong, #c7d0d6);
-  border-radius: 10px;
+  border-radius: 6px;
   background: #fff;
   padding: 10px 12px 12px;
   margin: 4px 2px 10px;
@@ -2960,21 +2967,21 @@ button {
   align-items: center;
   gap: 5px;
   font-size: 12px;
-  font-weight: 800;
+  font-weight: 600;
   color: #2b5a8a;
   background: #e6f0fa;
-  border-radius: 999px;
+  border-radius: 4px;
   padding: 3px 6px 3px 10px;
 }
 .rule-tag button {
   border: none;
   background: #cfe0f0;
   color: #2b5a8a;
-  border-radius: 999px;
+  border-radius: 4px;
   width: 18px;
   height: 18px;
   font-size: 11px;
-  font-weight: 800;
+  font-weight: 600;
   cursor: pointer;
   line-height: 1;
 }
@@ -2987,7 +2994,7 @@ button {
   display: inline-block;
   margin-left: 6px;
   font-size: 10px;
-  font-weight: 800;
+  font-weight: 600;
   color: #fff;
   background: #c0392b;
   border-radius: 5px;
@@ -3053,7 +3060,7 @@ button {
 }
 .rules-sub {
   font-size: 12px;
-  font-weight: 800;
+  font-weight: 600;
   color: #55636c;
 }
 .groom-chip {
@@ -3064,7 +3071,7 @@ button {
   font-weight: 700;
   color: #4a5560;
   border: 1px solid var(--line-strong, #c7d0d6);
-  border-radius: 999px;
+  border-radius: 4px;
   padding: 3px 9px;
   cursor: pointer;
   background: #fff;
@@ -3090,7 +3097,7 @@ button {
   margin-bottom: 8px;
   color: #2d3a43;
   font-size: 13px;
-  font-weight: 900;
+  font-weight: 700;
 }
 .prefixed-call-note {
   color: #687780;
@@ -3141,7 +3148,7 @@ button {
   border-radius: 6px;
   background: #fff;
   font-size: 12px;
-  font-weight: 800;
+  font-weight: 600;
 }
 @media (max-width: 640px) {
   .prefixed-call-head {
@@ -3207,10 +3214,10 @@ button {
   top: -9px;
   right: 10px;
   font-size: 11px;
-  font-weight: 800;
+  font-weight: 600;
   color: #fff;
   background: #1f6feb;
-  border-radius: 999px;
+  border-radius: 4px;
   padding: 1px 9px;
 }
 .sched-selmark.ghost {
@@ -3274,13 +3281,13 @@ button {
 }
 .call-sheet {
   border: 1.5px solid var(--line-strong, #c7d0d6);
-  border-radius: 10px;
+  border-radius: 6px;
   background: #fff;
   padding: 8px 4px 10px;
   margin: 2px 2px 12px;
 }
 .call-head {
-  font-weight: 800;
+  font-weight: 600;
   font-size: 14px;
   color: #2c353b;
   padding: 4px 10px 8px;
@@ -3298,14 +3305,14 @@ button {
   font-size: 14px;
 }
 .call-time {
-  font-weight: 800;
+  font-weight: 600;
   font-size: 17px;
   color: #1f6feb;
   min-width: 58px;
 }
 .call-groom {
   color: #2c6e49;
-  font-weight: 800;
+  font-weight: 600;
   font-size: 13px;
 }
 
@@ -3314,7 +3321,7 @@ button {
   display: inline-block;
   margin-left: 6px;
   font-size: 10px;
-  font-weight: 800;
+  font-weight: 600;
   color: #fff;
   background: #7a4fd0;
   border-radius: 5px;
@@ -3338,7 +3345,7 @@ button {
   gap: 8px;
   padding: 2px 12px 6px;
   font-size: 11px;
-  font-weight: 800;
+  font-weight: 600;
   color: #9aa6ad;
 }
 .call-row {
@@ -3353,7 +3360,7 @@ button {
   background: #f5f0fd;
 }
 .call-time {
-  font-weight: 800;
+  font-weight: 600;
   font-size: 18px;
   color: #1f6feb;
 }
@@ -3389,11 +3396,11 @@ button {
   border: none;
   background: #e0d3f5;
   color: #6a3fb0;
-  border-radius: 999px;
+  border-radius: 4px;
   width: 20px;
   height: 20px;
   font-size: 11px;
-  font-weight: 800;
+  font-weight: 600;
   cursor: pointer;
 }
 @media (max-width: 720px) {
@@ -3412,7 +3419,7 @@ button {
 /* 生成ボタン・未生成CTA */
 .btn-generate {
   font-size: 14px;
-  font-weight: 800;
+  font-weight: 600;
   padding: 8px 16px;
 }
 .btn-generate:disabled {
@@ -3427,7 +3434,7 @@ button {
   gap: 12px;
   border: 1.5px dashed #7facf0;
   background: #eef5fd;
-  border-radius: 10px;
+  border-radius: 6px;
   padding: 14px 16px;
   margin: 2px 2px 12px;
 }
@@ -3447,7 +3454,7 @@ button {
 }
 .start-label {
   font-size: 13px;
-  font-weight: 800;
+  font-weight: 600;
   color: #4a5560;
   flex: 0 0 auto;
 }
@@ -3465,7 +3472,7 @@ button {
   border-radius: 8px;
   background: #fff;
   color: #3f4b53;
-  font-weight: 800;
+  font-weight: 600;
   font-size: 14px;
   padding: 8px 12px;
   min-height: 38px;
@@ -3491,7 +3498,7 @@ button {
 }
 .day-label {
   font-size: 13px;
-  font-weight: 800;
+  font-weight: 600;
   color: #4a5560;
 }
 .day-nav {
@@ -3499,7 +3506,7 @@ button {
   border-radius: 8px;
   background: #fff;
   color: #3f4b53;
-  font-weight: 800;
+  font-weight: 600;
   font-size: 14px;
   padding: 8px 14px;
   min-height: 40px;
@@ -3514,16 +3521,16 @@ button {
   border: 1.5px solid var(--line-strong, #c7d0d6);
   border-radius: 8px;
   background: #fff;
-  font-weight: 800;
+  font-weight: 600;
   font-size: 16px;
   padding: 8px 10px;
   min-height: 40px;
 }
 .day-chip {
   font-size: 12px;
-  font-weight: 800;
+  font-weight: 600;
   padding: 4px 10px;
-  border-radius: 999px;
+  border-radius: 4px;
   background: #eef2f4;
   color: #55636c;
 }
@@ -3634,7 +3641,7 @@ button {
   border-radius: 8px;
   background: #fff;
   color: #3f4b53;
-  font-weight: 800;
+  font-weight: 600;
   font-size: 13px;
   padding: 4px 8px 4px 12px;
   min-height: 38px;
@@ -3656,7 +3663,7 @@ button {
 .pri-tag {
   display: inline-block;
   font-size: 10px;
-  font-weight: 800;
+  font-weight: 600;
   color: #fff;
   background: #1f6feb;
   border-radius: 5px;
@@ -3668,7 +3675,7 @@ button {
 .lane-tag {
   display: inline-block;
   font-size: 10px;
-  font-weight: 800;
+  font-weight: 600;
   color: #fff;
   background: #7a4fd0;
   border-radius: 5px;
@@ -3684,7 +3691,7 @@ button {
 .call-groom.unknown,
 .prefixed-call-groom.unknown {
   color: #b06a00;
-  font-weight: 800;
+  font-weight: 600;
 }
 
 /* 狭い画面（スマホ）：カードの高さが揃うよう情報を絞る */
@@ -3722,7 +3729,14 @@ button {
   --ok-soft: #e8f6ee;
   --warn: #dc2626;
   --warn-soft: #fdecec;
-  --radius: 12px;
+  --radius: 6px;
+  --radius-sm: 4px;
+  --accent: #2c4f78;
+  --accent-bg: #eaf0f7;
+  --ok: #2e7d4f;
+  --ok-bg: #e8f3ec;
+  --bad: #b3261e;
+  --bad-bg: #fbeaea;
   --radius-sm: 9px;
   --shadow: 0 1px 2px rgba(16, 24, 40, 0.05), 0 2px 6px rgba(16, 24, 40, 0.06);
 }
@@ -3777,8 +3791,8 @@ body {
 /* ---- ボタン: 高さ44px統一・主従を明確に ---- */
 .btn {
   min-height: 44px;
-  border-radius: 10px;
-  font-weight: 800;
+  border-radius: 6px;
+  font-weight: 600;
   letter-spacing: 0.01em;
   transition: filter 0.12s, transform 0.05s;
 }
@@ -3821,7 +3835,7 @@ body {
 .start-tab,
 .day-nav,
 .day-select {
-  border-radius: 10px;
+  border-radius: 6px;
   border: 1.5px solid var(--line-strong);
   background: var(--surface);
   color: var(--ink);
@@ -3859,7 +3873,7 @@ body {
 }
 .sched-time {
   font-size: 20px;
-  font-weight: 900;
+  font-weight: 700;
   color: var(--ink);
 }
 .sched-no {
@@ -3925,7 +3939,7 @@ body {
 .call-time {
   color: var(--accent);
   font-size: 19px;
-  font-weight: 900;
+  font-weight: 700;
 }
 
 /* ---- 本日の予定(所在ボード): 種付順番と同じカード規格 ---- */
@@ -3945,7 +3959,7 @@ body {
 }
 .roster-chip .chip-name {
   font-size: 15px;
-  font-weight: 800;
+  font-weight: 600;
 }
 
 /* ---- 厩舎マップ ---- */
@@ -3986,7 +4000,7 @@ button:focus-visible {
 .ov-tag {
   display: inline-block;
   font-size: 10px;
-  font-weight: 800;
+  font-weight: 600;
   color: #fff;
   background: #7850a0;
   border-radius: 5px;
@@ -4061,7 +4075,7 @@ button:focus-visible {
 .sched-groom.off,
 .call-groom.off {
   color: #8a4dd0;
-  font-weight: 800;
+  font-weight: 600;
   text-decoration: line-through;
 }
 
@@ -4082,11 +4096,369 @@ button:focus-visible {
   right: 8px;
   z-index: 2;
   font-size: 10px;
-  font-weight: 800;
+  font-weight: 600;
   color: #fff;
   background: #c0392b;
-  border-radius: 999px;
+  border-radius: 4px;
   padding: 1px 8px;
   white-space: nowrap;
   pointer-events: none;
 }
+
+/* ===== THEME v2 (業務ツール風) ===== */
+/* 絵文字をやめ、色数と太字を減らし、1pxの線で区切る。数字は等幅で揃える。 */
+body {
+  font-family: -apple-system, "Segoe UI", "Hiragino Sans", "Hiragino Kaku Gothic ProN",
+    "Yu Gothic UI", "Meiryo", system-ui, sans-serif;
+  font-size: 14px;
+  color: var(--text);
+  background: var(--bg);
+  -webkit-font-smoothing: antialiased;
+  font-feature-settings: "palt";
+}
+.ico {
+  display: inline-block;
+  vertical-align: -2px;
+  margin-right: 3px;
+  flex-shrink: 0;
+}
+.sched-time, .call-time, .call-mate, .mare-time, .vcard-no, .sched-no, .sched-len,
+.exmap-no, .fyard-frame, .frame-no, .slot-empty .no, .day-select, .start-tab, .group-time,
+.gap-info, .fixed-tag, .stay-warn, .home-info, .arrive-time {
+  font-variant-numeric: tabular-nums;
+}
+
+/* --- ヘッダー --- */
+.topbar {
+  background: #263241;
+  color: #fff;
+  border-radius: var(--radius);
+  padding: 9px 14px;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.topbar h1 {
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  color: #fff;
+}
+.topbar h1 .sub, .topbar .sub {
+  font-size: 11px;
+  font-weight: 400;
+  color: rgba(255, 255, 255, 0.62);
+  letter-spacing: 0.02em;
+}
+.topbar .btn, .topbar .sync-chip, .topbar a.btn {
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 500;
+  min-height: 34px;
+  padding: 0 12px;
+  border-radius: var(--radius-sm);
+  box-shadow: none;
+}
+.topbar .btn:hover, .topbar a.btn:hover { background: rgba(255, 255, 255, 0.08); }
+.sync-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  border: 1px solid var(--line-strong);
+  background: #fff;
+  border-radius: var(--radius-sm);
+  padding: 0 12px;
+  min-height: 34px;
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--text-muted);
+}
+.sync-chip::before {
+  content: "";
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #9aa4ae;
+  flex-shrink: 0;
+}
+.sync-chip.on::before { background: #3fbf7f; }
+.topbar .sync-chip { color: rgba(255, 255, 255, 0.85); }
+
+/* --- ボタン --- */
+.btn {
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-sm);
+  background: #fff;
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1;
+  padding: 0 14px;
+  min-height: 36px;
+  box-shadow: none;
+  transition: background 0.1s, border-color 0.1s;
+}
+.btn:hover { background: #f6f7f9; }
+.btn:active { transform: translateY(0.5px); }
+.btn-primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+.btn-primary:hover { background: #24425f; }
+.btn-danger { background: #fff; border-color: #d9a3a0; color: var(--bad); }
+.btn-danger:hover { background: var(--bad-bg); }
+.btn-ghost { background: transparent; border-color: var(--line-strong); }
+.btn-stall { background: #fff; border-color: #9bc4b5; color: #1f6a52; }
+.btn-sm { min-height: 32px; padding: 0 10px; font-size: 12.5px; }
+.btn-generate { font-weight: 600; }
+button:focus-visible, select:focus-visible, input:focus-visible, a:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+select, input[type="number"], input[type="time"], input[type="text"] {
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-sm);
+  background: #fff;
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 500;
+  min-height: 32px;
+  padding: 0 8px;
+}
+
+/* --- パネル・見出し --- */
+.yard, .roster-panel, .rules-panel, .call-sheet, .barn-box, .fplace, .fyard, .vcard,
+.modal, .generate-cta, .roster-chip, .sched-card, .rule-row, .call-row, .prefixed-call-row,
+.barn-grid .stall, .exmap-cell, .slot-empty {
+  border-width: 1px;
+  border-color: var(--line);
+  border-radius: var(--radius);
+  box-shadow: none;
+}
+.vcard, .roster-chip, .sched-card, .rule-row, .exmap-cell { border-color: var(--line-strong); }
+.yard, .roster-panel, .rules-panel, .call-sheet, .fyard { box-shadow: var(--shadow); }
+.roster-title, .yard-section-title, .call-head, .barn-name, .fplace-name, .modal-head,
+.fyard-label, .prefixed-call-head > span:first-child, .rules-sub {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--text);
+  letter-spacing: 0.01em;
+}
+.yard-section-title, .call-head { border-bottom: 1px solid var(--line); padding-bottom: 6px; }
+.yard-note, .fyard-note, .code-hint, .rules-hint, .call-note, .prefixed-call-note, .barn-hint {
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--text-muted);
+}
+.tap-hint {
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--text-muted);
+  background: transparent;
+  border-left: 3px solid var(--line-strong);
+  border-radius: 0;
+  padding: 2px 10px;
+}
+.tap-hint.active { border-left-color: var(--accent); color: var(--accent); background: transparent; }
+.generate-cta { border: 1px solid var(--line-strong); background: var(--accent-bg); }
+
+/* --- タブ（組・開始時刻）：セグメント風 --- */
+.group-tab, .start-tab, .day-nav, .start-custom {
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-sm);
+  background: #fff;
+  color: var(--text-muted);
+  font-size: 13px;
+  font-weight: 500;
+  box-shadow: none;
+}
+.group-tab { padding: 3px 12px; }
+.start-tab { padding: 0 12px; min-height: 34px; }
+.group-tab.on, .start-tab.on {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+.group-time { font-size: 10px; font-weight: 400; opacity: 0.8; }
+.start-custom.on { border-color: var(--accent); box-shadow: none; color: var(--accent); }
+.day-nav { min-height: 34px; padding: 0 8px; display: inline-flex; align-items: center; }
+.day-nav .ico { margin: 0; }
+.day-select { font-weight: 500; font-size: 14px; }
+.day-label { font-size: 12.5px; font-weight: 500; color: var(--text-muted); }
+
+/* --- 状態チップ（被りなし・要確認・順番表） --- */
+.sched-stat, .day-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  padding: 3px 9px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--line);
+  background: #fff;
+  color: var(--text-muted);
+}
+.sched-stat::before, .day-chip::before {
+  content: "";
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #9aa4ae;
+  flex-shrink: 0;
+}
+.sched-stat.ok, .day-chip.on { color: var(--ok); border-color: #b9d8c4; background: #fff; }
+.sched-stat.ok::before, .day-chip.on::before { background: var(--ok); }
+.sched-stat.bad { color: var(--bad); border-color: #e2b4b1; background: var(--bad-bg); }
+.sched-stat.bad::before { background: var(--bad); }
+.sched-stat.bad .ico { display: none; }
+
+/* --- 種牡馬コード（勝負服色は情報なので残す。形だけ整える） --- */
+.sched-badge, .chip-sire, .frame-sire, .vcard-code {
+  border-radius: 3px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  min-width: 40px;
+  padding: 0 6px;
+  height: 22px;
+  line-height: 22px;
+}
+.roster-chip .chip-sire { width: 44px; min-width: 44px; height: 26px; line-height: 26px; }
+.rule-row > .sched-badge { height: 26px; line-height: 26px; }
+.twotone { text-shadow: 0 0 2px rgba(0, 0, 0, 0.7); }
+
+/* --- 小タグ（固定・早め・第一のみ・上り など） --- */
+.pri-tag, .lane-tag, .first-tag, .fixed-tag, .mare-note, .frame-note, .rule-off-warn,
+.badge-new, .mare-kind, .fplace-count, .roster-count, .code-group {
+  border-radius: 3px;
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  padding: 1px 6px;
+  line-height: 1.5;
+}
+.pri-tag { background: var(--accent); }
+.lane-tag { background: #5b4b8a; }
+.fixed-tag { color: var(--accent); background: var(--accent-bg); }
+.rule-off-warn { background: var(--bad); font-size: 10.5px; }
+.rule-off-warn .ico { margin-right: 2px; vertical-align: -2px; }
+.fplace-count { background: #eef1f4; color: var(--text-muted); height: 20px; line-height: 18px; }
+.badge-new { font-weight: 700; letter-spacing: 0.06em; }
+
+/* --- 種付順番の一覧 --- */
+.sched-legend { font-size: 11.5px; font-weight: 500; color: var(--text-muted); text-transform: none; }
+.sched-time { font-size: 15px; font-weight: 600; color: var(--text); }
+.sched-no { font-size: 11px; font-weight: 500; color: var(--text-muted); }
+.sched-len { font-size: 11px; font-weight: 400; color: var(--text-muted); }
+.sched-round.bad { background: var(--bad-bg); }
+.sched-warn { font-size: 12px; font-weight: 500; color: var(--bad); }
+.sched-warn .ico { color: var(--bad); }
+.sched-groom { font-weight: 500; }
+.sched-groom.unknown, .call-groom.unknown, .prefixed-call-groom.unknown { color: #a2611b; font-weight: 600; }
+.gap-info { font-size: 10.5px; font-weight: 500; }
+.gap-info.bad { color: var(--bad); }
+.call-time { font-size: 16px; font-weight: 600; color: var(--accent); }
+.call-groom { font-weight: 500; color: var(--text); }
+.sched-card.sel { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-bg); }
+.sched-card.target { border-style: dashed; border-color: var(--accent); }
+.sched-selmark { border-radius: 3px; font-weight: 600; font-size: 10.5px; }
+
+/* --- 馬積場・所在ボード --- */
+.vcard-head { background: #f6f7f9; border-bottom: 1px solid var(--line); }
+.vcard-no {
+  width: 28px;
+  height: 28px;
+  border-radius: 3px;
+  background: var(--accent);
+  font-size: 14px;
+  font-weight: 600;
+}
+.slot-empty .no { font-size: 15px; font-weight: 500; color: var(--text-muted); }
+.slot-empty { border-style: dashed; }
+.exmap-cell .exmap-no { font-size: 14px; font-weight: 500; }
+.fyard-frame { font-size: 13px; font-weight: 500; }
+.fyard-frame.small { border-color: var(--line-strong); }
+.fyard-frames { border-color: var(--line-strong); }
+.fplace-icon:empty { display: none; }
+.fplace-name { font-size: 14px; }
+.fplace.has-mares .fplace-name { font-size: 13.5px; }
+.chip-adv {
+  border-radius: var(--radius-sm);
+  font-weight: 500;
+  font-size: 12.5px;
+  border: 1px solid var(--line-strong);
+  background: #fff;
+}
+.chip-adv-arrow { display: inline-flex; }
+.chip-adv-arrow .ico { margin: 0; }
+.frame-adv { border-radius: var(--radius-sm); font-weight: 500; }
+.stay-warn { font-weight: 500; color: var(--bad); }
+.stay-warn .ico { color: var(--bad); }
+
+/* --- 追加の微調整 --- */
+.topbar a, .topbar a.btn, a.btn { text-decoration: none; }
+.topbar a.btn { display: inline-flex; align-items: center; }
+.roster-count {
+  background: #fff;
+  color: var(--text-muted);
+  border: 1px solid var(--line);
+  font-weight: 500;
+  font-size: 12px;
+}
+.roster-hint { font-size: 12px; color: var(--text-muted); font-weight: 400; }
+.mare-kind { background: transparent; color: var(--accent); padding: 0; font-weight: 600; }
+.chip-sub { font-size: 11.5px; color: var(--text-muted); }
+.chip-name { font-weight: 600; }
+.roster-chip .chip-name { font-size: 14px; }
+
+/* ルール表の開閉ボタンは「押されている」見た目にし、実行ボタン(濃紺)と区別する */
+.roster-actions > button:first-child.btn-primary {
+  background: var(--accent-bg);
+  color: var(--accent);
+  border-color: var(--accent);
+}
+.roster-actions > button:first-child.btn-primary:hover { background: #dfe8f2; }
+
+/* --- 馬積み駐車場（ホーム） --- */
+/* 枠番号は競馬の枠色(1白〜8桃)なので色は残し、大きさと角を落ち着かせる */
+.ry-empty { border: 1px dashed var(--line-strong); }
+.ry-empty .ry-no {
+  min-width: 30px;
+  height: 30px;
+  font-size: 14px;
+  font-weight: 600;
+  border-radius: 3px;
+  border-width: 1px;
+}
+.ry-empty .ry-add { font-size: 12px; font-weight: 500; color: var(--text-muted); }
+.ry-empty .ry-add.on { color: var(--accent); font-weight: 600; }
+.ry-empty.staging-target { border-color: var(--accent); background: var(--accent-bg); }
+.vcard-overdue {
+  background: var(--bad-bg);
+  color: var(--bad);
+  border-top: 1px solid #e2b4b1;
+  border-bottom: 1px solid #e2b4b1;
+  font-size: 12px;
+  font-weight: 500;
+  text-align: left;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.vcard-truck, .vcard-arrived { font-weight: 500; color: var(--text-muted); }
+.vcard-memo { font-size: 12px; color: var(--text-muted); font-weight: 400; }
+.horse-code { font-weight: 600; }
+.horse-status { font-weight: 500; border-radius: 3px; }
+.yard-toolbar .btn-danger { min-height: 34px; }
+.departed-section, .wh-strip { border-radius: var(--radius); }
+.wh-ribbon, .wenthome-badge { border-radius: 3px; font-weight: 600; font-size: 10.5px; }
+.staging-bar, .staging-drop-hint, .toggle-hint { font-weight: 500; }
+.code-list .btn, .code-btn { font-weight: 600; letter-spacing: 0.04em; border-radius: 3px; }
+
+.vcard.overdue { box-shadow: none; border-color: #d9a3a0; }
+.vcard.staging-target { box-shadow: 0 0 0 2px var(--accent-bg); border-color: var(--accent); }
+.vcard.all-unloaded { box-shadow: inset 3px 0 0 #5aa77a; }
+
+/* --- モーダル --- */
+.modal { border: 1px solid var(--line); border-radius: 8px; box-shadow: var(--shadow-lg); }
+.modal-head { font-size: 15px; }
+.modal-close { border-radius: var(--radius-sm); }
