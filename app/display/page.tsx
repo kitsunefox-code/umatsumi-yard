@@ -20,7 +20,7 @@ import {
 } from "@/lib/board";
 import { Vehicle, effBatch } from "@/lib/types";
 import { cloudEnabled, subscribeBoard, subscribeYard } from "@/lib/cloud";
-import { groomOf, stallionName } from "@/lib/barns";
+import { stallionName } from "@/lib/barns";
 
 const KEY_STORAGE = "mare-transport-access-key";
 const STAY_WARN_MIN = 60;
@@ -78,7 +78,6 @@ function fmtDur(min: number): string {
 function CardView({ c, now, big }: { c: Card; now: number; big?: boolean }) {
   const min = stayMinutes(c.since, now);
   const warn = min != null && min >= STAY_WARN_MIN && c.sinceLabel === "滞在";
-  const groom = groomOf(c.sireCode);
   return (
     <div className={`dsp-card ${cardClass(c.note)}${big ? " big" : ""}`}>
       <Badge code={c.sireCode} />
@@ -88,7 +87,6 @@ function CardView({ c, now, big }: { c: Card; now: number; big?: boolean }) {
           {big && <span className="dsp-sire-name">{stallionName(c.sireCode)}</span>}
           {c.farm && <span>{c.farm}</span>}
           {c.kind && <span className="mare-kind">{c.kind}</span>}
-          {groom && <span>{groom}</span>}
           <NoteTags note={c.note} />
           {c.tags.map((t) => (
             <span key={t} className="dsp-tag">
