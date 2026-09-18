@@ -4469,6 +4469,79 @@ select, input[type="number"], input[type="time"], input[type="text"] {
   .fyard-frame { min-height: 70px; }
 }
 
+/* --- 一覧表示（1頭1行。スクロールせずに1画面へ） --- */
+.app.compact .topbar { padding: 6px 12px; margin-bottom: 8px; }
+.app.compact .roster-panel {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-start;
+  text-align: left;
+  gap: 4px 18px;
+  padding: 6px 12px;
+}
+.app.compact .roster-head, .app.compact .day-row, .app.compact .start-row, .app.compact .sched-config {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-start;
+  width: auto;
+  margin: 0;
+}
+.app.compact .roster-title { flex: 0 0 auto; }
+.app.compact .roster-panel > * { margin: 0; flex: 0 0 auto; width: auto; justify-content: flex-start; }
+.app.compact .roster-hint, .app.compact .tap-hint { display: none; }
+.app.compact .sched-config { gap: 6px 12px; }
+.app.compact .sched-timeline { padding: 0 0 8px; }
+.sched-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  background: #fff;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius);
+  overflow: hidden;
+  font-size: 13px;
+}
+.sched-table th {
+  text-align: left;
+  font-size: 11.5px;
+  font-weight: 500;
+  color: var(--text-muted);
+  padding: 5px 8px;
+  border-bottom: 1px solid var(--line);
+  background: #f6f7f9;
+  white-space: nowrap;
+}
+.sched-table td {
+  padding: 3px 8px;
+  border-bottom: 1px solid var(--line);
+  white-space: nowrap;
+  vertical-align: middle;
+  height: 34px;
+}
+.sched-table tbody tr { cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.sched-table tbody tr:hover td { background: #f8f9fb; }
+.sched-table tr.sel td { background: var(--accent-bg); }
+.sched-table tr.sel td:first-child { box-shadow: inset 3px 0 0 var(--accent); }
+.sched-table tr.target td { background: #fbfcfe; }
+.sched-table tr.bad td { background: var(--bad-bg); }
+.sched-table tr.empty td { color: var(--text-muted); background: #fafbfc; }
+.sched-table tr.empty.target td { color: var(--accent); }
+.sched-table .t-no { color: var(--text-muted); font-size: 11px; width: 22px; padding-right: 2px; }
+.sched-table .t-call { font-size: 15px; font-weight: 600; color: var(--accent); font-variant-numeric: tabular-nums; }
+.sched-table .t-mate { font-variant-numeric: tabular-nums; color: var(--text-muted); }
+.sched-table .t-lane { font-size: 11.5px; color: var(--text-muted); }
+.sched-table .t-mare { font-weight: 600; max-width: 11em; overflow: hidden; text-overflow: ellipsis; }
+.sched-table .t-unknown { color: #a2611b; font-weight: 600; }
+.sched-table .t-off { color: var(--bad); text-decoration: line-through; }
+.sched-table .t-warn { color: var(--bad); font-size: 11.5px; white-space: normal; max-width: 15em; line-height: 1.25; }
+.sched-table .t-tags { display: inline-flex; gap: 4px; }
+.sched-table td .sched-badge { min-width: 38px; height: 20px; line-height: 20px; font-size: 10.5px; }
+.sched-table .fixed-tag, .sched-table .pri-tag, .sched-table .lane-tag, .sched-table .first-tag { font-size: 10px; padding: 0 5px; }
+.sched-table .lane-tag.ov { background: #6b3fa0; }
+
 /* --- モーダル --- */
 .modal { border: 1px solid var(--line); border-radius: 8px; box-shadow: var(--shadow-lg); }
 .modal-head { font-size: 15px; }

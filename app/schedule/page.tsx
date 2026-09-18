@@ -110,7 +110,9 @@ export default function SchedulePage() {
   const [start, setStart] = useState("8:00");
   const [rounds, setRounds] = useState<Round[]>([]);
   const [showMap, setShowMap] = useState(false);
-  const [showRules, setShowRules] = useState(true);
+  const [showRules, setShowRules] = useState(false);
+  // 表示：一覧（1頭1行・1画面に収める）／カード（第一・第二を並べる）
+  const [view, setView] = useState<"table" | "cards">("table");
   const [showCall, setShowCall] = useState(false);
   const [opts, setOpts] = useState<Options>(defaultOptions());
   const [sel, setSel] = useState<{ i: number; lane: "a" | "b" } | null>(null);
@@ -162,7 +164,12 @@ export default function SchedulePage() {
       } catch {}
     }
     setAccessKey(localStorage.getItem("mare-transport-access-key"));
+    if (localStorage.getItem("sched:view") === "cards") setView("cards");
   }, []);
+  function changeView(v: "table" | "cards") {
+    setView(v);
+    if (typeof window !== "undefined") localStorage.setItem("sched:view", v);
+  }
 
   // 所在ボードを購読（実際の種付時刻を4h間隔の基準に使う）
   useEffect(() => {
@@ -630,7 +637,7 @@ export default function SchedulePage() {
   }
 
   return (
-    <div className="app board-app">
+    <div className={`app board-app${view === "table" ? " compact" : ""}`}>
       <div className="topbar">
         <h1>
           種付順番・呼び出し
@@ -722,17 +729,26 @@ export default function SchedulePage() {
             >
               {rounds.length ? "この内容で組み直す" : "生成する"}
             </button>
-            <button
-              className={`btn btn-sm ${showCall ? "btn-primary" : "btn-ghost"}`}
-              onClick={() => setShowCall((v) => !v)}
-            >
-              呼び出し表
-            </button>
+            {view === "cards" && (
+              <button
+                className={`btn btn-sm ${showCall ? "btn-primary" : "btn-ghost"}`}
+                onClick={() => setShowCall((v) => !v)}
+              >
+                呼び出し表
+              </button>
+            )}
             <button
               className="btn btn-ghost btn-sm"
               onClick={() => setShowMap((v) => !v)}
             >
               厩舎マップ{showMap ? "を隠す" : ""}
+            </button>
+            <button
+              className="btn btn-ghost btn-sm"
+              onClick={() => changeView(view === "table" ? "cards" : "table")}
+              title="一覧＝1頭1行で1画面に収める／カード＝第一・第二を並べて見る"
+            >
+              {view === "table" ? "カード表示" : "一覧表示"}
             </button>
           </div>
         </div>
@@ -1073,13 +1089,13 @@ export default function SchedulePage() {
       )}
 
       {/* 呼び出し表（時刻順・誰を何時に呼ぶか） */}
-      {showCall && rounds.length === 0 && (
+      {view === "cards" && showCall && rounds.length === 0 && (
         <section className="call-sheet">
           <div className="call-head">呼び出し表（時刻順）</div>
           <p className="barn-hint">まだ生成していません。上の「生成する」を押すと表示されます。</p>
         </section>
       )}
-      {showCall && rounds.length > 0 && (
+      {view === "cards" && showCall && rounds.length > 0 && (
         <section className="call-sheet">
           <div className="call-head">
             呼び出し表（時刻順）
@@ -1177,7 +1193,109 @@ export default function SchedulePage() {
 
       {/* タイムライン */}
       <section className="sched-timeline">
-        {rounds.length > 0 && (
+        {view === "table" && rounds.length > 0 && (
+          <table className="sched-table">
+            <thead>
+              <tr>
+                <th className="t-no">順</th>
+                <th>呼ぶ</th>
+                <th>種付</th>
+                <th>場</th>
+                <th>種牡馬</th>
+                <th>牝馬</th>
+                <th>担当</th>
+                <th>印</th>
+                <th>確認</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rounds.flatMap((r, i) =>
+                (["a", "b"] as const).map((ln) => {
+                  const m = r[ln];
+                  const soloBlocked =
+                    ln === "b" && !!r.a && isSoloCode(r.a.sireCode);
+                  if (!m && soloBlocked) return null;
+                  const isSel = sel?.i === i && sel?.lane === ln;
+                  const targeting = sel !== null && !isSel;
+                  const iss = issuesByRound[i];
+                  const gap = gapBad[i];
+                  const bad = iss.length > 0 || gap.length > 0;
+                  const key = `${i}-${ln}`;
+                  if (!m) {
+                    return (
+                      <tr
+                        key={key}
+                        className={`empty${targeting ? " target" : ""}`}
+                        onClick={() => tapSlot(i, ln, false)}
+                      >
+                        <td className="t-no">{i + 1}</td>
+                        <td className="t-call"></td>
+                        <td className="t-mate">{times[i]}</td>
+                        <td className="t-lane">{ln === "a" ? "第一" : "第二"}</td>
+                        <td colSpan={5}>{targeting ? "ここへ移動" : "空き"}</td>
+                      </tr>
+                    );
+                  }
+                  const code = normCode(m.sireCode);
+                  const pri = opts.priorities[code];
+                  const limit = laneOf(m, opts);
+                  const fo = firstOnly(m);
+                  const k = noteKind(m.note);
+                  const groom = optionGroomOf(m.sireCode, opts);
+                  const groomOff = (opts.offGrooms || []).includes(groom);
+                  const warn =
+                    ln === "a" || !r.a
+                      ? [
+                          ...iss.map((x) => ISSUE_LABEL[x]),
+                          ...gap.map((g) => `${g.code} 4時間未満`),
+                        ]
+                      : [];
+                  return (
+                    <tr
+                      key={key}
+                      className={`${isSel ? "sel" : ""}${targeting ? " target" : ""}${bad ? " bad" : ""}`}
+                      onClick={() => tapSlot(i, ln, false)}
+                    >
+                      <td className="t-no">{i + 1}</td>
+                      <td className="t-call">
+                        {quarterMin(
+                          callMinById[m.id] ?? startMins[i] - prepFor(times[i], opts)
+                        )}
+                      </td>
+                      <td className="t-mate">{times[i]}</td>
+                      <td className="t-lane">{ln === "a" ? "第一" : "第二"}</td>
+                      <td><Badge code={m.sireCode} /></td>
+                      <td className="t-mare">{m.mareName}</td>
+                      <td className={groom ? (groomOff ? "t-off" : "") : "t-unknown"}>
+                        {groom || "担当者不明"}{groomOff ? "(休)" : ""}
+                      </td>
+                      <td>
+                        <span className="t-tags">
+                          {pri && <span className="pri-tag">{PRIORITY_LABEL[pri]}</span>}
+                          {fo && <span className="first-tag">{fo}</span>}
+                          {k === "agari-re" && <span className="first-tag re">上り再発</span>}
+                          {k === "ov" && <span className="lane-tag ov">OV</span>}
+                          {!fo && limit && (
+                            <span className="lane-tag">{LANE_LIMIT_LABEL[limit]}</span>
+                          )}
+                        </span>
+                      </td>
+                      <td className="t-warn">
+                        {warn.length > 0 && (
+                          <>
+                            <IconWarn size={12} />
+                            {warn.join("・")}
+                          </>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
+            </tbody>
+          </table>
+        )}
+        {view === "cards" && rounds.length > 0 && (
           <>
             <div className={`tap-hint${sel ? " active" : ""}`}>
               {sel
@@ -1191,7 +1309,7 @@ export default function SchedulePage() {
             </div>
           </>
         )}
-        {rounds.map((r, i) => {
+        {view === "cards" && rounds.map((r, i) => {
           const iss = issuesByRound[i];
           const gap = gapBad[i];
           const bad = iss.length > 0 || gap.length > 0;
