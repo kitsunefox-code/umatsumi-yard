@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
 import { IconWarn, IconChevL, IconChevR } from "@/app/components/Icon";
 import {
   Mare,
@@ -85,8 +84,6 @@ function loadArr<T>(key: string, fallback: T[]): T[] {
 }
 
 export default function BoardPage() {
-  // /display で開いたときは見る専用（操作ボタンを出さない・タップで動かせない）
-  const readonly = (usePathname() || "").startsWith("/display");
   const [mares, setMares] = useState<Mare[]>([]);
   const [roster, setRoster] = useState<RosterEntry[]>([]);
   const [group, setGroup] = useState<GroupKey>("朝"); // 朝/昼/夕
@@ -462,35 +459,27 @@ export default function BoardPage() {
   if (!ready) return null;
 
   return (
-    <div className={`app board-app${readonly ? " readonly" : ""}`}>
+    <div className="app board-app">
       <div className="topbar">
         <h1>
           種付 所在ボード
           <span className="sub">今どの馬がどこにいるか</span>
         </h1>
-        {readonly ? (
-          <Link href="/board" className="btn btn-ghost">
-            操作ページへ
-          </Link>
-        ) : (
-          <>
-            <Link href="/display" className="btn btn-ghost" title="モニター用。操作なしで所在だけを映す">
-              表示用ページ
-            </Link>
-            <Link href="/schedule" className="btn btn-ghost">
-              種付順番へ
-            </Link>
-            <Link href="/" className="btn btn-ghost">
-              馬積みへ
-            </Link>
-            <button className="btn btn-primary" onClick={() => setAdding(true)}>
-              ＋ 馬を追加
-            </button>
-            <button className="btn btn-danger" onClick={clearBoard}>
-              クリア
-            </button>
-          </>
-        )}
+        <Link href="/display" className="btn btn-ghost" title="モニター用。操作なしで所在だけを映す">
+          表示用ページ
+        </Link>
+        <Link href="/schedule" className="btn btn-ghost">
+          種付順番へ
+        </Link>
+        <Link href="/" className="btn btn-ghost">
+          馬積みへ
+        </Link>
+        <button className="btn btn-primary" onClick={() => setAdding(true)}>
+          ＋ 馬を追加
+        </button>
+        <button className="btn btn-danger" onClick={clearBoard}>
+          クリア
+        </button>
         {cloudEnabled && (
           <span className={`sync-chip ${connected ? "on" : ""}`}>
             {connected ? `同期中${accessKey ? `：${accessKey}` : ""}` : "未接続"}
