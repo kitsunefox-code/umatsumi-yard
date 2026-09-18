@@ -4458,6 +4458,17 @@ select, input[type="number"], input[type="time"], input[type="text"] {
 .vcard.staging-target { box-shadow: 0 0 0 2px var(--accent-bg); border-color: var(--accent); }
 .vcard.all-unloaded { box-shadow: inset 3px 0 0 #5aa77a; }
 
+/* --- 縦向き表示（iPad縦・縦置きモニター） --- */
+/* 縦置きモニター：レイアウトはiPadと同じまま全体を拡大し、離れた席からも読めるようにする */
+@media (orientation: portrait) and (min-width: 1000px) { html { zoom: 1.32; } }
+@media (orientation: portrait) and (min-width: 1300px) { html { zoom: 1.7; } }
+@media (orientation: portrait) and (min-width: 1900px) { html { zoom: 2.45; } }
+/* iPad縦：駐車枠4〜15を横1列(12枠)にすると細くなりすぎるので 6＋6 の2段に */
+@media (orientation: portrait) and (max-width: 999px) {
+  .fyard-frames { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+  .fyard-frame { min-height: 70px; }
+}
+
 /* --- モーダル --- */
 .modal { border: 1px solid var(--line); border-radius: 8px; box-shadow: var(--shadow-lg); }
 .modal-head { font-size: 15px; }
