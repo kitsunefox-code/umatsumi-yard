@@ -4542,6 +4542,40 @@ select, input[type="number"], input[type="time"], input[type="text"] {
 .sched-table .fixed-tag, .sched-table .pri-tag, .sched-table .lane-tag, .sched-table .first-tag { font-size: 10px; padding: 0 5px; }
 .sched-table .lane-tag.ov { background: #6b3fa0; }
 
+/* --- 表示専用ページ（会議室のモニター・iPad。操作なし） --- */
+.display-app { padding: 10px 12px; min-height: 100dvh; box-sizing: border-box; }
+.display-bar {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 8px 14px;
+  margin-bottom: 8px;
+  background: #263241;
+  color: #fff;
+  border-radius: var(--radius);
+}
+.display-bar h1 { font-size: 16px; font-weight: 600; margin: 0; letter-spacing: 0.01em; }
+.display-bar .display-day { font-size: 16px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.display-bar .display-updated { margin-left: auto; font-size: 12px; color: rgba(255,255,255,0.7); font-variant-numeric: tabular-nums; }
+.display-bar .group-tabs { display: flex; gap: 4px; }
+.display-bar .group-tab { background: transparent; border-color: rgba(255,255,255,0.3); color: rgba(255,255,255,0.85); }
+.display-bar .group-tab.on { background: #fff; color: #263241; border-color: #fff; }
+.display-app .sched-table { font-size: 15px; }
+.display-app .sched-table td { height: 40px; padding: 4px 10px; }
+.display-app .sched-table th { font-size: 12px; }
+.display-app .sched-table .t-call { font-size: 19px; }
+.display-app .sched-table .t-mate { font-size: 14px; }
+.display-app .sched-table .t-mare { font-size: 15px; max-width: 14em; }
+.display-app .sched-table td .sched-badge { min-width: 44px; height: 24px; line-height: 24px; font-size: 12px; }
+.display-app .sched-table tbody tr { cursor: default; }
+.display-app .sched-table tbody tr:hover td { background: inherit; }
+.display-app .sched-table tr.bad:hover td { background: var(--bad-bg); }
+.display-empty { padding: 40px 16px; text-align: center; color: var(--text-muted); font-size: 15px; }
+.display-key { display: flex; gap: 8px; align-items: center; max-width: 420px; margin: 40px auto; }
+.display-key input { flex: 1; min-height: 40px; font-size: 15px; }
+.display-foot { margin-top: 6px; font-size: 11.5px; color: var(--text-muted); display: flex; gap: 14px; }
+.display-foot .sync-chip { min-height: 26px; font-size: 11.5px; padding: 0 8px; }
+
 /* --- モーダル --- */
 .modal { border: 1px solid var(--line); border-radius: 8px; box-shadow: var(--shadow-lg); }
 .modal-head { font-size: 15px; }

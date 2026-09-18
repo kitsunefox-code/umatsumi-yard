@@ -19,7 +19,8 @@ import {
   groomOf,
   barnOf,
 } from "@/lib/barns";
-import { cloudEnabled, subscribeBoard } from "@/lib/cloud";
+import { cloudEnabled, subscribeBoard, publishSchedule } from "@/lib/cloud";
+import type { SchedRow } from "@/lib/cloud";
 import {
   DayRosters,
   fetchSeasonDay,
@@ -475,6 +476,60 @@ export default function SchedulePage() {
       }),
     [rounds, startMins, earliest]
   );
+  // 表示専用ページ向けの行（画面の一覧と同じ内容）。組み直し・入替のたびに自動で送る
+  const displayRows: SchedRow[] = useMemo(() => {
+    const out: SchedRow[] = [];
+    rounds.forEach((r, i) => {
+      (["a", "b"] as const).forEach((ln) => {
+        const m = r[ln];
+        const soloBlocked = ln === "b" && !!r.a && isSoloCode(r.a.sireCode);
+        if (!m && soloBlocked) return;
+        const iss = issuesByRound[i];
+        const gap = gapBad[i];
+        const bad = iss.length > 0 || gap.length > 0;
+        if (!m) {
+          out.push({ id: `${i}-${ln}`, no: i + 1, lane: ln, call: "", mate: times[i], sireCode: "", mareName: "", groom: "", groomOff: false, tags: [], warn: "", bad: false, empty: true });
+          return;
+        }
+        const code = normCode(m.sireCode);
+        const pri = opts.priorities[code];
+        const limit = laneOf(m, opts);
+        const fo = firstOnly(m);
+        const k = noteKind(m.note);
+        const groom = optionGroomOf(m.sireCode, opts);
+        const tags: { t: string; k: string }[] = [];
+        if (pri) tags.push({ t: PRIORITY_LABEL[pri], k: "pri-tag" });
+        if (fo) tags.push({ t: fo, k: "first-tag" });
+        if (k === "agari-re") tags.push({ t: "上り再発", k: "first-tag re" });
+        if (k === "ov") tags.push({ t: "OV", k: "lane-tag ov" });
+        if (!fo && limit) tags.push({ t: LANE_LIMIT_LABEL[limit], k: "lane-tag" });
+        const warn =
+          ln === "a" || !r.a
+            ? [...iss.map((x) => ISSUE_LABEL[x]), ...gap.map((g) => `${g.code} 4時間未満`)].join("・")
+            : "";
+        out.push({
+          id: m.id, no: i + 1, lane: ln,
+          call: quarterMin(callMinById[m.id] ?? startMins[i] - prepFor(times[i], opts)),
+          mate: times[i], sireCode: m.sireCode, mareName: m.mareName,
+          groom, groomOff: (opts.offGrooms || []).includes(groom), tags, warn, bad,
+        });
+      });
+    });
+    return out;
+  }, [rounds, issuesByRound, gapBad, times, startMins, callMinById, opts]);
+  useEffect(() => {
+    if (!cloudEnabled || !accessKey || !day || rounds.length === 0) return;
+    const t = setTimeout(() => {
+      publishSchedule(accessKey, day, group, {
+        rows: displayRows,
+        start,
+        headCount: displayRows.filter((r) => !r.empty).length,
+        updatedAt: Date.now(),
+      }).catch(() => {});
+    }, 600);
+    return () => clearTimeout(t);
+  }, [displayRows, accessKey, day, group, start, rounds.length]);
+
   const badRounds = issuesByRound.filter((x, i) => x.length || gapBad[i].length)
     .length;
   const scheduled = rounds.reduce((n, r) => n + (r.a ? 1 : 0) + (r.b ? 1 : 0), 0);
@@ -643,6 +698,9 @@ export default function SchedulePage() {
           種付順番・呼び出し
           <span className="sub">どの馬を何時に呼ぶか</span>
         </h1>
+        <Link href="/display" className="btn btn-ghost" title="会議室のモニター用。操作なしで順番表だけを映す">
+          表示用ページ
+        </Link>
         <Link href="/board" className="btn btn-ghost">
           所在ボードへ
         </Link>
