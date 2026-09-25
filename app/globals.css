@@ -4621,3 +4621,74 @@ select, input[type="number"], input[type="time"], input[type="text"] {
 .modal { border: 1px solid var(--line); border-radius: 8px; box-shadow: var(--shadow-lg); }
 .modal-head { font-size: 15px; }
 .modal-close { border-radius: var(--radius-sm); }
+
+/* ===== v3 白板調：操作ページも見る専用ページと同じ雰囲気に ===== */
+/* 濃色ヘッダー・角丸カード・色付き選択タブ・チップをやめ、題字と黒の下線、角のない名札、黒白の切替に */
+:root {
+  --bg: #f6f5f1; --panel: #fff; --line: #dcdad3; --line-strong: #c9c7bf;
+  --text: #222; --text-muted: #6b6b66; --accent: #2b2b2b; --accent-bg: #ececea;
+  --radius: 2px; --radius-sm: 2px; --shadow: none;
+}
+body { background: #f6f5f1; color: #222; }
+.topbar {
+  background: transparent; color: #222; border-radius: 0; padding: 2px 2px 8px;
+  border-bottom: 2px solid #2b2b2b; margin-bottom: 12px; align-items: baseline;
+}
+.topbar h1 { font-size: 20px; font-weight: 700; letter-spacing: 0.06em; color: #222; }
+.topbar h1 .sub, .topbar .sub { color: #666; font-size: 11.5px; }
+.topbar .btn, .topbar a.btn { background: #fff; border: 1px solid #2b2b2b; color: #222; min-height: 32px; }
+.topbar .btn:hover, .topbar a.btn:hover { background: #f1f0eb; }
+.topbar .btn-primary { background: #2b2b2b; color: #fff; }
+.topbar .btn-danger { border-color: #b3261e; color: #b3261e; }
+.topbar .sync-chip { border: none; background: transparent; color: #666; padding: 0 2px; min-height: 0; }
+.sync-chip { border: none; background: transparent; padding: 0 2px; color: #666; }
+.btn { border-color: #9a9890; color: #222; background: #fff; }
+.btn:hover { background: #f1f0eb; }
+.btn-primary { background: #2b2b2b; border-color: #2b2b2b; color: #fff; }
+.btn-primary:hover { background: #111; }
+.btn-danger { background: #fff; border-color: #b3261e; color: #b3261e; }
+.btn-ghost { background: #fff; border-color: #9a9890; }
+.btn-stall { border-color: #2e7d4f; color: #2e7d4f; }
+.roster-actions > button:first-child.btn-primary { background: #ececea; color: #222; border-color: #2b2b2b; }
+.roster-actions > button:first-child.btn-primary:hover { background: #e2e1dc; }
+select, input[type="number"], input[type="time"], input[type="text"] { border-color: #9a9890; }
+button:focus-visible, select:focus-visible, input:focus-visible, a:focus-visible { outline-color: #2b2b2b; }
+
+/* 枠・見出し */
+.yard, .roster-panel, .rules-panel, .call-sheet, .barn-box, .fplace, .fyard, .modal, .generate-cta,
+.departed-section, .wh-strip { border-color: #c9c7bf; box-shadow: none; }
+.roster-title, .yard-section-title, .call-head, .barn-name, .fplace-name, .modal-head, .fyard-label,
+.prefixed-call-head > span:first-child, .rules-sub { letter-spacing: 0.06em; font-weight: 700; color: #2b2b2b; }
+.yard-section-title, .call-head { border-bottom: 1px solid #2b2b2b; }
+.generate-cta { background: #f1f0eb; border: 1px solid #9a9890; }
+.tap-hint { border-left-color: #9a9890; }
+.tap-hint.active { border-left-color: #2b2b2b; color: #222; }
+
+/* 名札（予定・所在・順番・車両） */
+.roster-chip, .sched-card, .rule-row, .call-row, .prefixed-call-row, .mare-chip, .vcard, .exmap-cell, .slot-empty,
+.barn-grid .stall { border-color: #c9c7bf; box-shadow: 0 1px 0 #d4d2ca; }
+.vcard-head { background: #f1f0eb; border-bottom-color: #dcdad3; }
+.vcard-no { background: #2b2b2b; }
+.sched-badge, .chip-sire, .frame-sire, .vcard-code { border-radius: 0; letter-spacing: 0.05em; }
+.chip-adv, .frame-adv { border-color: #9a9890; color: #222; }
+.chip-adv:hover, .frame-adv:hover { background: #f1f0eb; }
+
+/* 切替（組・開始時刻）と状態表示 */
+.group-tab, .start-tab, .day-nav, .start-custom { border-color: #9a9890; color: #444; background: #fff; }
+.group-tab.on, .start-tab.on { background: #2b2b2b; border-color: #2b2b2b; color: #fff; }
+.start-custom.on { border-color: #2b2b2b; color: #222; }
+.sched-stat, .day-chip { border: none; background: transparent; padding: 0 4px; color: #555; }
+.sched-stat.ok, .day-chip.on { border: none; color: #2e7d4f; }
+.sched-stat.bad { border: none; background: transparent; color: #b3261e; }
+.fplace-count, .roster-count { background: transparent; border: 1px solid #c9c7bf; color: #555; }
+
+/* 小さな印 */
+.pri-tag { background: #2b2b2b; }
+.fixed-tag { color: #222; background: #ececea; }
+.badge-new { background: #b3261e; }
+.sched-table { border-color: #c9c7bf; }
+.sched-table th { background: #f1f0eb; color: #555; }
+.sched-table tr.sel td { background: #ececea; }
+.sched-table tr.sel td:first-child { box-shadow: inset 3px 0 0 #2b2b2b; }
+.sched-table .t-call, .call-time { color: #222; }
+.sched-table tr.target td { background: #fafaf7; }
